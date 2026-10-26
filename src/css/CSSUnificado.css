@@ -1100,314 +1100,15 @@ ul, ol { list-style: none; }
 }
 
 /* ============================================================
-   8. SIDEBAR — Barra de navegación vertical izquierda
+   8. AVATAR / HEADER DE USUARIO
+   (el sidebar real, components/compartido/Sidebar.jsx, usa 100% estilos
+   inline -- .sidebar, .sidebar-menu, .collapse-btn, .sidebar-header,
+   .brand-name, .admin-badge, .submenu*, .sidebar-footer,
+   .logout-btn-sidebar y .user-info-section ya no las usa ningun archivo
+   del proyecto y se retiraron de aqui. .user-info, .avatar y .top-header
+   SI se usan -- via className literal -- en ReceptionistDashboard.jsx y
+   varias pantallas de Owner/Miembro/Admin, asi que se conservan.)
    ============================================================ */
-.sidebar {
-  width: 260px;
-  min-width: 260px;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-  left: 0;
-  z-index: 200;
-  background: rgba(8, 10, 16, 0.82);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
-  flex-shrink: 0;
-  transition: width 0.3s var(--ease), min-width 0.3s var(--ease);
-}
-
-.sidebar.collapsed {
-  width: 72px;
-  min-width: 72px;
-}
-
-/* Botón colapsar: círculo flotante en el borde derecho del sidebar */
-.collapse-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  position: absolute;
-  top: 22px;
-  right: -13px;
-  background: var(--bg-card, #1a1a2e);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 50%;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.55);
-  z-index: 201;
-  padding: 0;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-}
-
-.collapse-btn svg {
-  width: 13px;
-  height: 13px;
-}
-
-.collapse-btn:hover {
-  color: #fff;
-  background: rgba(51, 119, 255, 0.2);
-  border-color: var(--accent);
-}
-
-/* Header: Logo + Badge */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 16px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  border-right: none;
-  flex-shrink: 0;
-  overflow: hidden;
-  min-height: 68px;
-}
-
-.brand-name {
-  font-weight: 800;
-  font-size: 16px;
-  letter-spacing: 1.5px;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  transition: opacity 0.2s ease;
-}
-
-.admin-badge {
-  background: var(--accent-dim);
-  color: var(--accent-soft);
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: var(--r-sm);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transition: opacity 0.2s ease;
-}
-
-.sidebar.collapsed .brand-name,
-.sidebar.collapsed .admin-badge {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Menú vertical */
-.sidebar-menu {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  padding: 8px;
-  gap: 1px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.08) transparent;
-}
-
-.sidebar-menu::-webkit-scrollbar { width: 3px; }
-.sidebar-menu::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08);
-  border-radius: 2px;
-}
-
-.sidebar-menu > li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  color: rgba(255, 255, 255, 0.55);
-  border-radius: var(--r-md);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  position: relative;
-  min-height: 42px;
-  overflow: hidden;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.sidebar-menu > li:hover:not(.active):not(.divider) {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
-  transform: none;
-}
-
-.sidebar-menu > li.active {
-  background: rgba(51, 119, 255, 0.18);
-  color: var(--accent-soft);
-  font-weight: 600;
-}
-
-/* Indicador activo: barra izquierda */
-.sidebar-menu > li.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  background: var(--accent);
-  border-radius: 0 var(--r-full) var(--r-full) 0;
-}
-
-.sidebar-menu > li svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-/* Divider horizontal */
-.sidebar-menu > li.divider {
-  height: 1px;
-  width: calc(100% - 16px);
-  margin: 4px 8px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0;
-  min-height: unset;
-  pointer-events: none;
-  border-radius: var(--r-full);
-}
-
-/* Texto oculto en collapsed */
-.sidebar.collapsed .sidebar-menu > li > div > span,
-.sidebar.collapsed .sidebar-menu > li > span {
-  display: none;
-}
-
-/* Submenús inline dentro del sidebar */
-.submenu-wrapper {
-  position: static;
-  width: 100%;
-  overflow: hidden;
-  display: block;
-  height: auto !important;
-  grid-template-rows: unset;
-}
-
-.submenu-wrapper.open { display: block; }
-.submenu-inner { overflow: hidden; }
-
-.submenu {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: var(--r-md);
-  padding: 4px 0 4px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin-top: 4px;
-  border: none;
-  box-shadow: none;
-}
-
-.submenu::before { display: none; }
-
-.submenu li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px 8px 20px;
-  border-radius: var(--r-md);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.18s ease, color 0.18s ease;
-}
-
-.submenu li:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-}
-
-.submenu li.active {
-  background: rgba(51, 119, 255, 0.12);
-  color: var(--accent-soft);
-  font-weight: 600;
-  border-left: 2px solid var(--accent);
-  padding-left: 18px;
-}
-
-.sidebar.collapsed .submenu-wrapper {
-  display: none !important;
-}
-
-/* ── Footer del sidebar en columna ── */
-.sidebar-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 3px;
-  padding: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: none;
-  margin-left: 0;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.logout-btn-sidebar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 14px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: rgba(255, 255, 255, 0.55);
-  border-radius: var(--r-md);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  text-decoration: none;
-  overflow: hidden;
-  transition: border-color 0.22s ease, color 0.22s ease, background-color 0.22s ease;
-}
-
-.logout-btn-sidebar:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.logout-btn-sidebar:last-child:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-  background: var(--danger-bg);
-}
-
-.sidebar.collapsed .logout-btn-sidebar {
-  justify-content: center;
-  padding: 9px;
-}
-
-.sidebar.collapsed .logout-btn-sidebar span {
-  display: none;
-}
-
-/* ── Avatar + Info de usuario ── */
-.user-info-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: none;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
 .user-info {
   display: flex;
   flex-direction: column;
@@ -1415,12 +1116,6 @@ ul, ol { list-style: none; }
   flex: 1;
   min-width: 0;
   transition: opacity 0.2s ease;
-}
-
-.sidebar.collapsed .user-info {
-  opacity: 0;
-  flex: 0;
-  width: 0;
 }
 
 .user-info .name {
@@ -1450,18 +1145,9 @@ ul, ol { list-style: none; }
   display: none;
 }
 
-/* ── Responsive ── */
+/* .dashboard-content, .page-container y .main-wrapper SI se usan en
+   muchas pantallas -- se conservan sus reglas responsive. */
 @media (max-width: 900px) {
-  .sidebar {
-    width: 220px;
-    min-width: 220px;
-  }
-
-  .sidebar.collapsed {
-    width: 60px;
-    min-width: 60px;
-  }
-
   .dashboard-content,
   .page-container {
     padding: 18px 16px;
@@ -1469,18 +1155,6 @@ ul, ol { list-style: none; }
 }
 
 @media (max-width: 600px) {
-  .sidebar {
-    position: fixed;
-    height: 100dvh;
-    transition: transform 0.3s var(--ease), width 0.3s var(--ease), min-width 0.3s var(--ease);
-  }
-
-  .sidebar.collapsed {
-    transform: translateX(calc(-100% + 60px));
-    width: 60px;
-    min-width: 60px;
-  }
-
   .main-wrapper {
     margin-left: 0;
   }
