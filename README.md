@@ -4,7 +4,16 @@ Frontend de GymPro: aplicación de una sola página (SPA) construida con React y
 Se conecta a la API REST y ofrece vistas diferenciadas por rol. En Docker se compila a
 estáticos y se sirve con nginx, que además hace de proxy inverso hacia la API.
 
-Documentación completa del proyecto: [../doc/README.md](../doc/README.md)
+> **Arquitectura multi-repo:** este repo es parte de GymPro, dividido en 3 repos bajo la
+> organización [PantechGympro](https://github.com/PantechGympro):
+> [`gympro-api`](https://github.com/PantechGympro/gympro-api),
+> [`gympro-web`](https://github.com/PantechGympro/gympro-web) (este) y
+> [`gympro-mobile`](https://github.com/PantechGympro/gympro-mobile).
+>
+> Para levantar el stack completo con Docker Compose aún se necesita el
+> `docker-compose.yml` original (la separación de infraestructura en su propio repo
+> está pendiente). Mientras tanto, clona este repo como `web/` junto a `gympro-api`
+> como `api/`, con el `docker-compose.yml` del monorepo original al mismo nivel.
 
 ---
 
