@@ -7,13 +7,14 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
-
-/* Red de seguridad: ningun elemento (modal mal posicionado, tabla sin
-   scroll propio, etc.) deberia poder forzar scroll horizontal del
-   documento completo. */
-html {
+  /* Antes html (abajo) tambien tenia overflow-x: hidden como "red de
+     seguridad" extra contra scroll horizontal -- pero overflow-x distinto
+     de visible fuerza por especificacion CSS a que overflow-y pase a auto
+     en ese mismo elemento, y tenerlo en html Y en body a la vez crea dos
+     contenedores de scroll anidados en vez de uno. Con eso, position:
+     sticky deja de pegarse al viewport en TODA la app (se detecto primero
+     en la barra de navegacion de Landing.jsx). Un solo overflow-x:hidden
+     aqui en body ya cubre el mismo caso sin duplicarlo en html. */
   overflow-x: hidden;
 }
 

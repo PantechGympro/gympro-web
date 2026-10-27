@@ -34,9 +34,9 @@ import useCountUp from "../../hooks/useCountUp";
 import {
   FiSun, FiMoon, FiStar, FiUsers, FiDollarSign, FiBarChart2, FiSmartphone,
   FiActivity, FiMapPin, FiArrowRight, FiBriefcase, FiUserCheck, FiHeadphones,
-  FiCreditCard,
+  FiCreditCard, FiCheck,
 } from "react-icons/fi";
-import { getGimnasiosDestacados, getTestimoniosDestacados } from "../../api/landing";
+import { getGimnasiosDestacados, getTestimoniosDestacados, getPlanesPublicos } from "../../api/landing";
 import "../../css/CSSUnificado.css";
 
 const FUNCIONALIDADES = [
@@ -90,6 +90,17 @@ const S = {
   sectionSub: { fontSize: 14.5, color: "var(--text-secondary)", textAlign: "center", margin: "0 auto 40px", maxWidth: 560 },
 
   grid6: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 18 },
+
+  planCard: { position: "relative", display: "flex", flexDirection: "column", padding: "24px 22px 22px 25px" },
+  planBadge: { position: "absolute", top: 14, right: 14, background: "var(--accent)", color: "var(--text-on-accent)", fontSize: 10.5, fontWeight: 800, padding: "4px 10px", borderRadius: 999 },
+  planNombre: { fontSize: 18, fontWeight: 800, margin: "0 0 4px", textTransform: "capitalize" },
+  planTagline: { fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.4, margin: "0 0 18px", minHeight: 34 },
+  planPrecioRow: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 18 },
+  planPrecioNum: { fontSize: 32 },
+  planPrecioUnidad: { fontSize: 13, color: "var(--text-tertiary)" },
+  planLista: { listStyle: "none", margin: "0 0 22px", padding: 0, display: "flex", flexDirection: "column", gap: 9, flex: 1 },
+  planItem: { display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.4 },
+  planCheck: { color: "var(--accent)", flexShrink: 0, marginTop: 2, fontSize: 13 },
   featureCard: { background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, padding: "22px 20px 22px 23px" },
   featureIcon: { width: 40, height: 40, borderRadius: 6, background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 14 },
   featureTitulo: { fontSize: 15.5, fontWeight: 700, margin: "0 0 6px" },
@@ -168,7 +179,9 @@ export default function Landing() {
   const { theme, changeTheme } = useTheme();
   const [gimnasios, setGimnasios] = useState([]);
   const [testimonios, setTestimonios] = useState([]);
+  const [planes, setPlanes] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [cargandoPlanes, setCargandoPlanes] = useState(true);
 
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -214,6 +227,7 @@ export default function Landing() {
   const [scopeRef, scopeVisible] = useRevealOnScroll();
   const [funcionalidadesRef, funcionalidadesVisible] = useRevealOnScroll();
   const [rolesRef, rolesVisible] = useRevealOnScroll();
+  const [planesRef, planesVisible] = useRevealOnScroll();
   const [testimoniosRef, testimoniosVisible] = useRevealOnScroll();
   const [ctaBandRef, ctaBandVisible] = useRevealOnScroll();
 
@@ -229,6 +243,11 @@ export default function Landing() {
       .then((res) => setTestimonios(res.data || []))
       .catch(() => { /* la landing debe seguir viéndose bien aunque esto falle */ })
       .finally(() => setCargando(false));
+
+    getPlanesPublicos()
+      .then((res) => setPlanes(res.data || []))
+      .catch(() => { /* la landing debe seguir viéndose bien aunque esto falle */ })
+      .finally(() => setCargandoPlanes(false));
   }, []);
 
   useEffect(() => {
@@ -526,6 +545,7 @@ export default function Landing() {
         <div className="gympro-nav-links" style={S.navLinks}>
           <span className="gympro-nav-link" style={S.navLink} onClick={() => irA("funcionalidades")}>Funcionalidades</span>
           <span className="gympro-nav-link" style={S.navLink} onClick={() => irA("roles")}>Roles</span>
+          <span className="gympro-nav-link" style={S.navLink} onClick={() => irA("planes")}>Planes</span>
           <span className="gympro-nav-link" style={S.navLink} onClick={() => irA("gimnasios")}>Gimnasios</span>
         </div>
         <div style={S.navActions}>
@@ -680,6 +700,81 @@ export default function Landing() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Catalogo real de planes de suscripcion (tabla planes_suscripcion via
+          /api/publico/planes), nunca precios hardcodeados en el frontend --
+          si un plan cambia de precio o se desactiva desde el panel de
+          superadmin, esta seccion lo refleja solo. */}
+      <section id="planes" style={S.sectionAlt} ref={planesRef}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+          <h2 className={`gympro-reveal gympro-display${planesVisible ? " is-visible" : ""}`} style={S.sectionTitle}>
+            Un plan para cada etapa de tu gimnasio
+          </h2>
+          <p
+            className={`gympro-reveal${planesVisible ? " is-visible" : ""}`}
+            style={{ ...S.sectionSub, transitionDelay: "80ms" }}
+          >
+            Empieza gratis y sube de plan cuando tu gimnasio lo necesite, sin contratos forzosos.
+          </p>
+
+          {!cargandoPlanes && planes.length === 0 && (
+            <div style={S.emptyBox}>
+              Todavía no hay planes publicados. Vuelve en unos minutos.
+            </div>
+          )}
+
+          {planes.length > 0 && (
+            <div style={S.grid6}>
+              {planes.map((p, i) => {
+                const gratis = p.precio_mensual_mxn === 0;
+                const precio = gratis
+                  ? "Gratis"
+                  : `$${Math.round(p.precio_mensual_mxn / 100).toLocaleString("es-MX")}`;
+                return (
+                  <div
+                    key={p.id}
+                    className={`gympro-feature-card${planesVisible ? " is-visible" : ""}`}
+                    style={{
+                      ...S.featureCard,
+                      ...S.planCard,
+                      borderWidth: p.destacado ? 2 : 1,
+                      borderColor: p.destacado ? "var(--accent)" : "var(--border)",
+                      transitionDelay: `${160 + i * 60}ms`,
+                    }}
+                  >
+                    {p.destacado && <span style={S.planBadge}>Más elegido</span>}
+                    <h3 style={S.planNombre}>{p.nombre}</h3>
+                    <p style={S.planTagline}>{p.titulo_comercial || p.descripcion}</p>
+                    <div style={S.planPrecioRow}>
+                      <span className="gympro-display" style={S.planPrecioNum}>{precio}</span>
+                      {!gratis && <span style={S.planPrecioUnidad}>/mes</span>}
+                    </div>
+                    <ul style={S.planLista}>
+                      {(p.caracteristicas || []).slice(0, 7).map((c, idx) => (
+                        <li key={idx} style={S.planItem}>
+                          <FiCheck style={S.planCheck} />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      className={p.destacado ? "gympro-cta-btn" : "gympro-secondary-btn"}
+                      style={{
+                        ...(p.destacado ? S.ctaBtn : S.secondaryBtn),
+                        width: "100%",
+                        justifyContent: "center",
+                      }}
+                      onClick={() => navigate("/register-gym")}
+                    >
+                      Elegir {p.nombre}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
