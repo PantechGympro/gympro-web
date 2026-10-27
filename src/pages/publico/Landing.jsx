@@ -12,10 +12,25 @@
  * citas inventadas. Mientras ningún gimnasio haya subido fotos o
  * testimonios todavía, ambas secciones muestran un estado vacío honesto
  * en vez de ocultarse o rellenarse con datos de relleno.
+ *
+ * Movimiento de la página (pasada 2026-10-26): un solo momento protagonista
+ * -- la secuencia de entrada del hero (titular + CTAs escalonados, panel de
+ * vista previa deslizándose, KPIs contando hacia arriba y barras creciendo
+ * desde cero) -- y, por debajo, un sistema de scroll-reveal discreto y
+ * uniforme (mismas curvas/duraciones en todas las secciones, nunca una
+ * distinta por sección) más microinteracciones de hover/press en tarjetas
+ * y botones. `prefers-reduced-motion` se respeta en los 3 frentes: el
+ * carrusel de gimnasios deja de moverse solo (se muestra como grilla
+ * estática), las barras/KPIs aparecen ya en su valor final sin animar, y
+ * el resto de transiciones con desplazamiento se neutralizan por CSS
+ * conservando solo el fundido de opacidad.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
+import usePrefersReducedMotion from "../../hooks/usePrefersReducedMotion";
+import useRevealOnScroll from "../../hooks/useRevealOnScroll";
+import useCountUp from "../../hooks/useCountUp";
 import {
   FiSun, FiMoon, FiStar, FiUsers, FiDollarSign, FiBarChart2, FiSmartphone,
   FiActivity, FiMapPin, FiArrowRight, FiBriefcase, FiUserCheck, FiHeadphones,
@@ -67,7 +82,7 @@ const S = {
   kpiLabel: { fontSize: 11, color: "var(--text-tertiary)", marginBottom: 4 },
   kpiVal: { fontSize: 19, fontWeight: 800 },
   previewBarRow: { display: "flex", alignItems: "flex-end", gap: 6, height: 70, background: "var(--bg-main)", borderRadius: 10, padding: "10px 14px" },
-  previewBar: (h, c) => ({ flex: 1, height: `${h}%`, background: c || "var(--accent)", borderRadius: 4, opacity: 0.85 }),
+  previewBar: (h, c) => ({ flex: 1, height: `${h}%`, background: c || "var(--accent)", borderRadius: 4, opacity: 0.85, transformOrigin: "bottom" }),
   previewNote: { fontSize: 11, color: "var(--text-tertiary)", marginTop: 10, textAlign: "center" },
 
   section: { padding: "64px 28px", maxWidth: 1180, margin: "0 auto" },
@@ -89,6 +104,7 @@ const S = {
 
   marqueeViewport: { overflow: "hidden", margin: "0 -28px" },
   marqueeTrack: { display: "flex", gap: 20, width: "max-content", animation: "gympro-marquee 32s linear infinite" },
+  gymGridEstatica: { display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center" },
   gymCard: { width: 220, borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)", background: "var(--bg-card)", flexShrink: 0 },
   gymImg: { width: "100%", height: 130, objectFit: "cover", display: "block", background: "var(--bg-input)" },
   gymNombre: { padding: "10px 12px", fontSize: 13.5, fontWeight: 700 },
@@ -140,7 +156,7 @@ function GymCard({ g }) {
   }, [imagenes.length]);
 
   return (
-    <div style={S.gymCard}>
+    <div className="gympro-gym-card" style={S.gymCard}>
       <img src={imagenes[indice]} alt={g.nombre} style={S.gymImg} />
       <div style={S.gymNombre}>{g.nombre}</div>
       {g.direccion && <div style={S.gymDireccion}>{g.direccion}</div>}
@@ -155,15 +171,51 @@ export default function Landing() {
   const [testimonios, setTestimonios] = useState([]);
   const [cargando, setCargando] = useState(true);
 
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  // Secuencia de entrada del hero: arranca en su estado "antes" (oculto,
+  // ligeramente desplazado) y pasa a "visible" un frame después de montar
+  // -- si activáramos la clase en el mismo render que monta el componente,
+  // el navegador podría pintar ya con la clase final puesta y la
+  // transición nunca llegaría a verse.
+  const [heroMontado, setHeroMontado] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setHeroMontado(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // Sombra/blur de la barra de navegación solo después de hacer scroll --
+  // señal de que el contenido empezó a desplazarse por debajo, no decoración.
+  const [navConSombra, setNavConSombra] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setNavConSombra(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // KPIs de ejemplo del panel de vista previa contando hacia arriba una
+  // sola vez al montar el hero -- el propio producto vende "ve crecer tu
+  // negocio en números", así que es el lugar correcto para gastar el
+  // "momento llamativo" de esta pasada en vez de repartirlo por toda la
+  // página.
+  const sociosActivos = useCountUp(248, heroMontado, { duration: 1300 });
+  const ingresosMes = useCountUp(52400, heroMontado, { duration: 1500 });
+
   // El carrusel de gimnasios arranca "congelado" en la primera tarjeta
   // (animation-play-state: paused) y solo empieza a moverse la primera vez
   // que la seccion entra en el viewport -- si no, para cuando el usuario de
   // verdad scrollea hasta aqui el carrusel ya llevaba rato corriendo solo y
   // parecia arrancar a medias (mostrando ya la segunda tarjeta en vez de la
-  // primera).
+  // primera). El mismo booleano también revela el encabezado de la sección.
   const gimnasiosSectionRef = useRef(null);
   const [marqueeEnCurso, setMarqueeEnCurso] = useState(false);
   const [marqueeEnPausaPorHover, setMarqueeEnPausaPorHover] = useState(false);
+
+  const [funcionalidadesRef, funcionalidadesVisible] = useRevealOnScroll();
+  const [rolesRef, rolesVisible] = useRevealOnScroll();
+  const [testimoniosRef, testimoniosVisible] = useRevealOnScroll();
+  const [ctaBandRef, ctaBandVisible] = useRevealOnScroll();
 
   useEffect(() => {
     // Peticiones independientes a proposito: si una falla (p. ej. el
@@ -207,8 +259,13 @@ export default function Landing() {
   const gimnasiosParaMarquee = gimnasios.length > 0 ? [...gimnasios, ...gimnasios] : [];
 
   return (
-    <div style={S.page}>
+    <div className="gympro-landing" style={S.page}>
       <style>{`
+        .gympro-landing {
+          --gympro-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+          --gympro-ease: ease;
+        }
+
         @keyframes gympro-marquee {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
@@ -220,73 +277,250 @@ export default function Landing() {
         @media (max-width: 480px) {
           .gympro-nav { padding: 12px 16px; }
         }
+
+        /* ── Barra de navegación: sombra/blur al hacer scroll ────────────── */
+        .gympro-nav {
+          transition: box-shadow 250ms var(--gympro-ease-out),
+                      backdrop-filter 250ms var(--gympro-ease-out);
+        }
+        .gympro-nav.is-scrolled {
+          box-shadow: var(--shadow-sm);
+          backdrop-filter: blur(10px) saturate(1.1);
+        }
+
+        /* ── Secuencia de entrada del hero (el momento protagonista) ─────── */
+        .gympro-hero-copy > * {
+          opacity: 0;
+          transform: translateY(16px);
+          transition: opacity 600ms var(--gympro-ease-out),
+                      transform 600ms var(--gympro-ease-out);
+        }
+        .gympro-hero-copy.is-visible > * { opacity: 1; transform: translateY(0); }
+        .gympro-hero-copy.is-visible > *:nth-child(1) { transition-delay: 0ms; }
+        .gympro-hero-copy.is-visible > *:nth-child(2) { transition-delay: 90ms; }
+        .gympro-hero-copy.is-visible > *:nth-child(3) { transition-delay: 180ms; }
+
+        .gympro-hero-preview {
+          opacity: 0;
+          transform: translateY(24px) scale(0.97);
+          transition: opacity 700ms var(--gympro-ease-out),
+                      transform 700ms var(--gympro-ease-out);
+          transition-delay: 150ms;
+        }
+        .gympro-hero-preview.is-visible { opacity: 1; transform: translateY(0) scale(1); }
+
+        /* Trazo bajo "Hazlo crecer." -- se dibuja después del titular, eco
+           visual del propio mensaje (crecimiento), no decoración suelta. */
+        .gympro-h1-accent { position: relative; display: inline-block; }
+        .gympro-h1-accent::after {
+          content: "";
+          position: absolute;
+          left: 0; right: 0; bottom: -2px;
+          height: 3px;
+          background: var(--accent);
+          border-radius: 2px;
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: transform 500ms var(--gympro-ease-out);
+          transition-delay: 520ms;
+        }
+        .gympro-hero-copy.is-visible .gympro-h1-accent::after { transform: scaleX(1); }
+
+        /* ── Scroll-reveal: un sistema único (mismas curvas en toda la página) ── */
+        .gympro-reveal {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 550ms var(--gympro-ease-out),
+                      transform 550ms var(--gympro-ease-out);
+        }
+        .gympro-reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+        .gympro-feature-card,
+        .gympro-role-card,
+        .gympro-testi-card {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 550ms var(--gympro-ease-out),
+                      transform 350ms var(--gympro-ease-out),
+                      box-shadow 220ms var(--gympro-ease-out),
+                      border-color 220ms var(--gympro-ease-out);
+        }
+        .gympro-feature-card.is-visible,
+        .gympro-role-card.is-visible,
+        .gympro-testi-card.is-visible { opacity: 1; transform: translateY(0); }
+
+        @media (hover: hover) and (pointer: fine) {
+          .gympro-feature-card.is-visible:hover,
+          .gympro-role-card.is-visible:hover,
+          .gympro-testi-card.is-visible:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-soft);
+          }
+          .gympro-gym-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-soft);
+          }
+        }
+        .gympro-gym-card {
+          transition: transform 220ms var(--gympro-ease-out),
+                      box-shadow 220ms var(--gympro-ease-out),
+                      border-color 220ms var(--gympro-ease-out);
+        }
+
+        /* ── Botones: feedback de press + hover (sin libreria) ──────────── */
+        .gympro-cta-btn {
+          transition: transform 150ms var(--gympro-ease-out),
+                      box-shadow 220ms var(--gympro-ease-out),
+                      background-color 180ms var(--gympro-ease-out);
+        }
+        .gympro-cta-btn:hover { box-shadow: var(--shadow-accent); background-color: var(--accent-hover); }
+        .gympro-cta-btn:active { transform: scale(0.96); }
+
+        .gympro-secondary-btn {
+          transition: transform 150ms var(--gympro-ease-out),
+                      border-color 180ms var(--gympro-ease-out);
+        }
+        .gympro-secondary-btn:hover { border-color: var(--accent-soft); }
+        .gympro-secondary-btn:active { transform: scale(0.96); }
+
+        .gympro-icon-btn {
+          transition: transform 150ms var(--gympro-ease-out),
+                      border-color 180ms var(--gympro-ease-out),
+                      color 180ms var(--gympro-ease-out);
+        }
+        .gympro-icon-btn:hover { border-color: var(--accent-soft); color: var(--accent); }
+        .gympro-icon-btn:active { transform: scale(0.92) rotate(10deg); }
+
+        .gympro-nav-link, .gympro-footer-link {
+          transition: color 160ms var(--gympro-ease-out);
+        }
+        .gympro-nav-link:hover, .gympro-footer-link:hover { color: var(--accent); }
+
+        .gympro-cta-btn:focus-visible,
+        .gympro-secondary-btn:focus-visible,
+        .gympro-icon-btn:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+
+        /* ── Movimiento reducido: se conserva el fundido, se quita el desplazamiento ── */
+        @media (prefers-reduced-motion: reduce) {
+          .gympro-hero-copy > *,
+          .gympro-hero-preview,
+          .gympro-reveal,
+          .gympro-feature-card,
+          .gympro-role-card,
+          .gympro-testi-card {
+            transform: none;
+            transition-duration: 250ms;
+          }
+          .gympro-h1-accent::after { transition: none; }
+          .gympro-feature-card.is-visible:hover,
+          .gympro-role-card.is-visible:hover,
+          .gympro-testi-card.is-visible:hover,
+          .gympro-gym-card:hover {
+            transform: none;
+          }
+        }
       `}</style>
 
-      <nav className="gympro-nav" style={S.nav}>
+      <nav className={`gympro-nav${navConSombra ? " is-scrolled" : ""}`} style={S.nav}>
         <Link to="/" style={S.brand}>
           <img src="/logo64.png" alt="GymPro" style={{ width: 26, height: 26, borderRadius: 6 }} />
           GymPro
         </Link>
         <div className="gympro-nav-links" style={S.navLinks}>
-          <span style={S.navLink} onClick={() => irA("funcionalidades")}>Funcionalidades</span>
-          <span style={S.navLink} onClick={() => irA("roles")}>Roles</span>
-          <span style={S.navLink} onClick={() => irA("gimnasios")}>Gimnasios</span>
+          <span className="gympro-nav-link" style={S.navLink} onClick={() => irA("funcionalidades")}>Funcionalidades</span>
+          <span className="gympro-nav-link" style={S.navLink} onClick={() => irA("roles")}>Roles</span>
+          <span className="gympro-nav-link" style={S.navLink} onClick={() => irA("gimnasios")}>Gimnasios</span>
         </div>
         <div style={S.navActions}>
-          <button style={S.themeBtn} onClick={toggleTheme} title="Cambiar tema" aria-label="Cambiar tema">
+          <button className="gympro-icon-btn" style={S.themeBtn} onClick={toggleTheme} title="Cambiar tema" aria-label="Cambiar tema">
             {theme === "dark" ? <FiSun /> : <FiMoon />}
           </button>
           <Link to="/login" style={S.linkBtn}>Iniciar sesión</Link>
-          <button style={S.ctaBtn} onClick={() => navigate("/register-gym")}>
+          <button className="gympro-cta-btn" style={S.ctaBtn} onClick={() => navigate("/register-gym")}>
             Registra tu gimnasio <FiArrowRight />
           </button>
         </div>
       </nav>
 
       <header className="gympro-hero" style={S.hero}>
-        <div>
-          <h1 style={S.h1}>Gestiona tu gimnasio.<br /><span style={S.h1Accent}>Hazlo crecer.</span></h1>
+        <div className={`gympro-hero-copy${heroMontado ? " is-visible" : ""}`}>
+          <h1 style={S.h1}>
+            Gestiona tu gimnasio.<br />
+            <span className="gympro-h1-accent" style={S.h1Accent}>Hazlo crecer.</span>
+          </h1>
           <p style={S.heroSub}>
             GymPro automatiza la administración de tu gimnasio y mejora la retención
             de tus socios con seguimiento personalizado: membresías, pagos, reportes
             con IA y una app para que tus socios sigan su progreso.
           </p>
           <div style={S.heroCtas}>
-            <button style={S.ctaBtn} onClick={() => navigate("/register-gym")}>
+            <button className="gympro-cta-btn" style={S.ctaBtn} onClick={() => navigate("/register-gym")}>
               Registra tu gimnasio <FiArrowRight />
             </button>
-            <Link to="/login" style={S.secondaryBtn}>Iniciar sesión</Link>
+            <Link className="gympro-secondary-btn" to="/login" style={S.secondaryBtn}>Iniciar sesión</Link>
           </div>
         </div>
 
         {/* Vista previa ilustrativa del panel -- no es una captura real de
             ningún cliente, son cifras de ejemplo para mostrar la forma del
             producto (mismo recurso que usan la mayoría de las páginas de
-            SaaS para explicar el dashboard sin exponer datos reales). */}
-        <div style={S.previewCard}>
+            SaaS para explicar el dashboard sin exponer datos reales). Los
+            KPIs cuentan hacia arriba y las barras crecen desde cero al
+            montar el hero -- una sola vez, nunca se repite. */}
+        <div className={`gympro-hero-preview${heroMontado ? " is-visible" : ""}`} style={S.previewCard}>
           <div style={S.previewTop}>
             <strong style={{ fontSize: 13 }}>Resumen del gimnasio</strong>
             <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>Vista de ejemplo</span>
           </div>
           <div style={S.previewKpis}>
-            <div style={S.kpiBox}><div style={S.kpiLabel}>Socios activos</div><div style={S.kpiVal}>248</div></div>
-            <div style={S.kpiBox}><div style={S.kpiLabel}>Ingresos del mes</div><div style={S.kpiVal}>$52,400</div></div>
+            <div style={S.kpiBox}>
+              <div style={S.kpiLabel}>Socios activos</div>
+              <div style={S.kpiVal}>{Math.round(sociosActivos).toLocaleString("es-MX")}</div>
+            </div>
+            <div style={S.kpiBox}>
+              <div style={S.kpiLabel}>Ingresos del mes</div>
+              <div style={S.kpiVal}>${Math.round(ingresosMes).toLocaleString("es-MX")}</div>
+            </div>
           </div>
           <div style={S.previewBarRow}>
             {[40, 65, 50, 80, 60, 95, 70].map((h, i) => (
-              <div key={i} style={S.previewBar(h)} />
+              <div
+                key={i}
+                style={{
+                  ...S.previewBar(h),
+                  transform: prefersReducedMotion || heroMontado ? "scaleY(1)" : "scaleY(0)",
+                  transition: "transform 650ms var(--gympro-ease-out)",
+                  transitionDelay: `${300 + i * 60}ms`,
+                }}
+              />
             ))}
           </div>
           <p style={S.previewNote}>Así de simple se ve tu negocio en un vistazo</p>
         </div>
       </header>
 
-      <section id="funcionalidades" style={S.section}>
-        <h2 style={S.sectionTitle}>Todo lo que tu gimnasio necesita</h2>
-        <p style={S.sectionSub}>Ahorra tiempo, mejora la organización y enfócate en lo más importante: tus socios.</p>
+      <section id="funcionalidades" style={S.section} ref={funcionalidadesRef}>
+        <h2 className={`gympro-reveal${funcionalidadesVisible ? " is-visible" : ""}`} style={S.sectionTitle}>
+          Todo lo que tu gimnasio necesita
+        </h2>
+        <p
+          className={`gympro-reveal${funcionalidadesVisible ? " is-visible" : ""}`}
+          style={{ ...S.sectionSub, transitionDelay: "80ms" }}
+        >
+          Ahorra tiempo, mejora la organización y enfócate en lo más importante: tus socios.
+        </p>
         <div style={S.grid6}>
-          {FUNCIONALIDADES.map((f) => (
-            <div key={f.titulo} style={S.featureCard}>
+          {FUNCIONALIDADES.map((f, i) => (
+            <div
+              key={f.titulo}
+              className={`gympro-feature-card${funcionalidadesVisible ? " is-visible" : ""}`}
+              style={{ ...S.featureCard, transitionDelay: `${160 + i * 60}ms` }}
+            >
               <div style={S.featureIcon}>{f.icon}</div>
               <h3 style={S.featureTitulo}>{f.titulo}</h3>
               <p style={S.featureTexto}>{f.texto}</p>
@@ -295,13 +529,24 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="roles" style={S.sectionAlt}>
+      <section id="roles" style={S.sectionAlt} ref={rolesRef}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <h2 style={S.sectionTitle}>Un panel para cada persona de tu equipo</h2>
-          <p style={S.sectionSub}>GymPro reparte el trabajo en 5 roles, cada uno con justo lo que necesita ver.</p>
+          <h2 className={`gympro-reveal${rolesVisible ? " is-visible" : ""}`} style={S.sectionTitle}>
+            Un panel para cada persona de tu equipo
+          </h2>
+          <p
+            className={`gympro-reveal${rolesVisible ? " is-visible" : ""}`}
+            style={{ ...S.sectionSub, transitionDelay: "80ms" }}
+          >
+            GymPro reparte el trabajo en 5 roles, cada uno con justo lo que necesita ver.
+          </p>
           <div style={S.grid5}>
-            {ROLES.map((r) => (
-              <div key={r.nombre} style={S.roleCard}>
+            {ROLES.map((r, i) => (
+              <div
+                key={r.nombre}
+                className={`gympro-role-card${rolesVisible ? " is-visible" : ""}`}
+                style={{ ...S.roleCard, transitionDelay: `${160 + i * 60}ms` }}
+              >
                 <div style={S.roleIcon}>{r.icon}</div>
                 <h3 style={S.roleNombre}>{r.nombre}</h3>
                 <p style={S.roleTexto}>{r.texto}</p>
@@ -312,8 +557,15 @@ export default function Landing() {
       </section>
 
       <section id="gimnasios" style={S.section} ref={gimnasiosSectionRef}>
-        <h2 style={S.sectionTitle}>Gimnasios que ya confían en nosotros</h2>
-        <p style={S.sectionSub}>Negocios reales que administran su día a día con GymPro.</p>
+        <h2 className={`gympro-reveal${marqueeEnCurso ? " is-visible" : ""}`} style={S.sectionTitle}>
+          Gimnasios que ya confían en nosotros
+        </h2>
+        <p
+          className={`gympro-reveal${marqueeEnCurso ? " is-visible" : ""}`}
+          style={{ ...S.sectionSub, transitionDelay: "80ms" }}
+        >
+          Negocios reales que administran su día a día con GymPro.
+        </p>
 
         {!cargando && gimnasios.length === 0 && (
           <div style={S.emptyBox}>
@@ -322,7 +574,19 @@ export default function Landing() {
           </div>
         )}
 
-        {gimnasios.length > 0 && (
+        {gimnasios.length > 0 && prefersReducedMotion && (
+          // Con movimiento reducido activado, el carrusel en desplazamiento
+          // continuo no tiene ningún propósito más allá de lo decorativo --
+          // se muestra como una grilla fija con los gimnasios reales, sin
+          // duplicar la lista ni animar nada.
+          <div style={S.gymGridEstatica}>
+            {gimnasios.map((g) => (
+              <GymCard key={g.id} g={g} />
+            ))}
+          </div>
+        )}
+
+        {gimnasios.length > 0 && !prefersReducedMotion && (
           <div style={S.marqueeViewport}>
             <div
               className="gympro-marquee-track"
@@ -341,10 +605,17 @@ export default function Landing() {
         )}
       </section>
 
-      <section style={S.sectionAlt}>
+      <section style={S.sectionAlt} ref={testimoniosRef}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          <h2 style={S.sectionTitle}>Historias reales, resultados reales</h2>
-          <p style={S.sectionSub}>Lo que dicen las personas que ya usan GymPro todos los días.</p>
+          <h2 className={`gympro-reveal${testimoniosVisible ? " is-visible" : ""}`} style={S.sectionTitle}>
+            Historias reales, resultados reales
+          </h2>
+          <p
+            className={`gympro-reveal${testimoniosVisible ? " is-visible" : ""}`}
+            style={{ ...S.sectionSub, transitionDelay: "80ms" }}
+          >
+            Lo que dicen las personas que ya usan GymPro todos los días.
+          </p>
 
           {!cargando && testimonios.length === 0 && (
             <div style={S.emptyBox}>
@@ -355,8 +626,12 @@ export default function Landing() {
 
           {testimonios.length > 0 && (
             <div style={S.testiGrid}>
-              {testimonios.slice(0, 6).map((t) => (
-                <div key={t.id} style={S.testiCard}>
+              {testimonios.slice(0, 6).map((t, i) => (
+                <div
+                  key={t.id}
+                  className={`gympro-testi-card${testimoniosVisible ? " is-visible" : ""}`}
+                  style={{ ...S.testiCard, transitionDelay: `${160 + i * 60}ms` }}
+                >
                   <Estrellas valor={t.calificacion} />
                   <p style={S.testiTexto}>"{t.texto}"</p>
                   <div style={S.testiAutor}>{t.autor_nombre}</div>
@@ -369,12 +644,12 @@ export default function Landing() {
         </div>
       </section>
 
-      <div style={S.ctaBand}>
+      <div ref={ctaBandRef} className={`gympro-reveal${ctaBandVisible ? " is-visible" : ""}`} style={S.ctaBand}>
         <div>
           <h3 style={S.ctaBandTitle}>¿Listo para llevar tu gimnasio al siguiente nivel?</h3>
           <p style={S.ctaBandSub}>Crea tu cuenta y configura tu gimnasio en minutos.</p>
         </div>
-        <button style={S.ctaBtn} onClick={() => navigate("/register-gym")}>
+        <button className="gympro-cta-btn" style={S.ctaBtn} onClick={() => navigate("/register-gym")}>
           Registra tu gimnasio <FiArrowRight />
         </button>
       </div>
@@ -385,9 +660,9 @@ export default function Landing() {
           GymPro
         </Link>
         <div style={S.footerLinks}>
-          <Link to="/privacidad" target="_blank" rel="noopener noreferrer" style={S.footerLink}>Privacidad</Link>
-          <a href="mailto:soporteGympro@gmail.com" style={S.footerLink}>Contacto</a>
-          <Link to="/login" style={S.footerLink}>Iniciar sesión</Link>
+          <Link className="gympro-footer-link" to="/privacidad" target="_blank" rel="noopener noreferrer" style={S.footerLink}>Privacidad</Link>
+          <a className="gympro-footer-link" href="mailto:soporteGympro@gmail.com" style={S.footerLink}>Contacto</a>
+          <Link className="gympro-footer-link" to="/login" style={S.footerLink}>Iniciar sesión</Link>
         </div>
       </footer>
     </div>
