@@ -4,16 +4,23 @@ Frontend de GymPro: aplicación de una sola página (SPA) construida con React y
 Se conecta a la API REST y ofrece vistas diferenciadas por rol. En Docker se compila a
 estáticos y se sirve con nginx, que además hace de proxy inverso hacia la API.
 
-> **Arquitectura multi-repo:** este repo es parte de GymPro, dividido en 3 repos bajo la
-> organización [PantechGympro](https://github.com/PantechGympro):
+> **Arquitectura multi-repo:** este repo es parte de GymPro, repartido en cuatro
+> repositorios bajo la organización [PantechGympro](https://github.com/PantechGympro):
 > [`gympro-api`](https://github.com/PantechGympro/gympro-api),
-> [`gympro-web`](https://github.com/PantechGympro/gympro-web) (este) y
-> [`gympro-mobile`](https://github.com/PantechGympro/gympro-mobile).
+> [`gympro-web`](https://github.com/PantechGympro/gympro-web) (este),
+> [`gympro-mobile`](https://github.com/PantechGympro/gympro-mobile) e
+> [`gympro-infra`](https://github.com/PantechGympro/gympro-infra),
+> que contiene los `docker-compose*.yml` y la configuración de nginx.
 >
-> Para levantar el stack completo con Docker Compose aún se necesita el
-> `docker-compose.yml` original (la separación de infraestructura en su propio repo
-> está pendiente). Mientras tanto, clona este repo como `web/` junto a `gympro-api`
-> como `api/`, con el `docker-compose.yml` del monorepo original al mismo nivel.
+> Para levantar el stack completo se clonan como carpetas hermanas y se ejecuta
+> `docker compose` desde `gympro-infra/`:
+>
+> ```
+> proyectos/
+> ├── gympro-api/
+> ├── gympro-web/
+> └── gympro-infra/   ← aquí se corre docker compose
+> ```
 
 ---
 
@@ -32,14 +39,11 @@ desarrollo local con recarga en caliente.
 ## Desarrollo local
 
 ```bash
-cd web/
-
 # Instalar dependencias
 npm install
 
-# Variables de entorno (opcional en desarrollo)
-cp .env.example .env.local
-#   Editar .env.local con la URL de tu API
+# Variables de entorno (opcional en desarrollo): crear .env.local
+#   con la URL de tu API, según el ejemplo de abajo
 
 # Servidor de desarrollo con recarga en caliente
 npm run dev
@@ -71,7 +75,7 @@ npm run lint       # Análisis estático con ESLint
 
 ## Con Docker Compose
 
-Desde la raíz del proyecto, el frontend se construye y sirve con nginx en el puerto 8080:
+Desde `gympro-infra/`, el frontend se construye y sirve con nginx en el puerto 8080:
 
 ```bash
 docker compose up --build -d web
@@ -141,4 +145,55 @@ lugar de fiarse de la URL de retorno. En desarrollo, donde los webhooks no alcan
 `localhost`, las pantallas de cobro llaman además a un endpoint de reconciliación que
 recupera los pagos que quedaron pendientes.
 
-Alta de cuentas y credenciales: [../doc/PAGOS_CONFIGURACION.md](../doc/PAGOS_CONFIGURACION.md)
+Alta de cuentas y credenciales: documentación del proyecto en Jira (proyecto `SCRUM`),
+adjunta a la incidencia de configuración de pasarelas.
+
+---
+
+## Flujo de trabajo
+
+| Rama | Para qué |
+|---|---|
+| `dev-miguel`, `dev-francisco`, `dev-maximiliano`, `dev-carlos` | Trabajo diario; una por integrante |
+| `main` | Rama integrada. **Protegida**: no admite push directo |
+| `qa` | Verificación antes de preparar la entrega |
+| `staging` | Preproducción |
+| `prod` | Lo que corre en el servidor. **Protegida** |
+
+1. Trabaja en tu rama `dev-<nombre>`; nunca directamente sobre `main`.
+2. Abre un pull request hacia `main` y completa la plantilla
+   (`.github/PULL_REQUEST_TEMPLATE.md`).
+3. La integración continua (`.github/workflows/ci.yml`) debe pasar en verde y el PR
+   necesita la aprobación de otro integrante.
+4. Al fusionar, el workflow `sync-dev-branches.yml` baja `main` a las cuatro ramas
+   `dev-*` automáticamente. Si hay conflicto se detiene y lo reporta; se resuelve a
+   mano:
+
+   ```bash
+   git checkout dev-<nombre>
+   git merge main       # resolver los conflictos
+   git push
+   ```
+
+5. La promoción entre ambientes sigue `main → qa → staging → prod`.
+
+### Convención de commits
+
+Conventional Commits, con alcance opcional entre paréntesis:
+
+| Prefijo | Para qué |
+|---|---|
+| `feat:` | Funcionalidad nueva |
+| `fix:` | Corrección de un bug |
+| `chore:` | Mantenimiento, configuración, dependencias |
+| `docs:` | Solo documentación |
+| `refactor:` | Cambio de estructura sin cambiar comportamiento |
+| `perf:` | Mejora de rendimiento |
+
+Ejemplos: `feat(api): cobro recurrente con Mercado Pago`, `fix(mobile): sesión no se renueva`.
+
+**Nunca se commitean secretos ni archivos `.env`.** El repositorio versiona únicamente
+`.env.example`; los valores reales se mantienen fuera de git.
+
+La documentación del proyecto se lleva en **Jira** (proyecto `SCRUM`): los entregables y
+las decisiones técnicas se adjuntan o se enlazan desde la incidencia que les corresponde.
