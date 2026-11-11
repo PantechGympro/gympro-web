@@ -16,8 +16,14 @@ API.interceptors.request.use((config) => {
 });
 
 // GET ahora acepta el parámetro search
-export const getMiembros = (page = 1, mostrarInactivos = false, search = "") =>
-  API.get(`/miembros?page=${page}&inactivos=${mostrarInactivos}&search=${search}`);
+// perPage: opcional -- se omite para las pantallas de roster paginado
+// (MiembrosDashboard.jsx x2, que ya traen su propio control de pagina), y se
+// pasa un numero alto desde una busqueda en vivo que necesita el padron
+// completo de una sola vez (CobrarMembresia.jsx, PagosDashboard.jsx) -- ver
+// el tope real en owner_gym/miembros.py::listar_miembros.
+export const getMiembros = (page = 1, mostrarInactivos = false, search = "", perPage = null) =>
+  API.get(`/miembros?page=${page}&inactivos=${mostrarInactivos}&search=${search}`
+    + (perPage ? `&per_page=${perPage}` : ""));
 
 export const createMiembro = (data) => API.post("/miembros", data);
 export const updateMiembro = (id, data) => API.put(`/miembros/${id}`, data);

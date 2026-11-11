@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import useTheme from "../../hooks/ThemeContext";
 import useIsMobile from "../../hooks/useIsMobile";
 import axios from "axios";
@@ -225,6 +226,11 @@ export default function Sidebar({
   const [accessLevel,    setAccessLevel]    = useState("premium");
   const [mobileOpen,     setMobileOpen]     = useState(false);
   const optionsRef = useRef(null);
+  // Flyout lateral de los submenus del nav (Gestion del Negocio, IA &
+  // Analiticas, Configuracion): en vez de empujar el resto del menu hacia
+  // abajo, se renderiza via portal con la posicion de la fila que lo abrio.
+  const navRef = useRef(null);
+  const [flyoutRect, setFlyoutRect] = useState(null); // {top, left} en viewport
   const isMobile = useIsMobile(768);
   const collapsed = isMobile ? false : collapsedPref;
 
@@ -257,6 +263,23 @@ export default function Sidebar({
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
+
+  // Cerrar el flyout de submenu si se hace scroll en el nav o se
+  // redimensiona la ventana -- su posicion se calculo una sola vez al
+  // abrirlo (getBoundingClientRect de la fila), asi que no se mantiene
+  // sincronizada sola.
+  useEffect(() => {
+    if (isMobile) return;
+    const navEl = navRef.current;
+    if (!navEl) return;
+    const cerrar = () => { setOpenSubmenu(null); setFlyoutRect(null); };
+    navEl.addEventListener("scroll", cerrar);
+    window.addEventListener("resize", cerrar);
+    return () => {
+      navEl.removeEventListener("scroll", cerrar);
+      window.removeEventListener("resize", cerrar);
+    };
+  }, [isMobile]);
 
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
@@ -529,6 +552,22 @@ export default function Sidebar({
       boxShadow: "0 -8px 24px rgba(0,0,0,.3)",
       zIndex: 200,
     },
+    // Flyout lateral de un submenu del nav (ver flyoutRect, calculado por
+    // fila via getBoundingClientRect y renderizado por portal en <body> --
+    // por portal para no quedar recortado por el overflow:hidden de S.nav).
+    navFlyout: (rect) => ({
+      position: "fixed",
+      top: rect.top,
+      left: rect.left,
+      minWidth: 190,
+      background: "var(--sidebar-elevated, #232A3D)",
+      border: `1px solid ${P.border}`,
+      borderRadius: 10,
+      overflow: "hidden",
+      boxShadow: "4px 4px 24px rgba(0,0,0,.35)",
+      padding: 4,
+      zIndex: 1200,
+    }),
   };
 
   return (
@@ -592,7 +631,7 @@ export default function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav style={S.nav}>
+      <nav style={S.nav} ref={navRef}>
         {menu.map((item, i) => {
           if (item.type === "divider") return <div key={i} style={S.divider} />;
 
@@ -606,11 +645,22 @@ export default function Sidebar({
             <div key={item.id} style={S.menuItem(isActive, isRestr)}>
               <div
                 style={S.menuRow(isActive)}
-                onClick={() => {
+                onClick={(e) => {
                   if (isRestr) { handleRestricted(item.label); return; }
-                  if (hasChildren) setOpenSubmenu(isOpen ? null : item.id);
-                  else {
+                  if (hasChildren) {
+                    if (isOpen) { setOpenSubmenu(null); setFlyoutRect(null); }
+                    else if (isMobile) setOpenSubmenu(item.id); // movil: submenu inline, sin flyout
+                    else {
+                      // Hacia afuera, no hacia abajo: se posiciona pegado al
+                      // borde derecho de ESTA fila (no de todo el sidebar),
+                      // para que quede a la altura de lo que se abrio.
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setFlyoutRect({ top: rect.top, left: rect.right + 6 });
+                      setOpenSubmenu(item.id);
+                    }
+                  } else {
                     setOpenSubmenu(null);
+                    setFlyoutRect(null);
                     onTabChange(item.id);
                     if (isMobile) setMobileOpen(false);
                   }
@@ -625,18 +675,25 @@ export default function Sidebar({
                   <>
                     <span style={{ ...S.label, color: isActive ? P.text : P.muted }}>{item.label}</span>
                     {isRestr && <FiLock size={12} style={{ color: P.dim }} />}
-                    {hasChildren && (
+                    {hasChildren && (isMobile ? (
                       <FiChevronDown
                         size={13}
                         style={{ color: P.dim, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .2s" }}
                       />
-                    )}
+                    ) : (
+                      // Escritorio: el submenu sale hacia afuera (flyout), no
+                      // hacia abajo -- la fecha apunta al costado y no rota, no
+                      // hay "arriba/abajo" que indicar.
+                      <FiChevronRight size={13} style={{ color: P.dim }} />
+                    ))}
                   </>
                 )}
               </div>
 
-              {/* Submenu */}
-              {hasChildren && isOpen && !collapsed && !isRestr && (
+              {/* Submenu -- movil: inline (empuja hacia abajo, el drawer
+                  ya es full-width y se desplaza vertical sin problema).
+                  Escritorio: flyout lateral por portal, ver mas abajo. */}
+              {hasChildren && isOpen && isMobile && !collapsed && !isRestr && (
                 <div style={S.submenu}>
                   {item.children.map(sub => (
                     <div
@@ -652,6 +709,39 @@ export default function Sidebar({
                   ))}
                 </div>
               )}
+
+              {/* Escritorio: flyout lateral -- portal a <body> para escapar
+                  el overflow:hidden de S.nav (si no, un position:fixed/
+                  absolute igual queda recortado por el ancestro con scroll). */}
+              {hasChildren && isOpen && !isMobile && !collapsed && !isRestr && flyoutRect &&
+                createPortal(
+                  <>
+                    <div
+                      onClick={() => { setOpenSubmenu(null); setFlyoutRect(null); }}
+                      style={{ position: "fixed", inset: 0, zIndex: 1199 }}
+                    />
+                    <div style={S.navFlyout(flyoutRect)}>
+                      {item.children.map(sub => (
+                        <div
+                          key={sub.id}
+                          style={S.subItem(activeTab === sub.id)}
+                          onClick={e => {
+                            e.stopPropagation();
+                            onTabChange(sub.id);
+                            setOpenSubmenu(null);
+                            setFlyoutRect(null);
+                          }}
+                          onMouseEnter={e => { if (activeTab !== sub.id) e.currentTarget.style.background = P.bgHover; }}
+                          onMouseLeave={e => { if (activeTab !== sub.id) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>{sub.icon}</span>
+                          <span>{sub.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>,
+                  document.body
+                )}
             </div>
           );
         })}

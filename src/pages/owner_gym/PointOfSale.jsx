@@ -332,7 +332,10 @@ function TabVenta() {
       }
 
       const tasks = [getProductos({ activos: true })];
-      if (!isMiembroRole) tasks.push(getMiembros());
+      // per_page alto: POSCheckoutModal.jsx renderiza esta lista completa en
+      // un <select>, no re-consulta -- con el default de 6 solo aparecian
+      // los primeros 6 miembros del gimnasio.
+      if (!isMiembroRole) tasks.push(getMiembros({ per_page: 500 }));
 
       const [pr, mr] = await Promise.allSettled(tasks);
       if (pr.status === "fulfilled") setProductos(pr.value.data?.productos || []);
