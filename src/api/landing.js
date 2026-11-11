@@ -16,3 +16,6 @@ export const getGimnasiosDestacados = () => API.get("/gimnasios");
 
 /** Testimonios publicados por los propios gimnasios. */
 export const getTestimoniosDestacados = () => API.get("/testimonios");
+
+/** Catalogo de planes de suscripcion activos (ver api/app/routes/publico/landing.py). */
+export const getPlanesPublicos = () => API.get("/planes");
