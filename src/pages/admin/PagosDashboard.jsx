@@ -143,7 +143,10 @@ export default function PagosDashboard() {
     try {
       const pagosRes = await getPagos(page);
       try {
-        const mr = await getMiembros();
+        // per_page alto: mismo motivo que CobrarMembresia.jsx -- el selector
+        // de miembro de esta pantalla filtra en el cliente sobre el arreglo
+        // completo, no re-consulta por cada tecleo.
+        const mr = await getMiembros(1, false, "", 500);
         setMiembros(mr.data.miembros || []);
       } catch { /* silente */ }
       try {

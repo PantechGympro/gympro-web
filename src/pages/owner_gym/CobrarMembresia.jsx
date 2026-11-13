@@ -97,7 +97,10 @@ export default function CobrarMembresia() {
 
   useEffect(() => {
     Promise.allSettled([
-      getMiembros(1, false, "").then(r => setMiembros(r.data?.miembros || [])),
+      // per_page alto: esta pantalla filtra en el cliente mientras el staff
+      // escribe (miembrosFiltrados, abajo) -- sin esto solo llegaban los
+      // primeros 6 miembros (el per_page por defecto del roster paginado).
+      getMiembros(1, false, "", 500).then(r => setMiembros(r.data?.miembros || [])),
       getMembresias().then(r => setMembresias(Array.isArray(r.data) ? r.data : [])),
     ]).finally(() => setLoadingData(false));
   }, []);
