@@ -14,3 +14,9 @@ export const getTasks    = (params = {}) => API.get("/recepcionista/tasks", { pa
 export const createTask  = (data)        => API.post("/recepcionista/tasks", data);
 export const updateTask  = (id, data)    => API.patch(`/recepcionista/tasks/${id}`, data);
 export const deleteTask  = (id)          => API.delete(`/recepcionista/tasks/${id}`);
+
+// ── HU-39: entregas pendientes (productos comprados desde la app) ────
+// Rutas reales en ventas_bp (/api/ventas/...), no en /recepcionista: cualquier
+// integrante del personal del gimnasio las usa, no solo recepción.
+export const getPendientesEntrega = ()   => API.get("/ventas/pendientes-entrega");
+export const marcarEntregada      = (id) => API.patch(`/ventas/${id}/entregar`);

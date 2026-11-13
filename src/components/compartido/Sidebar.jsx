@@ -150,9 +150,10 @@ const MENUS = {
     {
       id: "rec-atencion", label: "Atención a Miembros", icon: <FiUserCheck />,
       children: [
-        { id: "checkins",     label: "Check-ins", icon: <FiUserCheck /> },
-        { id: "appointments", label: "Citas",     icon: <FiCalendar />  },
-        { id: "members",      label: "Miembros",  icon: <FiUsers />     },
+        { id: "checkins",     label: "Check-ins",          icon: <FiUserCheck /> },
+        { id: "appointments", label: "Citas",              icon: <FiCalendar />  },
+        { id: "members",      label: "Miembros",           icon: <FiUsers />     },
+        { id: "deliveries",   label: "Entregas pendientes", icon: <FiPackage />  },
       ],
     },
     {

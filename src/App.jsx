@@ -71,6 +71,7 @@ import ReceptionistMessages     from "./pages/recepcionista/ReceptionistMessages
 import ReceptionistTasks        from "./pages/recepcionista/ReceptionistTasks";
 import ReceptionistCheckin      from "./pages/recepcionista/ReceptionistCheckin";
 import ReceptionistAnalytics    from "./pages/recepcionista/ReceptionistAnalytics";
+import ReceptionistDeliveries   from "./pages/recepcionista/ReceptionistDeliveries";
 
 // --- PÁGINAS DE SUPERADMIN ---
 import SuperadminDashboard    from "./pages/superadmin/SuperadminDashboard";
@@ -204,6 +205,7 @@ function App() {
             <Route path="/receptionist/verificar-sucursal" element={<VerificarMiembro />} />
             <Route path="/receptionist/messages"     element={<ReceptionistMessages />} />
             <Route path="/receptionist/tasks"        element={<ReceptionistTasks />} />
+            <Route path="/receptionist/deliveries"   element={<ReceptionistDeliveries />} />
             <Route path="/receptionist/analytics"    element={<ReceptionistAnalytics />} />
             <Route path="/receptionist/mapreduce"    element={<AnalyticsMapReduce />} />
             <Route path="/receptionist/kmeans"       element={<AnalyticsKMeans />} />
