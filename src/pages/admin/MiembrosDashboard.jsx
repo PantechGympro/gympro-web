@@ -77,6 +77,20 @@ function SkeletonCard() {
   );
 }
 
+// foto_perfil puede llegar como data URI (fotos antiguas, o las que sube el
+// propio Propietario/Administrador desde este panel) o como el NOMBRE de un
+// archivo servido por /api/uploads/<archivo> (fotos que el miembro cambia
+// desde su perfil, web o móvil, desde nov/2026) -- antes el backend
+// descartaba esta segunda forma (ver Miembro.to_dict), por eso nunca se veia
+// aqui aunque el miembro si la hubiera cambiado. Mismo criterio que ya usa
+// el Avatar de owner_gym/MiembrosDashboard.jsx y el Sidebar.
+function normalizarFotoMiembro(raw) {
+  if (!raw) return null;
+  return (raw.startsWith("data:") || raw.startsWith("http") || raw.startsWith("/"))
+    ? raw
+    : `/api/uploads/${raw}`;
+}
+
 /* ── Avatar inteligente con foto o iniciales ── */
 function MemberAvatar({ src, name, size = 90 }) {
   const [imgError, setImgError] = useState(false);
@@ -109,7 +123,7 @@ function MemberAvatar({ src, name, size = 90 }) {
 function MemberCard({ m, verInactivos, onEdit, onDelete, onReactivate }) {
   const imc = calcularIMC(m.peso_inicial, m.estatura);
   const imcInfo = imcLabel(imc);
-  const fotoSrc = m.foto_perfil || null;  // ya es base64 data URL
+  const fotoSrc = normalizarFotoMiembro(m.foto_perfil);
 
   return (
     <div
@@ -334,8 +348,10 @@ export default function MiembrosDashboard() {
       telefono: m.telefono || "", sexo: m.sexo || "",
       peso_inicial: m.peso_inicial || "", estatura: m.estatura || "",
     });
-    // foto_perfil ya es una data URL base64 (o null)
-    setFotoPreview(m.foto_perfil || null);
+    // foto_perfil puede ser data URI o un nombre de archivo -- ver
+    // normalizarFotoMiembro arriba. Al guardar, si el usuario no elige una
+    // foto nueva, fotoBase64 se queda en null y no se reenvia (ver abajo).
+    setFotoPreview(normalizarFotoMiembro(m.foto_perfil));
     setFotoBase64(null);  // no re-enviar la foto existente a menos que se seleccione una nueva
     setEditingId(m.id);
     setShowModal(true);

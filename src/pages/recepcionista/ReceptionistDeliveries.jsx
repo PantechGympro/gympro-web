@@ -1,10 +1,16 @@
 /**
  * ReceptionistDeliveries.jsx
  *
- * HU-39: panel de compras pendientes de entrega (productos pagados en la
+ * HU-39: panel de compras pendientes de entrega (productos comprados en la
  * app que el miembro recogerá en una hora acordada). Visible a todo el
  * personal -- no solo recepción -- porque cualquiera puede entregar el
  * producto, incluso si quien atendió la venta no está.
+ *
+ * nov/2026: si el miembro eligió pagar en EFECTIVO al recoger, la venta
+ * también queda con estado_pago="pendiente" -- el dinero no se ha cobrado
+ * todavía. El botón "Entregar" se convierte en "Cobrar y entregar" para
+ * esos casos: confirmarlo cierra entrega Y cobro en la misma acción
+ * (PATCH /api/ventas/<id>/entregar ya hace ambas cosas en el backend).
  *
  * Datos reales contra /api/ventas/pendientes-entrega y
  * PATCH /api/ventas/<id>/entregar (ventas_bp, backend).
@@ -55,16 +61,18 @@ export default function ReceptionistDeliveries() {
   useEffect(() => { cargar(); }, [cargar]);
 
   const entregar = async (venta) => {
+    const pagoPendiente = venta.estado_pago === "pendiente";
     const { isConfirmed } = await Swal.fire({
-      title: "¿Marcar como entregada?",
+      title: pagoPendiente ? "¿Cobrar y marcar como entregada?" : "¿Marcar como entregada?",
       html: `<div style="text-align:left;font-size:13px;">
                <b>${venta.nombre_miembro || "Miembro"}</b><br/>
                ${resumenItems(venta.items)}<br/>
                <span style="color:var(--text-secondary)">$${Number(venta.total || 0).toFixed(2)} · ${venta.metodo_pago || ""}</span>
+               ${pagoPendiente ? `<br/><b style="color:#f59e0b">Confirma que ya cobraste $${Number(venta.total || 0).toFixed(2)} en efectivo antes de continuar.</b>` : ""}
              </div>`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Sí, entregar",
+      confirmButtonText: pagoPendiente ? "Sí, ya cobré, entregar" : "Sí, entregar",
       confirmButtonColor: "var(--accent)",
       cancelButtonText: "Cancelar",
       background: "var(--bg-card)",
@@ -119,7 +127,7 @@ export default function ReceptionistDeliveries() {
             )}
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 4 }}>
-            Productos comprados desde la app, pagados y pendientes de recoger
+            Productos comprados desde la app, pendientes de recoger (y de cobrar si eligieron pagar en efectivo)
           </p>
         </div>
         <motion.button onClick={cargar} disabled={loading}
@@ -182,6 +190,12 @@ export default function ReceptionistDeliveries() {
                           Vencida
                         </span>
                       )}
+                      {v.estado_pago === "pendiente" && (
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px",
+                          borderRadius: 99, background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+                          Pago pendiente
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 3 }}>
                       {resumenItems(v.items)}
@@ -200,11 +214,13 @@ export default function ReceptionistDeliveries() {
 
                   <button onClick={() => entregar(v)} disabled={entregandoId === v.id}
                     style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
-                      background: "var(--accent)", border: "none", color: "#fff",
+                      background: v.estado_pago === "pendiente" ? "#f59e0b" : "var(--accent)", border: "none", color: "#fff",
                       borderRadius: "var(--r-md)", cursor: "pointer", fontSize: 12.5, fontWeight: 600,
                       flexShrink: 0, opacity: entregandoId === v.id ? 0.6 : 1 }}>
                     <FiCheckCircle size={14} />
-                    {entregandoId === v.id ? "Entregando…" : "Entregar"}
+                    {entregandoId === v.id
+                      ? "Procesando…"
+                      : v.estado_pago === "pendiente" ? "Cobrar y entregar" : "Entregar"}
                   </button>
                 </div>
               </motion.div>

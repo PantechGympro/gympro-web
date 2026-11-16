@@ -1082,7 +1082,7 @@ export default function TrainerDiets(){
   const loadAll=useCallback(async()=>{
     try{
       setLoading(true);setError(null);
-      const [dietsData,recipesData,clientsData]=await Promise.all([trainerService.getDiets(),trainerService.getRecipes(),trainerService.getClients()]);
+      const [dietsData,recipesData,clientsData]=await Promise.all([trainerService.getDiets(),trainerService.getRecipes(),trainerService.getClients(1,'','all',500)]);
       setDiets(dietsData);setRecipes(recipesData);
       setClients((clientsData.clients||clientsData||[]).map(c=>({id:c.id,pg_id:c.pg_id??null,name:c.name||c.nombre})));
     }catch(err){setError(err.message||"Error al cargar datos");}

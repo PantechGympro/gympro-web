@@ -131,6 +131,18 @@ export default function UserProfile() {
       const data = await res.json();
       setProfile(data);
       setEdited(data);
+      // La foto (y el nombre) pueden haber cambiado desde OTRO lugar -- la app
+      // móvil, u otra pestaña -- y el Sidebar no lee el backend, solo
+      // localStorage.user (cacheado desde el login). Sin este sync, "Mi
+      // Perfil" mostraba la foto correcta pero el avatar del Sidebar se
+      // quedaba con la versión vieja hasta cerrar sesión y volver a entrar.
+      // Mismo patrón que ya usa UserDashboard.jsx al cargar.
+      try {
+        const existing = JSON.parse(localStorage.getItem("user") || "{}");
+        const merged = { ...existing, nombre: data.nombre, email: data.email, foto: data.fotoPerfil };
+        localStorage.setItem("user", JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent("userDataUpdated"));
+      } catch { /* no-op: el Sidebar simplemente no se refresca esta vez */ }
     } catch {
       showToast("err", "No se pudo cargar el perfil");
     } finally {

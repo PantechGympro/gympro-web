@@ -129,7 +129,15 @@ function MemberCombobox({ value, onChange, members }) {
     const h=(e)=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
     document.addEventListener("mousedown",h); return()=>document.removeEventListener("mousedown",h);
   },[]);
-  const filtered=members.filter(m=>{const q=query.toLowerCase();return(m.nombre||"").toLowerCase().includes(q)||(m.email||"").toLowerCase().includes(q);}).slice(0,8);
+  // Busqueda por nombre, correo o numero de socio (id_usuario_pg) -- igual
+  // que el resto de buscadores de miembros del sistema.
+  const filtered=members.filter(m=>{
+    const q=query.toLowerCase().trim();
+    if(!q) return true;
+    return (m.nombre||"").toLowerCase().includes(q)
+      || (m.email||"").toLowerCase().includes(q)
+      || (/^\d+$/.test(q) && String(m.id_usuario_pg??"")===q);
+  }).slice(0,8);
   return (
     <div ref={ref} style={{position:"relative"}}>
       <div style={{position:"relative"}}>
@@ -206,7 +214,11 @@ export default function ReceptionistAppointments() {
   const loadMes = useCallback(()=>{ const d=new Date(selDate+"T12:00:00"); fetchMes(d.getFullYear(),d.getMonth()+1); },[selDate,fetchMes]);
 
   const fetchTrainers = useCallback(async()=>{ if(isTrainer)return; try{const r=await axios.get(`${API}/trainers`,{headers:hdrs()});setTrainers(r.data.trainers||[]);}catch{} },[isTrainer]);
-  const fetchMembers  = useCallback(async()=>{ if(isTrainer)return; try{const r=await axios.get(`${API}/members`,{headers:hdrs()});setMembers(r.data.miembros||[]);}catch{} },[isTrainer]);
+  // per_page alto: este combobox busca en memoria sobre TODO el padron, no
+  // solo la primera pagina (10) que devuelve /members por defecto -- si no,
+  // la busqueda "no encuentra" miembros que existen pero quedan fuera de esa
+  // primera pagina (mismo bug ya corregido en CobrarMembresia.jsx/PointOfSale.jsx).
+  const fetchMembers  = useCallback(async()=>{ if(isTrainer)return; try{const r=await axios.get(`${API}/members`,{headers:hdrs(),params:{per_page:500}});setMembers(r.data.miembros||[]);}catch{} },[isTrainer]);
 
   useEffect(()=>{fetchCitas(selDate);},[selDate,fetchCitas]);
   useEffect(()=>{loadMes();},[loadMes]);

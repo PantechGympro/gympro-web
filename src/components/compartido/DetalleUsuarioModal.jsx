@@ -51,6 +51,20 @@ export function fechaFicha(valor) {
 }
 
 /**
+ * Normaliza la foto de un usuario a algo que <img src> pueda consumir.
+ * El staff siempre llega como data URI base64; los miembros llegan como
+ * un nombre de archivo suelto (servido por la ruta protegida con JWT
+ * /api/uploads/<archivo>), así que si no es ya una URL usable se le
+ * antepone esa ruta.
+ */
+function normalizarFoto(raw) {
+  if (!raw) return null;
+  const s = String(raw);
+  if (s.startsWith("data:") || s.startsWith("http") || s.startsWith("/")) return s;
+  return `/api/uploads/${s}`;
+}
+
+/**
  * @param {object|null} usuario  Ficha normalizada; null cierra el modal.
  * @param {React.ReactNode} extra Bloque opcional que se pinta debajo de la ficha
  *        (p. ej. el historial de asistencias en la vista de miembros). El modal
@@ -110,12 +124,22 @@ export default function DetalleUsuarioModal({ usuario, onClose, titulo = "Detall
 
         {/* Identidad */}
         <div style={{ padding: "26px 22px 20px", textAlign: "center" }}>
-          {usuario.foto && String(usuario.foto).startsWith("data:image") ? (
+          {normalizarFoto(usuario.foto) ? (
             <img
-              src={usuario.foto}
+              src={normalizarFoto(usuario.foto)}
               alt=""
+              onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "inline-flex"; }}
               style={{ width: 88, height: 88, borderRadius: 26, objectFit: "cover" }}
             />
+          ) : null}
+          {normalizarFoto(usuario.foto) ? (
+            <div style={{
+              width: 88, height: 88, borderRadius: 26, background: C.accent,
+              display: "none", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontSize: 32, fontWeight: 800,
+            }}>
+              {iniciales}
+            </div>
           ) : (
             <div style={{
               width: 88, height: 88, borderRadius: 26, background: C.accent,

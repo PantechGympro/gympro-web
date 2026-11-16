@@ -1,13 +1,32 @@
 /**
  * POSCheckoutModal.jsx — Modal de confirmacion de cobro con seleccion
- * de miembro y metodo de pago (Efectivo, PayPal o Mercado Pago).
+ * de miembro y metodo de pago.
+ *
+ * PayPal/Mercado Pago (nov/2026, pedido del gym): solo deben verse cuando
+ * quien cobra ES el miembro (self-checkout en /user/pos, ya sea web o
+ * movil) -- el pagador tiene que usar su propia cuenta. El staff que cobra
+ * en mostrador (Propietario, Administrador, Recepcionista, Entrenador)
+ * nunca debe verlas: solo cobra lo que puede recibir en mano o confirmar
+ * por transferencia, igual que ya hace CobrarMembresia.jsx (ver
+ * useMetodosPago.js / "soloManual" para el porque completo).
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { FiX, FiCheck, FiAlertCircle, FiCreditCard, FiRefreshCw, FiDollarSign, FiUser, FiLock } from "react-icons/fi";
-import { registrarVenta } from "../../api/owner_gym";
+import { FiX, FiCheck, FiAlertCircle, FiCreditCard, FiRefreshCw, FiDollarSign, FiUser, FiLock, FiCalendar, FiClock } from "react-icons/fi";
+import { registrarVenta, getHorariosGym } from "../../api/owner_gym";
 import useMetodosPago from "../../hooks/useMetodosPago";
 import { pagarYRedirigir } from "../../api/pagosOnline";
+
+/* Mismo criterio que PointOfSale.jsx (getIsMiembro): se calcula sincrono
+   desde localStorage, sin esperar al useEffect que arma `lockedMiembro`,
+   para que useMetodosPago reciba el valor correcto desde el primer render
+   y no pida pasarelas de mas para luego descartarlas. */
+function getIsMiembroActual() {
+  try {
+    const u = JSON.parse(localStorage.getItem("user") || "{}");
+    return u.role === "Miembro" || u.role === "user";
+  } catch { return false; }
+}
 
 const fmt = (n) => `$${Number(n).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 const nowStr = () => new Date().toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" });
@@ -28,8 +47,13 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
   const [miembro,    setMiembro]    = useState("");
   const [metodo,     setMetodo]     = useState("Efectivo");
   const [referencia, setReferencia] = useState("");
-  // Efectivo + pasarelas activas del gimnasio (PayPal / Mercado Pago)
-  const { metodos: metodosPago } = useMetodosPago("producto");
+  // Efectivo + TotalPass siempre; PayPal/Mercado Pago solo si cobra el
+  // propio miembro (soloManual=false) -- nunca si cobra el staff.
+  const isMiembroActual = getIsMiembroActual();
+  const { metodos: metodosPago } = useMetodosPago("producto", {
+    incluirTotalPass: true,
+    soloManual: !isMiembroActual,
+  });
   const [loading,    setLoading]  = useState(false);
   const [err,        setErr]      = useState("");
 
@@ -46,19 +70,93 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
     } catch { /* si no hay user en storage, no bloqueamos */ }
   }, []);
 
+  // ── HU-39 (web): dia y hora de recogida del producto ────────────────────
+  // Paridad con la app movil (app/(member)/pos.tsx): cuando quien compra es
+  // el propio miembro, el backend EXIGE fecha_recogida/hora_recogida (ver
+  // registrar_venta en ventas.py) -- sin esto la venta se rechazaba con 400
+  // y nunca llegaba a avisarle a recepcion. El staff cobrando en mostrador
+  // no necesita nada de esto (entrega el producto ahi mismo).
+  const [horarios,   setHorarios]   = useState(null);
+  const [pickupDate, setPickupDate] = useState(null);
+  const [pickupTime, setPickupTime] = useState(null);
+
+  useEffect(() => {
+    if (!isMiembroActual) return;
+    getHorariosGym()
+      .then(res => setHorarios(res.data?.horarios || {}))
+      .catch(() => setHorarios({}));
+  }, [isMiembroActual]);
+
+  // Proximos 7 dias en que el gimnasio abre, cada uno con sus franjas de 30
+  // min dentro del horario de atencion. La validacion real (autoritativa)
+  // ocurre en el backend; esto solo evita ofrecer algo que el servidor
+  // rechazaria. Mismo algoritmo que la app movil, para que ambas ofrezcan
+  // exactamente las mismas franjas.
+  const pickupDays = useMemo(() => {
+    if (!horarios) return [];
+    const DIA_KEY_POR_JS_DAY = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+    const ahora = new Date();
+    const dias = [];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(ahora);
+      d.setDate(d.getDate() + i);
+      const horario = horarios[DIA_KEY_POR_JS_DAY[d.getDay()]];
+      if (!horario || horario.cerrado) continue;
+
+      const [hA, mA] = horario.apertura.split(":").map(Number);
+      const [hC, mC] = horario.cierre.split(":").map(Number);
+      const finMin = hC * 60 + mC;
+      const minDesde = i === 0
+        ? Math.max(hA * 60 + mA, ahora.getHours() * 60 + ahora.getMinutes() + 15)
+        : hA * 60 + mA;
+
+      const slots = [];
+      for (let cursor = minDesde; cursor <= finMin; cursor += 30) {
+        const hh = String(Math.floor(cursor / 60)).padStart(2, "0");
+        const mm = String(cursor % 60).padStart(2, "0");
+        slots.push(`${hh}:${mm}`);
+      }
+      if (slots.length === 0) continue;
+
+      const label = i === 0 ? "Hoy" : i === 1 ? "Mañana"
+        : d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" });
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      dias.push({ iso, label, slots });
+    }
+    return dias;
+  }, [horarios]);
+
+  // Preselecciona el primer dia/horario disponible en cuanto cargan.
+  useEffect(() => {
+    if (pickupDays.length === 0) return;
+    if (!pickupDate || !pickupDays.some(d => d.iso === pickupDate)) {
+      setPickupDate(pickupDays[0].iso);
+      setPickupTime(pickupDays[0].slots[0]);
+    }
+  }, [pickupDays]);
+
+  const selectedDaySlots = pickupDays.find(d => d.iso === pickupDate)?.slots ?? [];
+
   const total = cart.reduce((s, i) => s + i.precio * i.qty, 0);
 
-  // La venta siempre debe quedar asociada a un miembro -- si el campo se
-  // deja en blanco no hay forma de que el historial de compras del miembro
-  // ni los reportes del negocio cuadren correctamente.
-  const faltaMiembro    = !lockedMiembro && !miembro;
+  // Elegir miembro es OPCIONAL (pedido del gym, nov/2026): permite cobrar
+  // visitas de un dia u otras ventas de mostrador a alguien que no esta
+  // registrado, sin obligar a elegir un miembro que no es quien compra.
   const esTransferencia = metodo === "Transferencia";
   const faltaReferencia = esTransferencia && !referencia.trim();
-  const puedeConfirmar  = !faltaMiembro && !faltaReferencia;
+  const faltaRecogida   = isMiembroActual && (!pickupDate || !pickupTime);
+  const puedeConfirmar  = !faltaReferencia && !faltaRecogida;
 
   const handlePagar = async () => {
-    if (faltaMiembro) { setErr("Selecciona un miembro para continuar"); return; }
     if (faltaReferencia) { setErr("Captura la referencia de la transferencia"); return; }
+    if (faltaRecogida)   { setErr("Elige el día y la hora en que pasarás por tu producto"); return; }
+
+    // HU-39 (web): solo viaja cuando compra el propio miembro -- el staff
+    // entrega en mostrador, sin agendar nada.
+    const recogida = isMiembroActual
+      ? { fecha_recogida: pickupDate, hora_recogida: pickupTime }
+      : {};
 
     // Con PayPal o Mercado Pago el cobro se hace en la pasarela y se redirige.
     const metodoSel = metodosPago.find(m => m.id === metodo);
@@ -72,12 +170,15 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
           descripcion: `Venta de productos (${cart.length} artículo${cart.length === 1 ? "" : "s"})`,
           referencia_local: lockedMiembro?.pgId || miembro || null,
           // El backend registra la venta y descuenta inventario al confirmarse
+          // (_aplicar_venta en pagos_online.py, que ya sabe leer fecha/hora de
+          // recogida desde estos mismos metadatos -- ver app/(member)/pos.tsx).
           metadatos: {
             items: cart.map(({ id, nombre, precio, qty, categoria }) => ({ id, nombre, precio, qty, categoria })),
             id_miembro: lockedMiembro ? lockedMiembro.pgId : miembro,
             nombre_miembro: lockedMiembro
               ? lockedMiembro.nombre
               : (miembros.find(m => String(m.id) === String(miembro))?.nombre || ""),
+            ...recogida,
           },
         });
       } catch (e) {
@@ -103,6 +204,7 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
         id_miembro:     id_miem,
         nombre_miembro: nom_miem,
         ...(esTransferencia ? { referencia: referencia.trim() } : {}),
+        ...recogida,
       };
       const res = await registrarVenta(payload);
       onComplete({ ...payload, id: res.data?.id, fecha: nowStr() });
@@ -144,7 +246,7 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
             <div>
               <label style={labelSt}>
                 <FiUser style={{ display: "inline", marginRight: 4 }} size={11} />
-                Miembro
+                Miembro {!lockedMiembro && "(opcional)"}
               </label>
 
               {lockedMiembro ? (
@@ -168,10 +270,11 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
                   </span>
                 </div>
               ) : (
-                /* Staff: selector libre de miembro -- obligatorio, sin
-                   opción de "venta sin miembro asociado" */
+                /* Staff: selector libre de miembro -- opcional. Sin elegir
+                   nada, la venta se registra como venta de mostrador / visita
+                   sin miembro asociado (p. ej. cobrar una visita de un dia). */
                 <select style={inputSt} value={miembro} onChange={e => { setMiembro(e.target.value); setErr(""); }}>
-                  <option value="" disabled>Selecciona un miembro…</option>
+                  <option value="">Sin miembro (visita / venta directa)</option>
                   {miembros.map(m => (
                     <option key={m.id} value={m.id}>{m.nombre} {m.apellido}</option>
                   ))}
@@ -212,6 +315,61 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
                 </div>
               )}
             </div>
+
+            {/* HU-39 (web): dia y hora de recogida -- solo cuando compra el
+                propio miembro. El staff entrega el producto ahi mismo. */}
+            {isMiembroActual && (
+              <div>
+                <label style={labelSt}>
+                  <FiCalendar style={{ display: "inline", marginRight: 4 }} size={11} />
+                  ¿Cuándo pasas por tu producto?
+                </label>
+                {horarios === null ? (
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>Cargando horario del gimnasio…</p>
+                ) : pickupDays.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "var(--danger)" }}>
+                    El gimnasio no tiene horario de atención configurado para los próximos días.
+                  </p>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
+                      {pickupDays.map(d => (
+                        <button key={d.iso} type="button"
+                          onClick={() => { setPickupDate(d.iso); setPickupTime(d.slots[0]); setErr(""); }}
+                          style={{
+                            flexShrink: 0, padding: "7px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                            fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
+                            background: pickupDate === d.iso ? "var(--accent)" : "var(--bg-input, rgba(255,255,255,.05))",
+                            color: pickupDate === d.iso ? "#fff" : "var(--text-secondary)",
+                          }}>
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                      {selectedDaySlots.map(t => (
+                        <button key={t} type="button"
+                          onClick={() => { setPickupTime(t); setErr(""); }}
+                          style={{
+                            padding: "6px 11px", borderRadius: 8, border: "none", cursor: "pointer",
+                            fontSize: 12, fontWeight: 600,
+                            background: pickupTime === t ? "var(--accent)" : "var(--bg-input, rgba(255,255,255,.05))",
+                            color: pickupTime === t ? "#fff" : "var(--text-secondary)",
+                          }}>
+                          <FiClock style={{ display: "inline", marginRight: 3, verticalAlign: "-1px" }} size={10} />
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                    {metodo === "Efectivo" && (
+                      <p style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 8, lineHeight: 1.5 }}>
+                        Tu pago queda pendiente hasta que pases a recepción a esa hora. Le avisamos al personal.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             {err && (
               <div style={{ display: "flex", gap: 8, alignItems: "center", background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.3)", borderRadius: 8, padding: "8px 12px", color: "var(--danger)", fontSize: 12 }}>
