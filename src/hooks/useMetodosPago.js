@@ -45,6 +45,20 @@ export const METODO_TRANSFERENCIA = {
   proveedor: null,
 };
 
+// TotalPass (nov/2026): no es una pasarela -- es solo una etiqueta manual
+// para que el staff marque que la visita/venta la cubre el convenio
+// TotalPass, y poder reportar cuanta gente/ingreso llega por ahi. No valida
+// nada contra TotalPass. Solo aplica en Punto de Venta (ver
+// POSCheckoutModal.jsx / useMetodosPago({ incluirTotalPass: true })) -- no
+// en cobro de membresías ni suscripciones.
+export const METODO_TOTALPASS = {
+  id: "TotalPass",
+  label: "TotalPass",
+  desc: "Visita cubierta por convenio TotalPass",
+  esPasarela: false,
+  proveedor: null,
+};
+
 const DESCRIPCIONES = {
   paypal: "Paga con tu cuenta PayPal",
   mercadopago: "Tarjeta, SPEI o saldo",
@@ -52,7 +66,7 @@ const DESCRIPCIONES = {
 
 export default function useMetodosPago(
   contexto = "membresia",
-  { incluirEfectivo = true, soloManual = false } = {},
+  { incluirEfectivo = true, soloManual = false, incluirTotalPass = false } = {},
 ) {
   const [pasarelas, setPasarelas] = useState([]);
   const [cargando, setCargando]   = useState(!soloManual);
@@ -85,6 +99,7 @@ export default function useMetodosPago(
 
   const metodos = [
     ...(incluirEfectivo ? [METODO_EFECTIVO, METODO_TRANSFERENCIA] : []),
+    ...(incluirTotalPass ? [METODO_TOTALPASS] : []),
     ...(soloManual ? [] : pasarelas.map((p) => ({
       id: p.proveedor,                 // "paypal" | "mercadopago"
       label: p.nombre,                 // "PayPal" | "Mercado Pago"

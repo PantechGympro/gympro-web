@@ -61,6 +61,28 @@ export default function TicketModal({ venta, onClose }) {
               </div>
             </div>
 
+            {/* HU-39: recogida programada (self-checkout del miembro). Se le
+                avisa al personal aparte (ver _notificar_compra_pendiente en
+                ventas.py) -- esto es solo el recordatorio visual del propio
+                comprador. */}
+            {venta.fecha_recogida && venta.hora_recogida && (
+              <div style={{
+                marginBottom: 12, padding: "8px 10px", borderRadius: 8,
+                background: venta.metodo_pago === "Efectivo" ? "rgba(245,158,11,.12)" : "rgba(99,102,241,.1)",
+                border: `1px solid ${venta.metodo_pago === "Efectivo" ? "rgba(245,158,11,.3)" : "var(--border)"}`,
+                fontSize: 11, lineHeight: 1.5,
+              }}>
+                <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                  Pasas por tu producto el {venta.fecha_recogida} a las {venta.hora_recogida}
+                </div>
+                {venta.metodo_pago === "Efectivo" && (
+                  <div style={{ color: "var(--text-secondary)", marginTop: 2 }}>
+                    Tu pago queda pendiente hasta que llegues a recepción. Ya le avisamos al personal.
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Metodo de pago */}
             <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 10, fontSize: 11, display: "flex", flexDirection: "column", gap: 4 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>

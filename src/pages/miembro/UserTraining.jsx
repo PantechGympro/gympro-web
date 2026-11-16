@@ -23,6 +23,9 @@ import "../../css/CSSUnificado.css";
 const videoCache = new Map();
 function getVideoBlobUrl(b64, exerciseId) {
   if (!b64) return null;
+  // MinIO (nov/2026): un ejercicio nuevo guarda una URL directa (http(s)://...)
+  // en vez de un data-URL base64 -- se usa tal cual, sin blob ni cache.
+  if (/^https?:\/\//.test(b64)) return b64;
   const cacheKey = (exerciseId ?? "u") + "_" + b64.slice(-24);
   if (videoCache.has(cacheKey)) return videoCache.get(cacheKey);
   try {

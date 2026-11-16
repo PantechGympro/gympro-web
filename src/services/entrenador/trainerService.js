@@ -68,11 +68,16 @@ export const trainerService = {
 
   // ─── CLIENTES ──────────────────────────────────────────────────────────────
 
-  getClients: async (page = 1, searchTerm = '', filterStatus = 'all') => {
+  // perPage: por defecto usa el tope del backend (6, el roster paginado de
+  // TrainerClients.jsx). Los selectores de cliente de Dietas/Rutinas, que
+  // necesitan el padron completo de una vez, deben pedir un valor alto
+  // (p. ej. 500) -- si no, silenciosamente solo ven a los primeros 6.
+  getClients: async (page = 1, searchTerm = '', filterStatus = 'all', perPage = null) => {
     const params = new URLSearchParams({
       page,
       search: searchTerm,
-      status: filterStatus
+      status: filterStatus,
+      ...(perPage ? { per_page: perPage } : {}),
     });
     const data = await apiFetch(`${API_BASE_URL}/trainer/clients?${params}`);
     return data; // Debe devolver { clients, pagination: { total_pages } }

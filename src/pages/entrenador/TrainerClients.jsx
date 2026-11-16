@@ -27,6 +27,16 @@ const fechaCorta = (iso) => {
   return d.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
 };
 
+// foto_perfil puede venir como data URI o como el nombre de un archivo
+// servido por /api/uploads/<archivo> (ver Miembro.to_dict en el backend) --
+// antes esta pantalla nunca mostraba foto del cliente, ni dato ni avatar.
+function normalizarFotoCliente(raw) {
+  if (!raw) return null;
+  return (raw.startsWith("data:") || raw.startsWith("http") || raw.startsWith("/"))
+    ? raw
+    : `/api/uploads/${raw}`;
+}
+
 export default function TrainerClients() {
   const { toast, ToastPortal } = useToast();
 
@@ -342,8 +352,12 @@ export default function TrainerClients() {
               {/* Cabecera */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 15 }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div className="avatar" style={{ width: 50, height: 50, fontSize: 18 }}>
-                    {client.name?.split(" ").map((n) => n[0]).join("") || "?"}
+                  <div className="avatar" style={{ width: 50, height: 50, fontSize: 18, overflow: "hidden" }}>
+                    {normalizarFotoCliente(client.foto_perfil) ? (
+                      <img src={normalizarFotoCliente(client.foto_perfil)} alt={client.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                    ) : (client.name?.split(" ").map((n) => n[0]).join("") || "?")}
                   </div>
                   <div>
                     <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>{client.name}</h4>
@@ -511,8 +525,12 @@ export default function TrainerClients() {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
                 <div style={{ display: "flex", gap: 15, alignItems: "center" }}>
-                  <div className="avatar" style={{ width: 60, height: 60, fontSize: 24 }}>
-                    {selectedClient.name?.split(" ").map((n) => n[0]).join("") || "?"}
+                  <div className="avatar" style={{ width: 60, height: 60, fontSize: 24, overflow: "hidden" }}>
+                    {normalizarFotoCliente(selectedClient.foto_perfil) ? (
+                      <img src={normalizarFotoCliente(selectedClient.foto_perfil)} alt={selectedClient.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                    ) : (selectedClient.name?.split(" ").map((n) => n[0]).join("") || "?")}
                   </div>
                   <div>
                     <h3 style={{ fontSize: 20, marginBottom: 5 }}>{selectedClient.name}</h3>

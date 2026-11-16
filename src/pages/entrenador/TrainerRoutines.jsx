@@ -70,6 +70,9 @@ const videoCache = new Map(); // cacheKey → blobURL
  */
 function getVideoBlobUrl(b64, exerciseId) {
   if (!b64) return null;
+  // MinIO (nov/2026): un ejercicio nuevo guarda una URL directa (http(s)://...)
+  // en vez de un data-URL base64 -- se usa tal cual, sin blob ni cache.
+  if (/^https?:\/\//.test(b64)) return b64;
   const cacheKey = (exerciseId ?? "new") + "_" + b64.slice(-24);
   if (videoCache.has(cacheKey)) return videoCache.get(cacheKey);
   const [header, data] = b64.split(",");
@@ -1465,9 +1468,10 @@ export default function TrainerRoutines() {
   // Pre-fetch exercises for library picker even on routines tab
   useEffect(() => { loadExercises(); }, []);
 
-  // Cargar clientes para importación IA (una sola vez)
+  // Cargar clientes para importación IA (una sola vez). per_page alto: se
+  // necesita el padron completo, no solo los primeros 6 del roster paginado.
   useEffect(() => {
-    trainerService.getClients()
+    trainerService.getClients(1, '', 'all', 500)
       .then(data => {
         const list = data.clients || data || [];
         // pg_id (id_usuario_pg en Postgres) es requerido por assignRoutineToMember

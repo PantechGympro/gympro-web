@@ -100,6 +100,10 @@ export const getPagos            = (params = {}) => API.get("/pagos", { params }
 // ── Ventas POS ────────────────────────────────────────────────────────────
 export const getVentas           = (params = {}) => API.get("/ventas", { params });
 export const registrarVenta      = (data)        => API.post("/ventas", data);
+// HU-39 (web): horario de atencion del gimnasio, sin restriccion de rol --
+// lo usa el self-checkout del miembro (POSCheckoutModal) para armar los
+// dias/horas de recogida que ofrece, igual que ya hace la app movil.
+export const getHorariosGym      = ()             => API.get("/owner_gym/horarios");
 
 // ── Productos POS ─────────────────────────────────────────────────────────
 export const getProductos        = (params = {}) => API.get("/owner_gym/productos", { params });
