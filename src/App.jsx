@@ -24,6 +24,8 @@ const OwnerDashboard           = lazy(() => import("./pages/owner_gym/OwnerDashb
 const OwnerStaff               = lazy(() => import("./pages/owner_gym/OwnerStaff"));
 const OwnerSucursales          = lazy(() => import("./pages/owner_gym/OwnerSucursales"));
 const VerificarMiembro         = lazy(() => import("./pages/compartido/VerificarMiembro"));
+const MembresiasPorVencer      = lazy(() => import("./pages/compartido/MembresiasPorVencer"));
+const CheckinManual            = lazy(() => import("./pages/owner_gym/CheckinManual"));
 const OwnerMemberships         = lazy(() => import("./pages/owner_gym/OwnerMemberships"));
 const OwnerProfile             = lazy(() => import("./pages/owner_gym/OwnerProfile"));
 const OwnerMiPerfil            = lazy(() => import("./pages/owner_gym/OwnerMiPerfil"));
@@ -152,6 +154,8 @@ function App() {
             <Route path="/owner/sucursales"    element={<OwnerSucursales />}  />
             <Route path="/owner/verificar-sucursal" element={<VerificarMiembro />} />
             <Route path="/owner/memberships"   element={<OwnerMemberships />} />
+            <Route path="/owner/por-vencer"    element={<MembresiasPorVencer />} />
+            <Route path="/owner/checkin"       element={<CheckinManual />}    />
             <Route path="/owner/profile"       element={<OwnerProfile />}     />
             <Route path="/owner/mi-perfil"     element={<OwnerMiPerfil />}    />
             <Route path="/owner/reportes"      element={<OwnerReportes />}    />
@@ -213,6 +217,7 @@ function App() {
             <Route path="/receptionist/payments"     element={<ReceptionistPayments />} />
             <Route path="/receptionist/cobrar"       element={<CobrarMembresia />} />
             <Route path="/receptionist/members"      element={<ReceptionistMembers />} />
+            <Route path="/receptionist/por-vencer"   element={<MembresiasPorVencer />} />
             <Route path="/receptionist/verificar-sucursal" element={<VerificarMiembro />} />
             <Route path="/receptionist/messages"     element={<ReceptionistMessages />} />
             <Route path="/receptionist/tasks"        element={<ReceptionistTasks />} />

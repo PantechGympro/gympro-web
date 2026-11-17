@@ -234,7 +234,7 @@ export default function AnalyticsKMeans() {
               background: desdeCache ? "var(--success-color)" : "var(--warning-color)",
               display: "inline-block",
             }} />
-            {desdeCache ? "Desde caché" : "Recién entrenado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+            {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
           </span>
         )}
 
@@ -244,7 +244,7 @@ export default function AnalyticsKMeans() {
           onClick={handleTrain}
           disabled={trainLoading}
           style={{ marginLeft: "auto" }}
-          title="Re-ejecuta el algoritmo con los datos actuales y actualiza la caché"
+          title="Vuelve a calcular la segmentación con la información más reciente"
         >
           {trainLoading ? (
             <span className="spinner" />

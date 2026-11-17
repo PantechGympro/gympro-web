@@ -433,7 +433,7 @@ export default function AnalyticsRegresion() {
           {ejecutadoEn && (
             <span style={{ fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: desdeCache ? "var(--success-color)" : "var(--warning-color)", display: "inline-block" }} />
-              {desdeCache ? "Desde caché" : "Recién entrenado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+              {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
             </span>
           )}
           <button className="btn-compact-primary" onClick={handleTrain} disabled={trainLoading || globalLoading}>

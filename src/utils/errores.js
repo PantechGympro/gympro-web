@@ -18,6 +18,7 @@ const GENERICO =
 const POR_ESTADO = {
   400: "Hay un dato que no pudimos procesar. Revisa la información e intenta de nuevo.",
   401: "Tu sesión caducó. Vuelve a iniciar sesión para continuar.",
+  402: "Esta función no está incluida en el plan actual del gimnasio. Pide al propietario que revise las opciones de plan.",
   403: "Tu cuenta no tiene permiso para hacer esto. Si crees que es un error, pide acceso a tu administrador.",
   404: "No encontramos lo que buscabas. Puede que ya no exista.",
   408: "El servidor tardó demasiado en responder. Intenta de nuevo.",
@@ -78,4 +79,17 @@ export function mensajeAmigable(error, respaldo) {
   // Llegó hasta aquí: es un mensaje redactado por la API para el usuario
   // ("Ese correo ya está registrado"). Se respeta tal cual.
   return texto;
+}
+
+/**
+ * Para errores de axios: usa el texto que la API redactó para la persona
+ * (`error` o `msg`), y si no hay, uno por código HTTP. Evita mostrar
+ * "Request failed with status code 403".
+ */
+export function mensajeDeRespuesta(error, respaldo) {
+  const datos = error?.response?.data;
+  const delServidor = datos?.error || datos?.msg;
+  if (typeof delServidor === "string" && delServidor.trim()) return delServidor;
+  if (error?.response?.status) return mensajePorEstado(error.response.status);
+  return mensajeAmigable(error, respaldo);
 }

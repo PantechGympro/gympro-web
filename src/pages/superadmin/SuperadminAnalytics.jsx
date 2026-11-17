@@ -231,7 +231,7 @@ export default function SuperadminAnalytics() {
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {plat?.desde_cache && (
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <span style={badge("cache")}>Desde caché · {new Date(plat.ejecutado_en).toLocaleString("es-MX")}</span>
+              <span style={badge("cache")}>Resumen guardado · {new Date(plat.ejecutado_en).toLocaleString("es-MX")}</span>
             </div>
           )}
 

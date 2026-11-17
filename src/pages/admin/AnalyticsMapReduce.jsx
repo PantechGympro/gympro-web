@@ -158,7 +158,7 @@ export default function AnalyticsMapReduce() {
                 background: desdeCache ? "var(--success-color)" : "var(--warning-color)",
                 display: "inline-block",
               }} />
-              {desdeCache ? "Desde caché" : "Recién calculado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+              {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
             </span>
           )}
 
@@ -167,7 +167,7 @@ export default function AnalyticsMapReduce() {
             className="btn-compact-primary"
             onClick={handleTrain}
             disabled={trainLoading}
-            title="Re-ejecuta MapReduce con los datos actuales y actualiza la caché"
+            title="Vuelve a calcular el resumen con la información más reciente"
           >
             {trainLoading ? <span className="spinner" /> : (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -206,9 +206,9 @@ export default function AnalyticsMapReduce() {
         }}>
           <div className="dashboard-spinner" style={{ width: 28, height: 28 }} />
           <div>
-            <p style={{ fontWeight: 600, marginBottom: 4 }}>Ejecutando nodos MapReduce...</p>
+            <p style={{ fontWeight: 600, marginBottom: 4 }}>Estamos actualizando tu resumen...</p>
             <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              Procesando pagos y asistencias en paralelo. Esto puede tardar unos segundos.
+              Revisando tus pagos y asistencias. Puede tardar unos segundos.
             </p>
           </div>
         </div>

@@ -471,7 +471,7 @@ export default function TrainerRegresion() {
               display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", display: "inline-block",
                 background: desdeCache ? "var(--success)" : "var(--warning)" }} />
-              {desdeCache ? "Datos en caché" : "Recién calculado"} ·{" "}
+              {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} ·{" "}
               {new Date(ejecutadoEn).toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
             </span>
           )}

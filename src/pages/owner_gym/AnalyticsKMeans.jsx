@@ -188,7 +188,7 @@ export default function AnalyticsKMeans() {
   }
 
   if (error) {
-    const isNoData = error.includes("401") || error.includes("403") || error.includes("404");
+    const isNoData = /No encontramos|Hay un dato|sesión caducó|no tiene permiso/.test(error);
     return (
       <div className="empty-state" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-tertiary)", marginBottom: 12 }}>
@@ -301,7 +301,7 @@ export default function AnalyticsKMeans() {
               background: desdeCache ? "var(--success-color)" : "var(--warning-color)",
               display: "inline-block",
             }} />
-            {desdeCache ? "Desde caché" : "Recién entrenado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+            {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
           </span>
         )}
 

@@ -217,7 +217,7 @@ export default function AnalyticsRegresion() {
                 background: desdeCache ? "var(--success-color)" : "var(--warning-color)",
                 display: "inline-block",
               }} />
-              {desdeCache ? "Desde caché" : "Recién entrenado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+              {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
             </span>
           )}
 
@@ -226,7 +226,7 @@ export default function AnalyticsRegresion() {
             className="btn-compact-primary"
             onClick={handleTrain}
             disabled={trainLoading || globalLoading}
-            title="Re-entrena el modelo con los datos actuales y actualiza la caché"
+            title="Vuelve a calcular las tendencias con la información más reciente"
           >
             {trainLoading ? <span className="spinner" /> : (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

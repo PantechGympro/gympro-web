@@ -46,6 +46,8 @@ const MENUS = {
     { id: "ow-pagos",      label: "Pagos",            icon: <FiDollarSign />   },
     { id: "ow-cobrar",     label: "Cobrar Membresía", icon: <FiDollarSign />   },
     { id: "ow-pos",        label: "Punto de Venta",   icon: <FiShoppingCart /> },
+    { id: "ow-checkin",    label: "Registrar entrada", icon: <FiUserCheck />    },
+    { id: "ow-por-vencer", label: "Por vencer",       icon: <FiClock />        },
     // HU-47/SCRUM-218: solo visible si la organización tiene 2+ sucursales
     // (multiSucursal, prop venida de /api/auth/me) -- ver filtrarOcultos abajo.
     { id: "ow-verificar-sucursal", label: "Verificar Visitante", icon: <FiSearch /> },
@@ -153,6 +155,7 @@ const MENUS = {
         { id: "checkins",     label: "Check-ins",          icon: <FiUserCheck /> },
         { id: "appointments", label: "Citas",              icon: <FiCalendar />  },
         { id: "members",      label: "Miembros",           icon: <FiUsers />     },
+        { id: "por-vencer",   label: "Membresías por vencer", icon: <FiClock /> },
         { id: "deliveries",   label: "Entregas pendientes", icon: <FiPackage />  },
       ],
     },
@@ -297,9 +300,11 @@ export default function Sidebar({
 
   const initials  = (user.nombre || "US").split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase();
   const isRestricted = accessLevel === "basico";
-  // TODO(membresías): bloqueo de secciones premium desactivado temporalmente
-  // para la demo. Restaurar con ["training", "health", "nutrition"] cuando
-  // se ajuste la lógica de niveles de membresía.
+  // DECISIÓN PENDIENTE DE PRODUCTO (antes TODO): el bloqueo de secciones
+  // premium está apagado a propósito mientras se define la regla de niveles
+  // de membresía. Para activarlo basta con asignar ["training", "health",
+  // "nutrition"]; no se activa solo para no dejar a nadie sin acceso a
+  // medio ajustar los planes.
   const BLOCKED = [];
   // HU-45: Administrador comparte el panel owner_gym con Propietario,
   // pero varias secciones son exclusivas del dueño real de la organización

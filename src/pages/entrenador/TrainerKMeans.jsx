@@ -333,7 +333,7 @@ export default function TrainerKMeans() {
               width: 7, height: 7, borderRadius: "50%",
               background: desdeCache ? "var(--success)" : "var(--warning)", display: "inline-block",
             }} />
-            {desdeCache ? "Datos guardados en caché" : "Recién calculado"} ·{" "}
+            {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} ·{" "}
             {new Date(ejecutadoEn).toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
           </span>
         )}
