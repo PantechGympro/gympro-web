@@ -19,4 +19,7 @@ export const deleteTask  = (id)          => API.delete(`/recepcionista/tasks/${i
 // Rutas reales en ventas_bp (/api/ventas/...), no en /recepcionista: cualquier
 // integrante del personal del gimnasio las usa, no solo recepción.
 export const getPendientesEntrega = ()   => API.get("/ventas/pendientes-entrega");
-export const marcarEntregada      = (id) => API.patch(`/ventas/${id}/entregar`);
+// confirmarPago=true: el personal verificó el pago pendiente del miembro y cobra +
+// entrega en una sola acción (el API lo exige si estado_pago === "pendiente").
+export const marcarEntregada      = (id, confirmarPago = false) =>
+  API.patch(`/ventas/${id}/entregar`, confirmarPago ? { confirmar_pago: true } : {});

@@ -75,6 +75,7 @@ const ReceptionistTasks        = lazy(() => import("./pages/recepcionista/Recept
 const ReceptionistCheckin      = lazy(() => import("./pages/recepcionista/ReceptionistCheckin"));
 const ReceptionistAnalytics    = lazy(() => import("./pages/recepcionista/ReceptionistAnalytics"));
 const ReceptionistDeliveries   = lazy(() => import("./pages/recepcionista/ReceptionistDeliveries"));
+const PagosPorConfirmar        = lazy(() => import("./pages/compartido/PagosPorConfirmar"));
 const SuperadminDashboard      = lazy(() => import("./pages/superadmin/SuperadminDashboard"));
 const SuperadminGimnasios      = lazy(() => import("./pages/superadmin/SuperadminGimnasios"));
 const SuperadminSuscripciones  = lazy(() => import("./pages/superadmin/SuperadminSuscripciones"));
@@ -157,6 +158,8 @@ function App() {
             <Route path="/owner/memberships"   element={<OwnerMemberships />} />
             <Route path="/owner/por-vencer"    element={<MembresiasPorVencer />} />
             <Route path="/owner/checkin"       element={<CheckinManual />}    />
+            <Route path="/owner/confirmar-pagos" element={<PagosPorConfirmar />} />
+            <Route path="/owner/deliveries"    element={<ReceptionistDeliveries />} />
             <Route path="/owner/profile"       element={<OwnerProfile />}     />
             <Route path="/owner/mi-perfil"     element={<OwnerMiPerfil />}    />
             <Route path="/owner/reportes"      element={<OwnerReportes />}    />
@@ -223,6 +226,7 @@ function App() {
             <Route path="/receptionist/messages"     element={<ReceptionistMessages />} />
             <Route path="/receptionist/tasks"        element={<ReceptionistTasks />} />
             <Route path="/receptionist/deliveries"   element={<ReceptionistDeliveries />} />
+            <Route path="/receptionist/confirmar-pagos" element={<PagosPorConfirmar />} />
             <Route path="/receptionist/analytics"    element={<ReceptionistAnalytics />} />
             <Route path="/receptionist/mapreduce"    element={<AnalyticsMapReduce />} />
             <Route path="/receptionist/kmeans"       element={<AnalyticsKMeans />} />

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiCreditCard, FiCheck, FiAlertCircle, FiDollarSign,
-  FiCalendar, FiRefreshCw, FiArrowRight, FiInfo, FiSend, FiStar
+  FiCalendar, FiRefreshCw, FiArrowRight, FiInfo, FiSend, FiClock
 } from "react-icons/fi";
 import useMetodosPago from "../../hooks/useMetodosPago";
 import { reconciliarSilencioso } from "../../api/pagosOnline";
@@ -13,8 +13,9 @@ import "../../css/CSSUnificado.css";
 const fmt = (n) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n ?? 0);
 
-// En la web solo Efectivo o Transferencia -- ambos manuales, el staff
-// confirma el pago en la sucursal. PayPal y Mercado Pago (cobro en línea con
+// En la web solo Efectivo o Transferencia -- ambos manuales: la solicitud queda
+// "en revisión" y la membresía NO se activa hasta que Recepción, Administración
+// o el Propietario verifican el pago (ver /api/confirmaciones-pago). PayPal y Mercado Pago (cobro en línea con
 // la propia cuenta del miembro) quedan exclusivos de la app móvil.
 const ICONOS_METODO = {
   Efectivo:      FiDollarSign,
@@ -30,7 +31,8 @@ export default function UserMembershipRenewal() {
   const [loading,        setLoading]        = useState(true);
   const [processing,     setProcessing]     = useState(false);
   const [error,          setError]          = useState(null);
-  const [success,        setSuccess]        = useState(null);
+  // Solicitud de renovación en revisión (recién enviada o ya existente en el API).
+  const [solicitud,      setSolicitud]      = useState(null);
   const [currentMem,     setCurrentMem]     = useState(null);
   const { metodos } = useMetodosPago("membresia", { soloManual: true });
 
@@ -48,13 +50,20 @@ export default function UserMembershipRenewal() {
     const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
     try {
-      const [plansRes, memRes] = await Promise.all([
+      const [plansRes, memRes, estadoRes] = await Promise.all([
         fetch("/api/user/membership/plans",  { headers }),
         fetch("/api/user/membership",        { headers }),
+        fetch("/api/user/membership/estado", { headers }),
       ]);
 
-      const plansData = plansRes.ok ? await plansRes.json() : { planes: [] };
-      const memData   = memRes.ok  ? await memRes.json()   : {};
+      const plansData  = plansRes.ok  ? await plansRes.json()  : { planes: [] };
+      const memData    = memRes.ok    ? await memRes.json()    : {};
+      const estadoData = estadoRes.ok ? await estadoRes.json() : {};
+      const pend = estadoData.renovacion_pendiente;
+      setSolicitud(pend ? {
+        nombre: pend.membresia_nombre, monto: pend.monto,
+        metodo: pend.metodo_pago, referencia: pend.referencia,
+      } : null);
 
       const lista = plansData.planes || [];
       setPlans(lista);
@@ -90,14 +99,20 @@ export default function UserMembershipRenewal() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al renovar");
+      if (!res.ok) {
+        // Ya había una solicitud abierta: mostrarla en vez de solo un error.
+        if (data.codigo === "renovacion_en_revision") fetchData();
+        throw new Error(data.error || "Error al renovar");
+      }
 
-      setSuccess({
-        nombre:   data.membresia.nombre,
-        fechaFin: data.membresia.fechaFin,
-        monto:    data.membresia.monto,
+      // 202: solicitud recibida, NO renovada. La membresía se activa cuando el
+      // personal confirme el pago.
+      setSolicitud({
+        nombre:     data.membresia.nombre,
+        monto:      data.membresia.monto,
+        metodo:     data.membresia.metodo_pago || selectedMethod,
+        referencia: selectedMethod === "Transferencia" ? referencia.trim() : null,
       });
-      setTimeout(() => navigate("/user/dashboard"), 3500);
     } catch (e) {
       setError(mensajeAmigable(e));
     } finally {
@@ -126,35 +141,49 @@ export default function UserMembershipRenewal() {
     </Shell>
   );
 
-  /* ── Success screen ────────────────────────────── */
-  if (success) return (
+  /* ── Solicitud en revisión ─────────────────────── */
+  if (solicitud) return (
     <Shell>
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         style={{
-          maxWidth: 480, margin: "60px auto", textAlign: "center",
+          maxWidth: 520, margin: "60px auto", textAlign: "center",
           background: "var(--bg-card)", border: "1px solid var(--border)",
-          borderRadius: 16, padding: "48px 32px",
+          borderRadius: 16, padding: "44px 32px",
         }}
       >
-        <FiStar size={64} style={{ color: "#4ade80", opacity: 0.85, marginBottom: 16 }} />
-        <h2 style={{ marginBottom: 8, color: "var(--text-primary)" }}>¡Membresía Renovada!</h2>
-        <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
-          <strong style={{ color: "var(--accent)" }}>{success.nombre}</strong>
-          {" "}activa hasta el{" "}
-          <strong>{new Date(success.fechaFin + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}</strong>
+        <FiClock size={60} style={{ color: "#f59e0b", opacity: 0.9, marginBottom: 16 }} />
+        <h2 style={{ marginBottom: 8, color: "var(--text-primary)" }}>Renovación en revisión</h2>
+        <p style={{ color: "var(--text-secondary)", marginBottom: 20 }}>
+          Pediste renovar <strong style={{ color: "var(--accent)" }}>{solicitud.nombre}</strong>.
+          Tu membresía se activará en cuanto recepción confirme tu pago.
         </p>
         <div style={{
-          padding: "12px 20px", background: "var(--bg-input)",
-          borderRadius: 10, display: "inline-block", marginBottom: 24,
-          fontSize: 24, fontWeight: 700, color: "var(--accent)"
+          padding: "12px 20px", background: "var(--bg-input)", borderRadius: 10,
+          display: "inline-block", marginBottom: 20, fontSize: 24, fontWeight: 700, color: "var(--accent)",
         }}>
-          {fmt(success.monto)}
+          {fmt(solicitud.monto)}
         </div>
-        <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-          Redirigiendo al dashboard…
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 24 }}>
+          {solicitud.metodo === "Efectivo"
+            ? "Pasa a recepción a pagar en efectivo."
+            : <>Recepción verificará tu transferencia{solicitud.referencia ? <> (ref. <strong>{solicitud.referencia}</strong>)</> : null} en el banco.</>}
+          {" "}Te avisaremos cuando quede lista.
         </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={fetchData}
+            style={{ padding: "9px 18px", background: "transparent", border: "1px solid var(--border)",
+              borderRadius: 8, color: "var(--text-primary)", cursor: "pointer", fontSize: 13,
+              display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <FiRefreshCw size={13} /> Actualizar estado
+          </button>
+          <button onClick={() => navigate("/user/dashboard")}
+            style={{ padding: "9px 18px", background: "var(--accent)", border: "none", borderRadius: 8,
+              color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+            Ir al inicio
+          </button>
+        </div>
       </motion.div>
     </Shell>
   );
@@ -473,18 +502,26 @@ export default function UserMembershipRenewal() {
               }}
             >
               {processing ? (
-                <><div className="dashboard-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Procesando pago…</>
+                <><div className="dashboard-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Enviando solicitud…</>
               ) : (
                 <>
                   <FiCheck />
-                  Confirmar y pagar {fmt(selectedPlan.precio)}
+                  Solicitar renovación · {fmt(selectedPlan.precio)}
                   <FiArrowRight />
                 </>
               )}
             </motion.button>
 
+            <p style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12.5, lineHeight: 1.5, marginTop: 14,
+              padding: "10px 12px", borderRadius: 8, background: "rgba(245,158,11,.1)", color: "var(--text-secondary)" }}>
+              <FiInfo size={15} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
+              <span>
+                Tu membresía se activa cuando recepción <strong>confirme tu pago</strong>
+                {selectedMethod === "Efectivo" ? " en el gimnasio." : " en el banco."} Mientras tanto verás la solicitud “en revisión”.
+              </span>
+            </p>
             <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-secondary)", marginTop: 12 }}>
-              Al confirmar aceptas los términos y condiciones del gimnasio.
+              Al solicitar aceptas los términos y condiciones del gimnasio.
             </p>
 
           </div>

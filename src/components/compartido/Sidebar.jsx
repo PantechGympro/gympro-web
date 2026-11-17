@@ -12,7 +12,7 @@ import {
   FiShoppingCart, FiCpu, FiPieChart, FiChevronDown,
   FiChevronLeft, FiChevronRight, FiGlobe, FiPackage, FiServer,
   FiMoreHorizontal, FiHelpCircle, FiMapPin, FiSearch, FiBriefcase, FiImage,
-  FiMenu, FiX, FiClock,
+  FiMenu, FiX, FiClock, FiCheckCircle,
 } from "react-icons/fi";
 import { GiMuscleUp, GiMeal } from "react-icons/gi";
 // HU-45: para ocultar "Sucursales" a Administrador -- comparte el panel
@@ -46,6 +46,8 @@ const MENUS = {
     { id: "ow-pagos",      label: "Pagos",            icon: <FiDollarSign />   },
     { id: "ow-cobrar",     label: "Cobrar Membresía", icon: <FiDollarSign />   },
     { id: "ow-pos",        label: "Punto de Venta",   icon: <FiShoppingCart /> },
+    { id: "ow-confirmar-pagos", label: "Pagos por confirmar", icon: <FiCheckCircle /> },
+    { id: "ow-entregas",   label: "Entregas pendientes", icon: <FiPackage />   },
     { id: "ow-checkin",    label: "Registrar entrada", icon: <FiUserCheck />    },
     { id: "ow-por-vencer", label: "Por vencer",       icon: <FiClock />        },
     // HU-47/SCRUM-218: solo visible si la organización tiene 2+ sucursales
@@ -163,6 +165,7 @@ const MENUS = {
       id: "rec-admin", label: "Pagos y Tareas", icon: <FiClipboard />,
       children: [
         { id: "payments", label: "Pagos",    icon: <FiDollarSign /> },
+        { id: "confirmar-pagos", label: "Pagos por confirmar", icon: <FiCheckCircle /> },
         { id: "cobrar", label: "Cobrar Membresía", icon: <FiDollarSign /> },
         { id: "messages", label: "Bitácora", icon: <FiActivity />   },
         { id: "tasks",    label: "Tareas",   icon: <FiClipboard />  },

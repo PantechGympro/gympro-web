@@ -207,7 +207,7 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
         ...recogida,
       };
       const res = await registrarVenta(payload);
-      onComplete({ ...payload, id: res.data?.id, fecha: nowStr() });
+      onComplete({ ...payload, id: res.data?.id, fecha: nowStr(), estado_pago: res.data?.estado_pago });
     } catch (e) {
       setErr(e.response?.data?.error || "Error al registrar la venta");
       setLoading(false);

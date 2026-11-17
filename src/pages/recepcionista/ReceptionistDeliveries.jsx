@@ -6,11 +6,13 @@
  * personal -- no solo recepción -- porque cualquiera puede entregar el
  * producto, incluso si quien atendió la venta no está.
  *
- * nov/2026: si el miembro eligió pagar en EFECTIVO al recoger, la venta
- * también queda con estado_pago="pendiente" -- el dinero no se ha cobrado
- * todavía. El botón "Entregar" se convierte en "Cobrar y entregar" para
- * esos casos: confirmarlo cierra entrega Y cobro en la misma acción
- * (PATCH /api/ventas/<id>/entregar ya hace ambas cosas en el backend).
+ * nov/2026: todo pago que el miembro declara a mano (efectivo, transferencia,
+ * TotalPass) deja la venta con estado_pago="pendiente" -- nadie ha verificado
+ * el dinero. El botón "Entregar" se convierte en "Verificar pago y entregar":
+ * quien entrega confirma que cobró/verificó y se cierran pago Y entrega en la
+ * misma acción (PATCH /api/ventas/<id>/entregar con confirmar_pago=true). El
+ * API lo exige y solo lo permite a Recepción, Administración y Propietario.
+ * También se puede confirmar antes desde "Pagos por confirmar".
  *
  * Datos reales contra /api/ventas/pendientes-entrega y
  * PATCH /api/ventas/<id>/entregar (ventas_bp, backend).
@@ -39,6 +41,20 @@ const fmtFecha = (iso) => {
 const resumenItems = (items = []) =>
   items.map((it) => `${it.qty ?? it.cantidad ?? 1}× ${it.nombre}`).join(", ");
 
+// Nombre y referencia los escribe el miembro: se escapan antes de ir a un diálogo HTML.
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Qué debe comprobar quien entrega, según el método que declaró el miembro.
+const instruccionPago = (v) => {
+  const monto = `$${Number(v.total || 0).toFixed(2)}`;
+  if (v.metodo_pago === "Transferencia") {
+    return `Confirma que la transferencia de ${monto}${v.referencia ? ` (ref. ${esc(v.referencia)})` : ""} ya aparece en el banco.`;
+  }
+  if (v.metodo_pago === "TotalPass") return "Confirma que esta compra está cubierta por TotalPass.";
+  return `Confirma que ya cobraste ${monto} en efectivo.`;
+};
+
 export default function ReceptionistDeliveries() {
   const [pendientes, setPendientes] = useState([]);
   const [loading,     setLoading]   = useState(true);
@@ -63,16 +79,16 @@ export default function ReceptionistDeliveries() {
   const entregar = async (venta) => {
     const pagoPendiente = venta.estado_pago === "pendiente";
     const { isConfirmed } = await Swal.fire({
-      title: pagoPendiente ? "¿Cobrar y marcar como entregada?" : "¿Marcar como entregada?",
+      title: pagoPendiente ? "¿Verificar pago y marcar como entregada?" : "¿Marcar como entregada?",
       html: `<div style="text-align:left;font-size:13px;">
-               <b>${venta.nombre_miembro || "Miembro"}</b><br/>
-               ${resumenItems(venta.items)}<br/>
-               <span style="color:var(--text-secondary)">$${Number(venta.total || 0).toFixed(2)} · ${venta.metodo_pago || ""}</span>
-               ${pagoPendiente ? `<br/><b style="color:#f59e0b">Confirma que ya cobraste $${Number(venta.total || 0).toFixed(2)} en efectivo antes de continuar.</b>` : ""}
+               <b>${esc(venta.nombre_miembro || "Miembro")}</b><br/>
+               ${esc(resumenItems(venta.items))}<br/>
+               <span style="color:var(--text-secondary)">$${Number(venta.total || 0).toFixed(2)} · ${esc(venta.metodo_pago || "")}</span>
+               ${pagoPendiente ? `<br/><b style="color:#f59e0b">${instruccionPago(venta)}</b>` : ""}
              </div>`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: pagoPendiente ? "Sí, ya cobré, entregar" : "Sí, entregar",
+      confirmButtonText: pagoPendiente ? "Sí, pago verificado, entregar" : "Sí, entregar",
       confirmButtonColor: "var(--accent)",
       cancelButtonText: "Cancelar",
       background: "var(--bg-card)",
@@ -82,7 +98,7 @@ export default function ReceptionistDeliveries() {
 
     setEntregandoId(venta.id);
     try {
-      await marcarEntregada(venta.id);
+      await marcarEntregada(venta.id, pagoPendiente);
       setPendientes((prev) => prev.filter((p) => p.id !== venta.id));
       Swal.fire({
         title: "Entregado",
@@ -95,6 +111,7 @@ export default function ReceptionistDeliveries() {
       });
     } catch (e) {
       setError(e?.response?.data?.error || "No se pudo registrar la entrega.");
+      if (e?.response?.status === 409) cargar();   // otra persona ya la resolvió: refrescar
     } finally {
       setEntregandoId(null);
     }
@@ -127,7 +144,7 @@ export default function ReceptionistDeliveries() {
             )}
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 4 }}>
-            Productos comprados desde la app, pendientes de recoger (y de cobrar si eligieron pagar en efectivo)
+            Productos comprados desde la app, pendientes de recoger (y de verificar el pago si fue efectivo, transferencia o TotalPass)
           </p>
         </div>
         <motion.button onClick={cargar} disabled={loading}
@@ -193,7 +210,7 @@ export default function ReceptionistDeliveries() {
                       {v.estado_pago === "pendiente" && (
                         <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px",
                           borderRadius: 99, background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
-                          Pago pendiente
+                          {v.metodo_pago === "Efectivo" ? "Cobrar" : "Verificar pago"}
                         </span>
                       )}
                     </div>
@@ -207,7 +224,7 @@ export default function ReceptionistDeliveries() {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4,
                         fontSize: 11, color: "var(--text-secondary)" }}>
-                        <FiCreditCard size={11} /> ${Number(v.total || 0).toFixed(2)} · {v.metodo_pago}
+                        <FiCreditCard size={11} /> ${Number(v.total || 0).toFixed(2)} · {v.metodo_pago}{v.referencia ? ` · ref. ${v.referencia}` : ""}
                       </div>
                     </div>
                   </div>
@@ -220,7 +237,7 @@ export default function ReceptionistDeliveries() {
                     <FiCheckCircle size={14} />
                     {entregandoId === v.id
                       ? "Procesando…"
-                      : v.estado_pago === "pendiente" ? "Cobrar y entregar" : "Entregar"}
+                      : v.estado_pago === "pendiente" ? "Verificar y entregar" : "Entregar"}
                   </button>
                 </div>
               </motion.div>

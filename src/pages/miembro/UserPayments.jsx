@@ -347,18 +347,29 @@ export default function UserPaymentsHistory() {
                         </td>
                         <td>
                           {/* Mapeo del estilo status-badge */}
-                          <span className={`status-badge ${p.status === 'Pagado' || p.status === 'Completado' ? 'success' : 'normal'}`}>
+                          <span className={`status-badge ${
+                            p.status === 'Pagado' || p.status === 'Completado' ? 'success'
+                            : p.status === 'En revisión' ? 'warning'
+                            : p.status === 'Rechazado' ? 'urgent' : 'normal'}`}>
                             {p.status}
                           </span>
                         </td>
                         <td>
-                          <button
-                            className="btn-download"
-                            onClick={() => downloadReceipt(p)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
-                          >
-                            <FiDownload size={14} /> Recibo
-                          </button>
+                          {/* Recibo oficial solo de pagos confirmados: uno "en revisión"
+                              o rechazado no es comprobante de nada. */}
+                          {p.status === 'Completado' || p.status === 'Pagado' ? (
+                            <button
+                              className="btn-download"
+                              onClick={() => downloadReceipt(p)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                            >
+                              <FiDownload size={14} /> Recibo
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                              {p.status === 'En revisión' ? 'Esperando confirmación' : '—'}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))
