@@ -6,8 +6,7 @@
  * personal -- no solo recepción -- porque cualquiera puede entregar el
  * producto, incluso si quien atendió la venta no está.
  *
- * nov/2026: todo pago que el miembro declara a mano (efectivo, transferencia,
- * TotalPass) deja la venta con estado_pago="pendiente" -- nadie ha verificado
+ * nov/2026: todo pago que el miembro declara a mano (efectivo o transferencia) deja la venta con estado_pago="pendiente" -- nadie ha verificado
  * el dinero. El botón "Entregar" se convierte en "Verificar pago y entregar":
  * quien entrega confirma que cobró/verificó y se cierran pago Y entrega en la
  * misma acción (PATCH /api/ventas/<id>/entregar con confirmar_pago=true). El
@@ -51,7 +50,6 @@ const instruccionPago = (v) => {
   if (v.metodo_pago === "Transferencia") {
     return `Confirma que la transferencia de ${monto}${v.referencia ? ` (ref. ${esc(v.referencia)})` : ""} ya aparece en el banco.`;
   }
-  if (v.metodo_pago === "TotalPass") return "Confirma que esta compra está cubierta por TotalPass.";
   return `Confirma que ya cobraste ${monto} en efectivo.`;
 };
 
@@ -144,7 +142,7 @@ export default function ReceptionistDeliveries() {
             )}
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 4 }}>
-            Productos comprados desde la app, pendientes de recoger (y de verificar el pago si fue efectivo, transferencia o TotalPass)
+            Productos comprados desde la app, pendientes de recoger (y de verificar el pago si fue efectivo o transferencia)
           </p>
         </div>
         <motion.button onClick={cargar} disabled={loading}

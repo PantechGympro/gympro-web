@@ -51,7 +51,9 @@ export default function CheckoutModal({ cart, miembros, onClose, onComplete }) {
   // propio miembro (soloManual=false) -- nunca si cobra el staff.
   const isMiembroActual = getIsMiembroActual();
   const { metodos: metodosPago } = useMetodosPago("producto", {
-    incluirTotalPass: true,
+    // TotalPass solo lo registra el personal en mostrador: no hay forma de verificar
+    // que un miembro lo use, y el API lo rechaza si viene de un miembro.
+    incluirTotalPass: !isMiembroActual,
     soloManual: !isMiembroActual,
   });
   const [loading,    setLoading]  = useState(false);

@@ -2,7 +2,7 @@
  * PagosPorConfirmar.jsx
  *
  * Bandeja de pagos que el MIEMBRO declaró a mano y nadie ha verificado todavía:
- *   - compras de la tienda con Efectivo / Transferencia / TotalPass
+ *   - compras de la tienda con Efectivo / Transferencia
  *   - renovaciones de membresía con Efectivo / Transferencia
  *
  * Visible para Recepcionista, Administrador y Propietario (el API responde 403 al
@@ -53,10 +53,9 @@ const hace = (iso) => {
 const INSTRUCCION = {
   Efectivo: (m) => `Confirma que recibiste ${fmtMoney(m)} en efectivo.`,
   Transferencia: (m) => `Confirma que la transferencia de ${fmtMoney(m)} ya aparece en el estado de cuenta.`,
-  TotalPass: () => "Confirma que la visita/compra está cubierta por TotalPass.",
 };
 
-const ICONO_METODO = { Efectivo: FiDollarSign, Transferencia: FiSend, TotalPass: FiCreditCard };
+const ICONO_METODO = { Efectivo: FiDollarSign, Transferencia: FiSend };
 
 const FILTROS = [
   { id: "todos",      label: "Todos" },
@@ -182,7 +181,7 @@ export default function PagosPorConfirmar() {
             )}
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 4, maxWidth: 640 }}>
-            Pagos en efectivo, transferencia o TotalPass que el miembro declaró desde su cuenta.
+            Pagos en efectivo o transferencia que el miembro declaró desde su cuenta.
             No cuentan como ingreso ni se entregan ni se activan hasta que los verifiques.
             Los pagos con PayPal y Mercado Pago se validan solos con la pasarela.
           </p>
