@@ -17,6 +17,7 @@ import {
 import { useToast } from "../../hooks/useToast";
 import MiembroForm from "../../components/admin/MiembroForm";
 import MiembroModal from "../../components/admin/MiembroModal";
+import PaginacionControles, { usePorPagina } from "../../components/compartido/PaginacionControles";
 import "../../css/CSSUnificado.css";
 
 /* ── Iconos ── */
@@ -31,8 +32,6 @@ const UserIcon     = () => (<svg xmlns="http://www.w3.org/2000/svg" width="28" h
 const WeightIcon   = () => (<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"/></svg>);
 const HeightIcon   = () => (<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="M14.5 4v16"/></svg>);
 const GenderIcon   = () => (<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>);
-const ChevronLeft  = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>);
-const ChevronRight = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>);
 
 /* ── Helpers ── */
 function calcularIMC(peso, altura) {
@@ -252,6 +251,8 @@ export default function MiembrosDashboard() {
   const [loading, setLoading]         = useState(false);
   const [page, setPage]               = useState(1);
   const [totalPages, setTotalPages]   = useState(1);
+  const [total, setTotal]             = useState(0);
+  const [perPage, setPerPage]         = usePorPagina("admin-miembros", 12);
   const [verInactivos, setVerInactivos] = useState(false);
   const [showModal, setShowModal]     = useState(false);
 
@@ -266,9 +267,10 @@ export default function MiembrosDashboard() {
   const loadMiembros = async () => {
     setLoading(true);
     try {
-      const { data } = await getMiembros(page, verInactivos, searchTerm);
+      const { data } = await getMiembros(page, verInactivos, searchTerm, perPage);
       setMiembros(data.miembros);
       setTotalPages(data.pages);
+      setTotal(data.total || 0);
       if (data.miembros.length === 0 && page > 1) setPage(page - 1);
     } catch (err) {
       if (err.response?.status === 401) {
@@ -284,7 +286,7 @@ export default function MiembrosDashboard() {
   useEffect(() => {
     const t = setTimeout(loadMiembros, 500);
     return () => clearTimeout(t);
-  }, [page, verInactivos, searchTerm]);
+  }, [page, verInactivos, searchTerm, perPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Handlers ── */
   const handleFileChange = (e) => {
@@ -500,28 +502,12 @@ export default function MiembrosDashboard() {
             ))}
           </div>
 
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <div className="pagination-controls">
-              <button
-                className="btn-outline-small"
-                onClick={() => setPage(p => p - 1)}
-                disabled={page === 1 || loading}
-                style={{ display: "flex", alignItems: "center", gap: 4 }}
-              >
-                <ChevronLeft /> Anterior
-              </button>
-              <span className="page-info">Página {page} de {totalPages}</span>
-              <button
-                className="btn-outline-small"
-                onClick={() => setPage(p => p + 1)}
-                disabled={page === totalPages || loading}
-                style={{ display: "flex", alignItems: "center", gap: 4 }}
-              >
-                Siguiente <ChevronRight />
-              </button>
-            </div>
-          )}
+          {/* Paginación + cuántos mostrar */}
+          <PaginacionControles
+            page={page} totalPages={totalPages} total={total} perPage={perPage}
+            loading={loading} etiqueta="miembros por página"
+            onPage={setPage} onPerPage={(n) => { setPerPage(n); setPage(1); }}
+          />
 
           {/* Empty state */}
           {miembros.length === 0 && (
