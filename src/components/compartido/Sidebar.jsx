@@ -209,6 +209,24 @@ const THEMES = [
   { id: "nebula", label: "Nebulosa", icon: <FiStar />   },
 ];
 
+// Qué función del plan necesita cada módulo del menú (ids de MENUS). Debe
+// coincidir con los @require_funcion_plan del API: aquí solo se evita mostrar
+// una pantalla que el servidor igual rechazaría (402); la regla real vive allá.
+const FUNCION_POR_MODULO = {
+  "ow-pos": "pos", pos: "pos",
+  "ow-pagos-online": "cobros_en_linea",
+  "ow-backups": "respaldos",
+  "ow-reportes": "reportes_pdf", "ow-reportes-auto": "reportes_pdf", reports: "reportes_pdf",
+  "ow-kmeans": "analiticas_ia", "ow-regresion": "analiticas_ia",
+  "ow-cancelaciones": "analiticas_ia", "ow-analytics": "analiticas_ia",
+  "rec-kmeans": "analiticas_ia", "rec-regresion": "analiticas_ia", "rec-analytics": "analiticas_ia",
+  "trainer-kmeans": "analiticas_ia", "trainer-regresion": "analiticas_ia",
+};
+const NOMBRE_FUNCION = {
+  pos: "el Punto de Venta", cobros_en_linea: "los cobros en línea", respaldos: "los respaldos a demanda",
+  reportes_pdf: "los reportes en PDF", analiticas_ia: "las analíticas con IA",
+};
+
 export default function Sidebar({
   role = "admin",
   activeTab = "overview",
@@ -216,6 +234,7 @@ export default function Sidebar({
   onLogout = () => {},
   onOpenGuide,
   multiSucursal = false,
+  funcionesPlan = {},
 }) {
   const { theme, changeTheme } = useTheme();
   // En escritorio "collapsed" sigue significando lo de siempre (sidebar
@@ -339,6 +358,31 @@ export default function Sidebar({
     .filter((item) => !(!multiSucursal && ID_SOLO_MULTISUCURSAL.includes(item.id)))
     .map((item) => item.children ? { ...item, children: filtrarOcultos(item.children) } : item);
   const menu = filtrarOcultos(MENUS[role] || MENUS.user);
+
+  // Bloqueo por plan contratado. `=== false` (no "falsy") a propósito: mientras
+  // /api/auth/me no responde, funcionesPlan está vacío y no se debe bloquear nada.
+  const bloqueadoPorPlan = (id) => {
+    const f = FUNCION_POR_MODULO[id];
+    return !!f && funcionesPlan[f] === false;
+  };
+  const avisarPlan = (id, label) => {
+    const f = FUNCION_POR_MODULO[id];
+    const esPropietario = role === "owner_gym" && !esAdministrador;
+    Swal.fire({
+      icon: "info",
+      title: "Disponible en un plan superior",
+      html: `<p><strong>${label}</strong> no está incluido en el plan actual de tu gimnasio (${NOMBRE_FUNCION[f] || "esta función"}).</p>` +
+            (esPropietario ? "<p>Puedes mejorar tu plan cuando quieras.</p>" : "<p>Pídele al propietario que revise las opciones de plan.</p>"),
+      confirmButtonText: esPropietario ? "Ver planes" : "Entendido",
+      confirmButtonColor: "#6366f1",
+      showCancelButton: esPropietario,
+      cancelButtonText: "Ahora no",
+      background: "var(--bg-card)",
+      color: "var(--text-primary, #f1f5f9)",
+    }).then(r => { if (r.isConfirmed && esPropietario) onTabChange("ow-subscription"); });
+  };
+  // Navega solo si el plan lo permite; si no, explica por qué.
+  const navegar = (id, label) => (bloqueadoPorPlan(id) ? avisarPlan(id, label) : onTabChange(id));
 
   const handleRestricted = (label) => {
     Swal.fire({
@@ -667,7 +711,7 @@ export default function Sidebar({
                   } else {
                     setOpenSubmenu(null);
                     setFlyoutRect(null);
-                    onTabChange(item.id);
+                    navegar(item.id, item.label);
                     if (isMobile) setMobileOpen(false);
                   }
                 }}
@@ -680,7 +724,7 @@ export default function Sidebar({
                 {!collapsed && (
                   <>
                     <span style={{ ...S.label, color: isActive ? P.text : P.muted }}>{item.label}</span>
-                    {isRestr && <FiLock size={12} style={{ color: P.dim }} />}
+                    {(isRestr || bloqueadoPorPlan(item.id)) && <FiLock size={12} style={{ color: P.dim }} aria-label="No incluido en tu plan" />}
                     {hasChildren && (isMobile ? (
                       <FiChevronDown
                         size={13}
@@ -705,12 +749,13 @@ export default function Sidebar({
                     <div
                       key={sub.id}
                       style={S.subItem(activeTab === sub.id)}
-                      onClick={e => { e.stopPropagation(); onTabChange(sub.id); setOpenSubmenu(null); if (isMobile) setMobileOpen(false); }}
+                      onClick={e => { e.stopPropagation(); navegar(sub.id, sub.label); setOpenSubmenu(null); if (isMobile) setMobileOpen(false); }}
                       onMouseEnter={e => { if (activeTab !== sub.id) e.currentTarget.style.background = P.bgHover; }}
                       onMouseLeave={e => { if (activeTab !== sub.id) e.currentTarget.style.background = "transparent"; }}
                     >
                       <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>{sub.icon}</span>
                       <span>{sub.label}</span>
+                      {bloqueadoPorPlan(sub.id) && <FiLock size={11} style={{ marginLeft: "auto", opacity: .6 }} aria-label="No incluido en tu plan" />}
                     </div>
                   ))}
                 </div>
@@ -733,7 +778,7 @@ export default function Sidebar({
                           style={S.subItem(activeTab === sub.id)}
                           onClick={e => {
                             e.stopPropagation();
-                            onTabChange(sub.id);
+                            navegar(sub.id, sub.label);
                             setOpenSubmenu(null);
                             setFlyoutRect(null);
                           }}
@@ -742,6 +787,7 @@ export default function Sidebar({
                         >
                           <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>{sub.icon}</span>
                           <span>{sub.label}</span>
+                          {bloqueadoPorPlan(sub.id) && <FiLock size={11} style={{ marginLeft: "auto", opacity: .6 }} aria-label="No incluido en tu plan" />}
                         </div>
                       ))}
                     </div>

@@ -10,6 +10,7 @@ import {
 } from "../../hooks/useRoutineImportJob";
 import { useToast } from "../../hooks/useToast";
 import { peticion } from "../../api/cliente";
+import AvisoLimitePlan from "./AvisoLimitePlan";
 // Catálogo único de roles (SCRUM-107): antes este archivo mantenía su
 // propia copia de este mapa, que podía divergir de la de otras vistas
 // (ver web/src/constants/roles.js).
@@ -440,6 +441,7 @@ export default function Layout({ role = "owner_gym" }) {
             onLogout={handleLogout}
             onOpenGuide={guideEnabled ? openGuide : undefined}
             multiSucursal={sesion.multiSucursal}
+            funcionesPlan={sesion.funcionesPlan}
           />
         )}
 
@@ -456,6 +458,7 @@ export default function Layout({ role = "owner_gym" }) {
         >
           {/* Las páginas se cargan bajo demanda (ver App.jsx): mientras llega
               el archivo de la pantalla, la barra lateral se queda en su sitio. */}
+          {role === "owner_gym" && <AvisoLimitePlan onVerPlanes={() => handleNav("ow-subscription")} />}
           <Suspense fallback={<CargandoPagina />}>
             <Outlet context={{ funcionesPlan: sesion.funcionesPlan }} />
           </Suspense>
