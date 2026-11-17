@@ -9,6 +9,7 @@ import CargandoPagina from "./components/compartido/CargandoPagina";
 import Landing     from "./pages/publico/Landing";
 import AuthPage    from "./components/auth/AuthPage";
 import RegisterGym from "./pages/publico/RegisterGym";
+import { MembresiaGate } from "./components/miembro/MembresiaGate";
 
 // ── Carga diferida de páginas (auditoría nov/2026, rendimiento) ─────────────
 // Antes las 69 pantallas de TODOS los roles se importaban aquí arriba: quien
@@ -54,7 +55,6 @@ const UserHealthUpdate         = lazy(() => import("./pages/miembro/UserHealthUp
 const UserMembershipRenewal    = lazy(() => import("./pages/miembro/UserMembershipRenewal"));
 const UserWeightPrediction     = lazy(() => import("./pages/miembro/UserWeightPrediction"));
 const UserTraining             = lazy(() => import("./pages/miembro/UserTraining"));
-import { MembresiaGate } from "./components/miembro/MembresiaGate";
 const UserWorkoutLog           = lazy(() => import("./pages/miembro/UserWorkoutLog"));
 const CompleteProfile          = lazy(() => import("./pages/miembro/CompleteProfile"));
 const TrainerDashboard         = lazy(() => import("./pages/entrenador/TrainerDashboard"));
