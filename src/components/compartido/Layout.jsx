@@ -1,7 +1,8 @@
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { FiLoader, FiCheckCircle, FiAlertCircle, FiX } from "react-icons/fi";
 import Sidebar from "./Sidebar";
+import CargandoPagina from "./CargandoPagina";
 import PerfilCompletoBadge from "./PerfilCompletoBadge";
 import SystemGuide from "../guide/SystemGuide";
 import {
@@ -9,6 +10,8 @@ import {
 } from "../../hooks/useRoutineImportJob";
 import { useToast } from "../../hooks/useToast";
 import { peticion } from "../../api/cliente";
+import AvisoLimitePlan from "./AvisoLimitePlan";
+import { AvisoMembresia } from "../miembro/MembresiaGate";
 // Catálogo único de roles (SCRUM-107): antes este archivo mantenía su
 // propia copia de este mapa, que podía divergir de la de otras vistas
 // (ver web/src/constants/roles.js).
@@ -25,6 +28,10 @@ const ROUTE_MAP = {
     "/owner/sucursales":   "ow-sucursales",
     "/owner/verificar-sucursal": "ow-verificar-sucursal",
     "/owner/memberships":  "ow-membresias",
+    "/owner/por-vencer":   "ow-por-vencer",
+    "/owner/checkin":      "ow-checkin",
+    "/owner/confirmar-pagos": "ow-confirmar-pagos",
+    "/owner/deliveries":   "ow-entregas",
     "/owner/mi-perfil":    "ow-mi-perfil",
     "/owner/profile":      "ow-profile",
     "/owner/reportes":     "ow-reportes",
@@ -62,11 +69,13 @@ const ROUTE_MAP = {
     "/receptionist/payments":     "payments",
     "/receptionist/cobrar":       "cobrar",
     "/receptionist/members":      "members",
+    "/receptionist/por-vencer":   "por-vencer",
     "/receptionist/verificar-sucursal": "verificar-sucursal",
     "/receptionist/pos":          "pos",
     "/receptionist/messages":     "messages",
     "/receptionist/tasks":        "tasks",
     "/receptionist/deliveries":   "deliveries",
+    "/receptionist/confirmar-pagos": "confirmar-pagos",
     "/receptionist/mapreduce":    "rec-mapreduce",
     "/receptionist/kmeans":       "rec-kmeans",
     "/receptionist/regresion":    "rec-regresion",
@@ -112,6 +121,10 @@ const NAV_MAP = {
     "ow-sucursales": "/owner/sucursales",
     "ow-verificar-sucursal": "/owner/verificar-sucursal",
     "ow-membresias": "/owner/memberships",
+    "ow-por-vencer": "/owner/por-vencer",
+    "ow-checkin":    "/owner/checkin",
+    "ow-confirmar-pagos": "/owner/confirmar-pagos",
+    "ow-entregas":   "/owner/deliveries",
     "ow-mi-perfil":  "/owner/mi-perfil",
     "ow-profile":    "/owner/profile",
     "ow-reportes":   "/owner/reportes",
@@ -148,11 +161,13 @@ const NAV_MAP = {
     payments:        "/receptionist/payments",
     cobrar:          "/receptionist/cobrar",
     members:         "/receptionist/members",
+    "por-vencer":    "/receptionist/por-vencer",
     "verificar-sucursal": "/receptionist/verificar-sucursal",
     pos:             "/receptionist/pos",
     messages:        "/receptionist/messages",
     tasks:           "/receptionist/tasks",
     deliveries:      "/receptionist/deliveries",
+    "confirmar-pagos": "/receptionist/confirmar-pagos",
     "rec-mapreduce":  "/receptionist/mapreduce",
     "rec-kmeans":     "/receptionist/kmeans",
     "rec-regresion":  "/receptionist/regresion",
@@ -433,6 +448,7 @@ export default function Layout({ role = "owner_gym" }) {
             onLogout={handleLogout}
             onOpenGuide={guideEnabled ? openGuide : undefined}
             multiSucursal={sesion.multiSucursal}
+            funcionesPlan={sesion.funcionesPlan}
           />
         )}
 
@@ -447,7 +463,13 @@ export default function Layout({ role = "owner_gym" }) {
             flexDirection: "column",
           }}
         >
-          <Outlet context={{ funcionesPlan: sesion.funcionesPlan }} />
+          {/* Las páginas se cargan bajo demanda (ver App.jsx): mientras llega
+              el archivo de la pantalla, la barra lateral se queda en su sitio. */}
+          {role === "owner_gym" && <AvisoLimitePlan onVerPlanes={() => handleNav("ow-subscription")} />}
+          {role === "user" && <AvisoMembresia />}
+          <Suspense fallback={<CargandoPagina />}>
+            <Outlet context={{ funcionesPlan: sesion.funcionesPlan }} />
+          </Suspense>
         </div>
 
         {guideEnabled && (

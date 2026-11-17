@@ -1,90 +1,102 @@
-import { cloneElement } from "react";
+import { cloneElement, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, useLocation, useOutlet } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "./hooks/ThemeContext";
 import Layout from "./components/compartido/Layout";
+import CargandoPagina from "./components/compartido/CargandoPagina";
 
 // --- PÁGINAS PÚBLICAS ---
 import Landing     from "./pages/publico/Landing";
 import AuthPage    from "./components/auth/AuthPage";
 import RegisterGym from "./pages/publico/RegisterGym";
-import ForgotPassword from "./pages/publico/ForgotPassword";
-import PrivacyPolicy  from "./pages/publico/PrivacyPolicy";
+import { MembresiaGate } from "./components/miembro/MembresiaGate";
+
+// ── Carga diferida de páginas (auditoría nov/2026, rendimiento) ─────────────
+// Antes las 69 pantallas de TODOS los roles se importaban aquí arriba: quien
+// abría el login descargaba también el panel de superadmin, la analítica y el
+// punto de venta. Con lazy(), cada pantalla viaja en su propio archivo y solo
+// se descarga al entrar a ella. Landing/Login/Registro siguen en el paquete
+// inicial: son la primera pintura y comparten la transición animada.
+const ForgotPassword           = lazy(() => import("./pages/publico/ForgotPassword"));
+const PrivacyPolicy            = lazy(() => import("./pages/publico/PrivacyPolicy"));
+const OwnerOnboarding          = lazy(() => import("./pages/owner_gym/OwnerOnboarding"));
+const CambiarPasswordInicial   = lazy(() => import("./pages/compartido/CambiarPasswordInicial"));
+const OwnerDashboard           = lazy(() => import("./pages/owner_gym/OwnerDashboard"));
+const OwnerStaff               = lazy(() => import("./pages/owner_gym/OwnerStaff"));
+const OwnerSucursales          = lazy(() => import("./pages/owner_gym/OwnerSucursales"));
+const VerificarMiembro         = lazy(() => import("./pages/compartido/VerificarMiembro"));
+const MembresiasPorVencer      = lazy(() => import("./pages/compartido/MembresiasPorVencer"));
+const CheckinManual            = lazy(() => import("./pages/owner_gym/CheckinManual"));
+const OwnerMemberships         = lazy(() => import("./pages/owner_gym/OwnerMemberships"));
+const OwnerProfile             = lazy(() => import("./pages/owner_gym/OwnerProfile"));
+const OwnerMiPerfil            = lazy(() => import("./pages/owner_gym/OwnerMiPerfil"));
+const OwnerReportes            = lazy(() => import("./pages/owner_gym/OwnerReportes"));
+const OwnerReportesAutomaticos = lazy(() => import("./pages/owner_gym/OwnerReportesAutomaticos"));
+const MiembrosDashboard        = lazy(() => import("./pages/owner_gym/MiembrosDashboard"));
+const PagosDashboard           = lazy(() => import("./pages/owner_gym/PagosDashboard"));
+const CobrarMembresia          = lazy(() => import("./pages/owner_gym/CobrarMembresia"));
+const PointOfSale              = lazy(() => import("./pages/owner_gym/PointOfSale"));
+const BackupsDashboard         = lazy(() => import("./pages/owner_gym/BackupsDashboard"));
+const OwnerSubscription        = lazy(() => import("./pages/owner_gym/OwnerSubscription"));
+const AdminAnalytics           = lazy(() => import("./pages/owner_gym/AdminAnalytics"));
+const AnalyticsMapReduce       = lazy(() => import("./pages/owner_gym/AnalyticsMapReduce"));
+const AnalyticsKMeans          = lazy(() => import("./pages/owner_gym/AnalyticsKMeans"));
+const TrainerKMeans            = lazy(() => import("./pages/entrenador/TrainerKMeans"));
+const TrainerRegresion         = lazy(() => import("./pages/entrenador/TrainerRegresion"));
+const AnalyticsRegresion       = lazy(() => import("./pages/owner_gym/AnalyticsRegresion"));
+const UserDashboard            = lazy(() => import("./pages/miembro/UserDashboard"));
+const UserPayments             = lazy(() => import("./pages/miembro/UserPayments"));
+const UserProfile              = lazy(() => import("./pages/miembro/UserProfile"));
+const UserRoutineCreator       = lazy(() => import("./pages/miembro/UserRoutineCreator"));
+const UserBodyProgress         = lazy(() => import("./pages/miembro/UserBodyProgress"));
+const UserMealPlan             = lazy(() => import("./pages/miembro/UserMealPlan"));
+const UserHealth               = lazy(() => import("./pages/miembro/UserHealth"));
+const UserHealthUpdate         = lazy(() => import("./pages/miembro/UserHealthUpdate"));
+const UserMembershipRenewal    = lazy(() => import("./pages/miembro/UserMembershipRenewal"));
+const UserWeightPrediction     = lazy(() => import("./pages/miembro/UserWeightPrediction"));
+const UserTraining             = lazy(() => import("./pages/miembro/UserTraining"));
+const UserWorkoutLog           = lazy(() => import("./pages/miembro/UserWorkoutLog"));
+const CompleteProfile          = lazy(() => import("./pages/miembro/CompleteProfile"));
+const TrainerDashboard         = lazy(() => import("./pages/entrenador/TrainerDashboard"));
+const TrainerClients           = lazy(() => import("./pages/entrenador/TrainerClients"));
+const TrainerSchedule          = lazy(() => import("./pages/entrenador/TrainerSchedule"));
+const TrainerRoutines          = lazy(() => import("./pages/entrenador/TrainerRoutines"));
+const TrainerReports           = lazy(() => import("./pages/entrenador/TrainerReports"));
+const TrainerMessages          = lazy(() => import("./pages/entrenador/TrainerMessages"));
+const TrainerProfile           = lazy(() => import("./pages/entrenador/TrainerProfile"));
+const TrainerRequests          = lazy(() => import("./pages/entrenador/TrainerRequests"));
+const TrainerDiets             = lazy(() => import("./pages/entrenador/TrainerDiets"));
+const ReceptionistDashboard    = lazy(() => import("./pages/recepcionista/ReceptionistDashboard"));
+const ReceptionistMembers      = lazy(() => import("./pages/recepcionista/ReceptionistMembers"));
+const ReceptionistPayments     = lazy(() => import("./pages/recepcionista/ReceptionistPayments"));
+const ReceptionistAppointments = lazy(() => import("./pages/recepcionista/ReceptionistAppointments"));
+const ReceptionistMessages     = lazy(() => import("./pages/recepcionista/ReceptionistMessages"));
+const ReceptionistTasks        = lazy(() => import("./pages/recepcionista/ReceptionistTasks"));
+const ReceptionistCheckin      = lazy(() => import("./pages/recepcionista/ReceptionistCheckin"));
+const ReceptionistAnalytics    = lazy(() => import("./pages/recepcionista/ReceptionistAnalytics"));
+const ReceptionistDeliveries   = lazy(() => import("./pages/recepcionista/ReceptionistDeliveries"));
+const PagosPorConfirmar        = lazy(() => import("./pages/compartido/PagosPorConfirmar"));
+const SuperadminDashboard      = lazy(() => import("./pages/superadmin/SuperadminDashboard"));
+const SuperadminGimnasios      = lazy(() => import("./pages/superadmin/SuperadminGimnasios"));
+const SuperadminSuscripciones  = lazy(() => import("./pages/superadmin/SuperadminSuscripciones"));
+const SuperadminPlanes         = lazy(() => import("./pages/superadmin/SuperadminPlanes"));
+const SuperadminUsuarios       = lazy(() => import("./pages/superadmin/SuperadminUsuarios"));
+const SuperadminBackups        = lazy(() => import("./pages/superadmin/SuperadminBackups"));
+const SuperadminAnalytics      = lazy(() => import("./pages/superadmin/SuperadminAnalytics"));
+const SuperadminModelos        = lazy(() => import("./pages/superadmin/SuperadminModelos"));
+const OwnerPagos               = lazy(() => import("./pages/owner_gym/OwnerPagos"));
+const OwnerPerfilPublico       = lazy(() => import("./pages/owner_gym/OwnerPerfilPublico"));
+const PagoResultado            = lazy(() => import("./pages/publico/PagoResultado"));
 
 // --- PÁGINAS DE OWNER GYM ---
-import OwnerOnboarding    from "./pages/owner_gym/OwnerOnboarding";
-import CambiarPasswordInicial from "./pages/compartido/CambiarPasswordInicial";
-import OwnerDashboard     from "./pages/owner_gym/OwnerDashboard";
-import OwnerStaff         from "./pages/owner_gym/OwnerStaff";
-import OwnerSucursales    from "./pages/owner_gym/OwnerSucursales";
-import VerificarMiembro   from "./pages/compartido/VerificarMiembro";
-import OwnerMemberships   from "./pages/owner_gym/OwnerMemberships";
-import OwnerProfile       from "./pages/owner_gym/OwnerProfile";
-import OwnerMiPerfil      from "./pages/owner_gym/OwnerMiPerfil";
-import OwnerReportes      from "./pages/owner_gym/OwnerReportes";
-import OwnerReportesAutomaticos from "./pages/owner_gym/OwnerReportesAutomaticos";
-import MiembrosDashboard  from "./pages/owner_gym/MiembrosDashboard";
-import PagosDashboard     from "./pages/owner_gym/PagosDashboard";
-import CobrarMembresia    from "./pages/owner_gym/CobrarMembresia";
-import PointOfSale        from "./pages/owner_gym/PointOfSale";
-import BackupsDashboard   from "./pages/owner_gym/BackupsDashboard";
-import OwnerSubscription  from "./pages/owner_gym/OwnerSubscription";
-import AdminAnalytics     from "./pages/owner_gym/AdminAnalytics";
-import AnalyticsMapReduce from "./pages/owner_gym/AnalyticsMapReduce";
-import AnalyticsKMeans    from "./pages/owner_gym/AnalyticsKMeans";
-import TrainerKMeans      from "./pages/entrenador/TrainerKMeans";
-import TrainerRegresion   from "./pages/entrenador/TrainerRegresion";
-import AnalyticsRegresion from "./pages/owner_gym/AnalyticsRegresion";
 
 // --- PÁGINAS DE MIEMBRO ---
-import UserDashboard         from "./pages/miembro/UserDashboard";
-import UserPayments          from "./pages/miembro/UserPayments";
-import UserProfile           from "./pages/miembro/UserProfile";
-import UserRoutineCreator    from "./pages/miembro/UserRoutineCreator";
-import UserBodyProgress      from "./pages/miembro/UserBodyProgress";
-import UserMealPlan          from "./pages/miembro/UserMealPlan";
-import UserHealth            from "./pages/miembro/UserHealth";
-import UserHealthUpdate      from "./pages/miembro/UserHealthUpdate";
-import UserMembershipRenewal from "./pages/miembro/UserMembershipRenewal";
-import UserWeightPrediction  from "./pages/miembro/UserWeightPrediction";
-import UserTraining          from "./pages/miembro/UserTraining";
-import UserWorkoutLog        from "./pages/miembro/UserWorkoutLog";
-import CompleteProfile       from "./pages/miembro/CompleteProfile";
 
 // --- PÁGINAS DE ENTRENADOR ---
-import TrainerDashboard from "./pages/entrenador/TrainerDashboard";
-import TrainerClients   from "./pages/entrenador/TrainerClients";
-import TrainerSchedule  from "./pages/entrenador/TrainerSchedule";
-import TrainerRoutines  from "./pages/entrenador/TrainerRoutines";
-import TrainerReports   from "./pages/entrenador/TrainerReports";
-import TrainerMessages  from "./pages/entrenador/TrainerMessages";
-import TrainerProfile   from "./pages/entrenador/TrainerProfile";
-import TrainerRequests  from "./pages/entrenador/TrainerRequests";
-import TrainerDiets     from "./pages/entrenador/TrainerDiets";
 
 // --- PÁGINAS DE RECEPCIONISTA ---
-import ReceptionistDashboard    from "./pages/recepcionista/ReceptionistDashboard";
-import ReceptionistMembers      from "./pages/recepcionista/ReceptionistMembers";
-import ReceptionistPayments     from "./pages/recepcionista/ReceptionistPayments";
-import ReceptionistAppointments from "./pages/recepcionista/ReceptionistAppointments";
-import ReceptionistMessages     from "./pages/recepcionista/ReceptionistMessages";
-import ReceptionistTasks        from "./pages/recepcionista/ReceptionistTasks";
-import ReceptionistCheckin      from "./pages/recepcionista/ReceptionistCheckin";
-import ReceptionistAnalytics    from "./pages/recepcionista/ReceptionistAnalytics";
-import ReceptionistDeliveries   from "./pages/recepcionista/ReceptionistDeliveries";
 
 // --- PÁGINAS DE SUPERADMIN ---
-import SuperadminDashboard    from "./pages/superadmin/SuperadminDashboard";
-import SuperadminGimnasios    from "./pages/superadmin/SuperadminGimnasios";
-import SuperadminSuscripciones from "./pages/superadmin/SuperadminSuscripciones";
-import SuperadminPlanes       from "./pages/superadmin/SuperadminPlanes";
-import SuperadminUsuarios     from "./pages/superadmin/SuperadminUsuarios";
-import SuperadminBackups      from "./pages/superadmin/SuperadminBackups";
-import SuperadminAnalytics    from "./pages/superadmin/SuperadminAnalytics";
-import SuperadminModelos      from "./pages/superadmin/SuperadminModelos";
-import OwnerPagos             from "./pages/owner_gym/OwnerPagos";
-import OwnerPerfilPublico    from "./pages/owner_gym/OwnerPerfilPublico";
-import PagoResultado          from "./pages/publico/PagoResultado";
 
 // Login (AuthPage.jsx) y el wizard de registro (RegisterGym.jsx) usan el
 // mismo layout espejado (ver la nota de "Entrada en desvanecido" en ambos
@@ -110,6 +122,9 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
+        {/* Respaldo para las rutas sin Layout (públicas); las de panel tienen
+            su propio Suspense dentro de Layout para no desmontar la barra lateral. */}
+        <Suspense fallback={<CargandoPagina pantallaCompleta />}>
         <Routes>
           {/* 1. RUTAS PÚBLICAS */}
           {/* La comercial (Landing) es ahora "/" -- antes era el login. Vive
@@ -141,6 +156,10 @@ function App() {
             <Route path="/owner/sucursales"    element={<OwnerSucursales />}  />
             <Route path="/owner/verificar-sucursal" element={<VerificarMiembro />} />
             <Route path="/owner/memberships"   element={<OwnerMemberships />} />
+            <Route path="/owner/por-vencer"    element={<MembresiasPorVencer />} />
+            <Route path="/owner/checkin"       element={<CheckinManual />}    />
+            <Route path="/owner/confirmar-pagos" element={<PagosPorConfirmar />} />
+            <Route path="/owner/deliveries"    element={<ReceptionistDeliveries />} />
             <Route path="/owner/profile"       element={<OwnerProfile />}     />
             <Route path="/owner/mi-perfil"     element={<OwnerMiPerfil />}    />
             <Route path="/owner/reportes"      element={<OwnerReportes />}    />
@@ -158,21 +177,21 @@ function App() {
           {/* 3. RUTAS USUARIO (MIEMBRO) */}
           <Route element={<Layout role="user" key="user" />}>
             <Route path="/user/dashboard"    element={<UserDashboard />} />
-            <Route path="/user/routine"      element={<UserRoutineCreator />} />
-            <Route path="/user/workout-log"  element={<UserWorkoutLog />} />
+            <Route path="/user/routine"      element={<MembresiaGate servicio="tus rutinas"><UserRoutineCreator /></MembresiaGate>} />
+            <Route path="/user/workout-log"  element={<MembresiaGate servicio="el registro de entrenos"><UserWorkoutLog /></MembresiaGate>} />
             <Route path="/user/progress"     element={<UserBodyProgress />} />
             <Route path="/user/prediction"   element={<UserWeightPrediction />} />
             <Route path="/user/body-metrics" element={<UserBodyProgress />} />
-            <Route path="/user/meal-plan"    element={<UserMealPlan />} />
-            <Route path="/user/nutrition"    element={<UserMealPlan />} />
-            <Route path="/user/recipes"      element={<UserMealPlan />} />
+            <Route path="/user/meal-plan"    element={<MembresiaGate servicio="tu plan de nutrición"><UserMealPlan /></MembresiaGate>} />
+            <Route path="/user/nutrition"    element={<MembresiaGate servicio="tu plan de nutrición"><UserMealPlan /></MembresiaGate>} />
+            <Route path="/user/recipes"      element={<MembresiaGate servicio="tu plan de nutrición"><UserMealPlan /></MembresiaGate>} />
             <Route path="/user/health"       element={<UserHealth />} />
             <Route path="/user-health-update" element={<UserHealthUpdate />} />
             <Route path="/user/payments"     element={<UserPayments />} />
             <Route path="/user/renew"        element={<UserMembershipRenewal />} />
             <Route path="/user/profile"      element={<UserProfile />} />
             <Route path="/user/pos"          element={<PointOfSale />} />
-            <Route path="/user/training"     element={<UserTraining />} />
+            <Route path="/user/training"     element={<MembresiaGate servicio="tus entrenamientos"><UserTraining /></MembresiaGate>} />
             <Route path="/complete-profile"  element={<CompleteProfile />} />
           </Route>
 
@@ -202,10 +221,12 @@ function App() {
             <Route path="/receptionist/payments"     element={<ReceptionistPayments />} />
             <Route path="/receptionist/cobrar"       element={<CobrarMembresia />} />
             <Route path="/receptionist/members"      element={<ReceptionistMembers />} />
+            <Route path="/receptionist/por-vencer"   element={<MembresiasPorVencer />} />
             <Route path="/receptionist/verificar-sucursal" element={<VerificarMiembro />} />
             <Route path="/receptionist/messages"     element={<ReceptionistMessages />} />
             <Route path="/receptionist/tasks"        element={<ReceptionistTasks />} />
             <Route path="/receptionist/deliveries"   element={<ReceptionistDeliveries />} />
+            <Route path="/receptionist/confirmar-pagos" element={<PagosPorConfirmar />} />
             <Route path="/receptionist/analytics"    element={<ReceptionistAnalytics />} />
             <Route path="/receptionist/mapreduce"    element={<AnalyticsMapReduce />} />
             <Route path="/receptionist/kmeans"       element={<AnalyticsKMeans />} />
@@ -245,6 +266,7 @@ function App() {
             </div>
           } />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </ThemeProvider>
   );

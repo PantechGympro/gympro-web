@@ -5,6 +5,7 @@
  * Se almacena en MongoDB directamente — sin filesystem ni volúmenes.
  */
 import { useState, useEffect, useRef, useCallback } from "react";
+import PaginacionControles, { usePorPagina } from "../../components/compartido/PaginacionControles";
 import { FiCamera, FiSearch, FiUsers, FiCheck, FiRepeat, FiMail } from "react-icons/fi";
 import EmailDomainInput from "../../components/compartido/EmailDomainInput";
 import DetalleUsuarioModal, { fechaFicha } from "../../components/compartido/DetalleUsuarioModal";
@@ -624,6 +625,7 @@ export default function MiembrosDashboard() {
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total,      setTotal]      = useState(0);
+  const [perPage,    setPerPage]    = usePorPagina("owner-miembros", 12);
   const [search,     setSearch]     = useState("");
   const [inactivos,  setInactivos]  = useState(false);
   // Miembro cuya ficha completa se está viendo; null cierra el modal.
@@ -685,17 +687,17 @@ export default function MiembrosDashboard() {
     });
   };
 
-  const load = useCallback(async (p = page) => {
+  const load = useCallback(async (p = page, pp = perPage) => {
     setLoading(true);
     try {
-      const { data } = await getMiembros(p, inactivos, search);
+      const { data } = await getMiembros(p, inactivos, search, pp);
       setMiembros(data.miembros  || []);
       setTotal(data.total        || 0);
       setTotalPages(data.pages   || 1);
       setPage(p);
     } catch { toast.error("Error al cargar miembros"); }
     finally  { setLoading(false); }
-  }, [inactivos, search, page]);
+  }, [inactivos, search, page, perPage]);
 
   // Debounce search
   useEffect(() => {
@@ -708,7 +710,9 @@ export default function MiembrosDashboard() {
     setSelectionMode(false);
     setSelectedIds([]);
     setDestinoId("");
-  }, [page, search, inactivos]);
+  }, [page, search, inactivos, perPage]);
+
+  const cambiarPorPagina = (n) => { setPerPage(n); load(1, n); };
 
   const handleEdit   = (m) => setModal(m);
   const handleNew    = ()  => setModal({});
@@ -921,20 +925,12 @@ export default function MiembrosDashboard() {
         </div>
       )}
 
-      {/* Paginación */}
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 28, alignItems: "center" }}>
-          <button disabled={page === 1 || loading} onClick={() => load(page - 1)}
-            style={{ padding: "7px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", color: C.t2, cursor: page === 1 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, opacity: page === 1 ? 0.4 : 1 }}>
-            ← Anterior
-          </button>
-          <span style={{ fontSize: 13, color: C.t2 }}>Página {page} de {totalPages}</span>
-          <button disabled={page === totalPages || loading} onClick={() => load(page + 1)}
-            style={{ padding: "7px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", color: C.t2, cursor: page === totalPages ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, opacity: page === totalPages ? 0.4 : 1 }}>
-            Siguiente →
-          </button>
-        </div>
-      )}
+      {/* Paginación + cuántos mostrar */}
+      <PaginacionControles
+        page={page} totalPages={totalPages} total={total} perPage={perPage}
+        loading={loading} etiqueta="miembros por página"
+        onPage={(p) => load(p)} onPerPage={cambiarPorPagina}
+      />
 
       <DetalleUsuarioModal
         usuario={detalle ? miembroADetalle(detalle) : null}

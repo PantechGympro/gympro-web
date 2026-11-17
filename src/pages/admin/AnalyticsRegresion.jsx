@@ -1,3 +1,4 @@
+import { mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -53,7 +54,7 @@ export default function AnalyticsRegresion() {
       const r = await fetch(`${API_BASE}/api/analytics/regresion`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setGlobalData(await r.json());
     } catch (e) {
       setGlobalError(e.message);
@@ -73,7 +74,7 @@ export default function AnalyticsRegresion() {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       const json = await r.json();
       setGlobalData(json);
       setTrainMsg(json.mensaje || "Modelo reentrenado correctamente.");
@@ -128,7 +129,7 @@ export default function AnalyticsRegresion() {
         `${API_BASE}/api/analytics/regresion/predecir/${id}?dias=${diasParam}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      if (!res.ok) throw new Error(mensajePorEstado(res.status));
       setMemberData(await res.json());
     } catch (e) {
       setMemberError(e.message);
@@ -216,7 +217,7 @@ export default function AnalyticsRegresion() {
                 background: desdeCache ? "var(--success-color)" : "var(--warning-color)",
                 display: "inline-block",
               }} />
-              {desdeCache ? "Desde caché" : "Recién entrenado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+              {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
             </span>
           )}
 
@@ -225,7 +226,7 @@ export default function AnalyticsRegresion() {
             className="btn-compact-primary"
             onClick={handleTrain}
             disabled={trainLoading || globalLoading}
-            title="Re-entrena el modelo con los datos actuales y actualiza la caché"
+            title="Vuelve a calcular las tendencias con la información más reciente"
           >
             {trainLoading ? <span className="spinner" /> : (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

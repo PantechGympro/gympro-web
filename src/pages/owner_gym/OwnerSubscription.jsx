@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * OwnerSubscription.jsx — "Mi Suscripción" del dueño del gimnasio.
  *
@@ -13,6 +14,7 @@ import {
 } from "react-icons/fi";
 import BotonesPago from "../../components/compartido/BotonesPago";
 import "../../css/CSSUnificado.css";
+import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -150,7 +152,7 @@ export default function OwnerSubscription() {
       await cargarLotes();
       setMsg({ type: "ok", text: j.msg });
     } catch (e) {
-      setMsg({ type: "error", text: e.message });
+      setMsg({ type: "error", text: mensajeAmigable(e) });
     }
   };
 
@@ -178,7 +180,7 @@ export default function OwnerSubscription() {
       // Se sale del sitio: la autorización ocurre en la pasarela.
       window.location.href = j.url_autorizacion;
     } catch (e) {
-      setMsg({ type: "error", text: e.message });
+      setMsg({ type: "error", text: mensajeAmigable(e) });
       setProcesando(false);
     }
   };
@@ -199,7 +201,7 @@ export default function OwnerSubscription() {
           : `La pasarela reporta el acuerdo como "${j.estado}". Todavía no cobra.`,
       });
     } catch (e) {
-      if (!silencioso) setMsg({ type: "error", text: e.message });
+      if (!silencioso) setMsg({ type: "error", text: mensajeAmigable(e) });
     } finally {
       setProcesando(false);
     }
@@ -220,7 +222,7 @@ export default function OwnerSubscription() {
       await Promise.all([cargarRecurrente(), load()]);
       setMsg({ type: "ok", text: j.msg });
     } catch (e) {
-      setMsg({ type: "error", text: e.message });
+      setMsg({ type: "error", text: mensajeAmigable(e) });
     } finally {
       setProcesando(false);
     }
@@ -239,7 +241,7 @@ export default function OwnerSubscription() {
       setPay(null);
       setMsg({ type: "ok", text: "Pago simulado exitoso. Tu suscripción quedó activa." });
       await load();
-    } catch (e) { setMsg({ type: "error", text: e.message }); }
+    } catch (e) { setMsg({ type: "error", text: mensajeAmigable(e) }); }
     finally { setProcessing(false); }
   };
 
@@ -494,6 +496,10 @@ export default function OwnerSubscription() {
                   ))}
                 </ul>
               )}
+
+              <div style={{ marginBottom: 12 }}>
+                <FuncionesPorRol plan={p} planes={planes} />
+              </div>
 
               <button disabled={actual}
                 onClick={() => { setMetodo("tarjeta"); setPay({ modo: "mejorar", plan: p, ciclo }); }}

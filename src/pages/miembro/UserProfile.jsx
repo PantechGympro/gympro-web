@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -168,7 +169,7 @@ export default function UserProfile() {
       window.dispatchEvent(new CustomEvent("userDataUpdated"));
       showToast("ok", "Perfil actualizado correctamente");
     } catch (e) {
-      showToast("err", e.message);
+      showToast("err", mensajeAmigable(e));
     } finally {
       setSaving(false);
     }

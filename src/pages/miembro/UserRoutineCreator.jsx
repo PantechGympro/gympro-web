@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -314,7 +315,7 @@ export default function UserRoutineCreator() {
       setRoutine(blankRoutine());
       setActiveDay(0);
       setTimeout(() => setSuccess(false), 3000);
-    } catch(e) { setError(e.message); }
+    } catch(e) { setError(mensajeAmigable(e)); }
     finally { setSaving(false); }
   };
 

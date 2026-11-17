@@ -26,3 +26,7 @@ yarn-error.log*
 .vscode/
 .idea/
 Thumbs.db
+
+# Variables locales: nunca al repositorio (auditoría nov/2026).
+# El portal no necesita secretos: habla con la API por la ruta relativa /api.
+.env

@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../utils/errores";
 /**
  * useMetricsHistory
  * Fetches the member's body metrics time-series from /api/user/metrics/history.
@@ -29,11 +30,11 @@ export function useMetricsHistory({ limit = 100, campo = null, enabled = true } 
       const res = await fetch(`/api/user/metrics/history?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(mensajePorEstado(res.status));
       const json = await res.json();
       setHistory(json.history || []);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }

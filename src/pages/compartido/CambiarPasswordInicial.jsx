@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * CambiarPasswordInicial.jsx — SCRUM-224.
  *
@@ -70,7 +71,7 @@ export default function CambiarPasswordInicial() {
       else if (role === "administrador" || role === "owner_gym" || role === "propietario") navigate("/owner");
       else navigate("/user/dashboard");
     } catch (e) {
-      setError(e.message || "No se pudo actualizar la contraseña.");
+      setError(mensajeAmigable(e, "No se pudo actualizar la contraseña."));
     } finally {
       setLoading(false);
     }

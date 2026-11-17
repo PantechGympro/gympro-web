@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -46,10 +47,10 @@ function PredictionModal({ member, onClose }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `Error ${res.status}`);
+      if (!res.ok) throw new Error(json.error || mensajePorEstado(res.status));
       setData(json);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
@@ -318,7 +319,7 @@ export default function AnalyticsRegresion() {
       const r = await fetch(`${API_BASE}/api/analytics/regresion`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setGlobalData(await r.json());
     } catch (e) {
       setGlobalError(e.message);
@@ -335,7 +336,7 @@ export default function AnalyticsRegresion() {
       const r = await fetch(`${API_BASE}/api/analytics/regresion/train`, {
         method: "POST", headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       const json = await r.json();
       setGlobalData(json);
       setTrainMsg(json.mensaje || "Tendencias actualizadas correctamente.");
@@ -432,7 +433,7 @@ export default function AnalyticsRegresion() {
           {ejecutadoEn && (
             <span style={{ fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: desdeCache ? "var(--success-color)" : "var(--warning-color)", display: "inline-block" }} />
-              {desdeCache ? "Desde caché" : "Recién entrenado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+              {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
             </span>
           )}
           <button className="btn-compact-primary" onClick={handleTrain} disabled={trainLoading || globalLoading}>

@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useCallback } from "react";
 import "../../css/CSSUnificado.css";
 
@@ -70,12 +71,12 @@ export default function AnalyticsKMeans() {
       const res = await fetch(`${API_BASE}/api/analytics/kmeans?k=${k}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      if (!res.ok) throw new Error(mensajePorEstado(res.status));
       const json = await res.json();
       setData(json);
       setPage(1);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
@@ -99,13 +100,13 @@ export default function AnalyticsKMeans() {
           body: JSON.stringify({ k: kValue, max_iter: 20 }),
         }
       );
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      if (!res.ok) throw new Error(mensajePorEstado(res.status));
       const json = await res.json();
       setData(json);
       setPage(1);
       setTrainMsg(json.mensaje || "Modelo reentrenado correctamente.");
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setTrainLoading(false);
     }
@@ -233,7 +234,7 @@ export default function AnalyticsKMeans() {
               background: desdeCache ? "var(--success-color)" : "var(--warning-color)",
               display: "inline-block",
             }} />
-            {desdeCache ? "Desde caché" : "Recién entrenado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+            {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
           </span>
         )}
 
@@ -243,7 +244,7 @@ export default function AnalyticsKMeans() {
           onClick={handleTrain}
           disabled={trainLoading}
           style={{ marginLeft: "auto" }}
-          title="Re-ejecuta el algoritmo con los datos actuales y actualiza la caché"
+          title="Vuelve a calcular la segmentación con la información más reciente"
         >
           {trainLoading ? (
             <span className="spinner" />

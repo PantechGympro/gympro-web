@@ -2704,3 +2704,48 @@ button.swal2-confirm { background-color: var(--accent) !important; }
   background: var(--success-bg);
   color: var(--success);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESIBILIDAD GLOBAL (auditoría nov/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   1) Foco visible para TODO lo interactivo, no solo .btn y los inputs del
+      sistema de diseño. La mayoría de las pantallas arma sus botones con
+      estilos en línea y 40 de ellos declaran `outline: "none"`: quien navega
+      con teclado no veía dónde estaba parado (WCAG 2.4.7). :focus-visible
+      solo aparece con teclado, así que no cambia nada para quien usa ratón.
+      !important es necesario para ganarle al estilo en línea.
+   2) Altura de toque mínima de 44 px en pantallas táctiles (WCAG 2.5.5 /
+      guías de iOS y Android) para los botones del sistema de diseño.
+   3) Texto de formulario a 16 px en móvil: con menos, Safari en iOS hace
+      zoom automático al enfocar un campo y descoloca la pantalla.
+   ═══════════════════════════════════════════════════════════════════════════ */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* Solo los botones del sistema de diseño. Aplicarlo a TODO <button> es lo
+     correcto a largo plazo, pero muchas pantallas arman chips y botones-icono
+     con estilos en línea dentro de tablas densas: forzarles 44 px sin
+     revisarlas una por una las descuadraría. Queda como pendiente en la
+     bitácora (migrar esos botones a estas clases). */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .login-button {
+    min-height: 44px;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

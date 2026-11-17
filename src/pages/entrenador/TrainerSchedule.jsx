@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * TrainerSchedule.jsx — Agenda + Historial de sesiones (módulo unificado)
  *
@@ -86,7 +87,7 @@ function NotesModal({ session, onClose, onSaved }) {
     try {
       await trainerService.updateSession(session.id_sesion, { notas: notes });
       onSaved(); onClose();
-    } catch (e) { alert(`Error: ${e.message}`); }
+    } catch (e) { alert(mensajeAmigable(e)); }
     finally { setSaving(false); }
   };
 
@@ -128,7 +129,7 @@ function DeleteModal({ session, onClose, onDeleted }) {
   const handleDelete = async () => {
     setDeleting(true);
     try { await trainerService.deleteSession(session.id_sesion); onDeleted(); onClose(); }
-    catch (e) { alert(`Error: ${e.message}`); }
+    catch (e) { alert(mensajeAmigable(e)); }
     finally { setDeleting(false); }
   };
   return (
@@ -254,7 +255,7 @@ function NewSessionModal({ onClose, onSaved, defaultDate, members, todayStr }) {
         duracion_minutos: parseInt(form.duracion_minutos),
       });
       onSaved(); onClose();
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setSaving(false); }
   };
 
@@ -425,7 +426,7 @@ function HistorialTab({ onNotesFn, onDeleteFn }) {
       setSessions(data.sessions || []);
       setStats(data.stats || {});
       setTotal(data.total || 0);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, [filterStatus, dateRange, page]);
 
@@ -435,7 +436,7 @@ function HistorialTab({ onNotesFn, onDeleteFn }) {
   const handleStatusUpdate = async (sessionId, newStatus) => {
     setActionLoading(sessionId);
     try { await trainerService.updateSessionStatus(sessionId, newStatus); fetchSessions(); }
-    catch (e) { alert(`Error: ${e.message}`); }
+    catch (e) { alert(mensajeAmigable(e)); }
     finally { setActionLoading(null); }
   };
 
@@ -691,7 +692,7 @@ function CitasTab() {
     try {
       setCitas(await trainerService.getCitas());
     } catch (e) {
-      setError(e.message || "No se pudieron cargar las citas");
+      setError(mensajeAmigable(e, "No se pudieron cargar las citas"));
     } finally {
       setLoading(false);
     }
@@ -780,7 +781,7 @@ export default function TrainerSchedule() {
     try {
       const data = await trainerService.getSchedule(currentWeek);
       setScheduleData(data);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, [currentWeek]);
 
@@ -855,7 +856,7 @@ export default function TrainerSchedule() {
   const handleStatusUpdate = async (sessionId, newStatus) => {
     setActionLoading(sessionId);
     try { await trainerService.updateSessionStatus(sessionId, newStatus); fetchSchedule(); }
-    catch (e) { alert(`Error: ${e.message}`); }
+    catch (e) { alert(mensajeAmigable(e)); }
     finally { setActionLoading(null); }
   };
 

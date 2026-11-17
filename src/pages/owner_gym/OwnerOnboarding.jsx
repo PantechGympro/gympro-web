@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * OwnerOnboarding.jsx — Wizard de bienvenida para dueños de gimnasio.
  *
@@ -268,7 +269,7 @@ export default function OwnerOnboarding() {
 
       setStep(1);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }

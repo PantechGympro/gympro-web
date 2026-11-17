@@ -13,7 +13,7 @@ export default function TicketModal({ venta, onClose }) {
       <div style={{ position: "fixed", inset: 0, zIndex: 9995, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, pointerEvents: "none" }}>
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, padding: 0, maxWidth: 380, width: "100%", pointerEvents: "auto", boxShadow: "0 24px 60px rgba(0,0,0,.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px 0" }}>
-            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Comprobante de venta</span>
+            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{venta.estado_pago === "pendiente" ? "Solicitud de compra" : "Comprobante de venta"}</span>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}><FiX size={16} /></button>
           </div>
 
@@ -68,18 +68,37 @@ export default function TicketModal({ venta, onClose }) {
             {venta.fecha_recogida && venta.hora_recogida && (
               <div style={{
                 marginBottom: 12, padding: "8px 10px", borderRadius: 8,
-                background: venta.metodo_pago === "Efectivo" ? "rgba(245,158,11,.12)" : "rgba(99,102,241,.1)",
-                border: `1px solid ${venta.metodo_pago === "Efectivo" ? "rgba(245,158,11,.3)" : "var(--border)"}`,
+                background: venta.estado_pago === "pendiente" ? "rgba(245,158,11,.12)" : "rgba(99,102,241,.1)",
+                border: `1px solid ${venta.estado_pago === "pendiente" ? "rgba(245,158,11,.3)" : "var(--border)"}`,
                 fontSize: 11, lineHeight: 1.5,
               }}>
                 <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
                   Pasas por tu producto el {venta.fecha_recogida} a las {venta.hora_recogida}
                 </div>
-                {venta.metodo_pago === "Efectivo" && (
+                {venta.estado_pago === "pendiente" && (
                   <div style={{ color: "var(--text-secondary)", marginTop: 2 }}>
-                    Tu pago queda pendiente hasta que llegues a recepción. Ya le avisamos al personal.
+                    Ya le avisamos al personal. Se entrega cuando recepción confirme tu pago.
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Pago pendiente de verificar (miembro: efectivo / transferencia / TotalPass).
+                Antes el ticket parecía un comprobante de pago aunque nadie hubiera cobrado. */}
+            {venta.estado_pago === "pendiente" && (
+              <div style={{
+                marginBottom: 12, padding: "8px 10px", borderRadius: 8, fontSize: 11, lineHeight: 1.5,
+                background: "rgba(245,158,11,.12)", border: "1px solid rgba(245,158,11,.3)",
+              }}>
+                <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>Pago pendiente de confirmar</div>
+                <div style={{ color: "var(--text-secondary)", marginTop: 2 }}>
+                  {venta.metodo_pago === "Transferencia"
+                    ? "Recepción verificará tu transferencia en el banco."
+                    : venta.metodo_pago === "TotalPass"
+                      ? "Recepción verificará que esta compra esté cubierta por TotalPass."
+                      : "Paga en recepción al recoger tu producto."}
+                  {" "}No es un comprobante de pago hasta que se confirme.
+                </div>
               </div>
             )}
 
@@ -104,7 +123,7 @@ export default function TicketModal({ venta, onClose }) {
             </div>
 
             <div style={{ textAlign: "center", marginTop: 18, fontSize: 10, color: "var(--text-tertiary)", borderTop: "1px dashed var(--border)", paddingTop: 12 }}>
-              Gracias por tu compra
+              {venta.estado_pago === "pendiente" ? "Gracias, te esperamos" : "Gracias por tu compra"}
             </div>
           </div>
 

@@ -815,6 +815,7 @@ function TabHistorial() {
             metodo_pago:    ticketVenta.metodo_pago,
             numero_tarjeta: ticketVenta.numero_tarjeta || "",
             referencia:     ticketVenta.referencia     || "",
+            estado_pago:    ticketVenta.estado_pago,
           }}
           onClose={() => setTicketVenta(null)}
         />

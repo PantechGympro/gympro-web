@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState, useRef, useEffect } from "react";
 import { login } from "../../api/auth";
 import { useNavigate, Link } from "react-router-dom";
@@ -109,7 +110,7 @@ export default function AuthPage() {
       else navigate("/user/dashboard");
 
     } catch (err) {
-      setError(err.message || "Error al conectar con el servidor");
+      setError(mensajeAmigable(err, "Error al conectar con el servidor"));
     } finally {
       setLoading(false);
     }

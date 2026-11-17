@@ -22,8 +22,9 @@ API.interceptors.request.use((config) => {
 // completo de una sola vez (CobrarMembresia.jsx, PagosDashboard.jsx) -- ver
 // el tope real en owner_gym/miembros.py::listar_miembros.
 export const getMiembros = (page = 1, mostrarInactivos = false, search = "", perPage = null) =>
-  API.get(`/miembros?page=${page}&inactivos=${mostrarInactivos}&search=${search}`
-    + (perPage ? `&per_page=${perPage}` : ""));
+  API.get("/miembros", {
+    params: { page, inactivos: mostrarInactivos, search, ...(perPage ? { per_page: perPage } : {}) },
+  });
 
 export const createMiembro = (data) => API.post("/miembros", data);
 export const updateMiembro = (id, data) => API.put(`/miembros/${id}`, data);

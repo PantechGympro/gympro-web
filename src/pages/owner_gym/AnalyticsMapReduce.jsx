@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect } from "react";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -46,10 +47,10 @@ export default function AnalyticsMapReduce() {
       const r = await fetch(`${API_BASE}/api/analytics/mapreduce`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
@@ -66,12 +67,12 @@ export default function AnalyticsMapReduce() {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       const json = await r.json();
       setData(json);
       setTrainMsg(json.mensaje || "Datos actualizados correctamente.");
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setTrainLoading(false);
     }
@@ -90,7 +91,7 @@ export default function AnalyticsMapReduce() {
   );
 
   if (error) {
-    const isNoData = error.includes("400") || error.includes("401") || error.includes("403") || error.includes("404");
+    const isNoData = /No encontramos|Hay un dato|sesión caducó|no tiene permiso/.test(error);
     return (
       <div className="empty-state">
         {isNoData ? (
@@ -181,7 +182,7 @@ export default function AnalyticsMapReduce() {
                 background: desdeCache ? "var(--success-color)" : "var(--warning-color)",
                 display: "inline-block",
               }} />
-              {desdeCache ? "Desde caché" : "Recién calculado"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
+              {desdeCache ? "Mostrando el último resumen guardado" : "Calculado hace un momento"} · {new Date(ejecutadoEn).toLocaleString("es-MX")}
             </span>
           )}
 
@@ -190,7 +191,7 @@ export default function AnalyticsMapReduce() {
             className="btn-compact-primary"
             onClick={handleTrain}
             disabled={trainLoading}
-            title="Re-ejecuta MapReduce con los datos actuales y actualiza la caché"
+            title="Vuelve a calcular el resumen con la información más reciente"
           >
             {trainLoading ? <span className="spinner" /> : (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -229,9 +230,9 @@ export default function AnalyticsMapReduce() {
         }}>
           <div className="dashboard-spinner" style={{ width: 28, height: 28 }} />
           <div>
-            <p style={{ fontWeight: 600, marginBottom: 4 }}>Ejecutando nodos MapReduce...</p>
+            <p style={{ fontWeight: 600, marginBottom: 4 }}>Estamos actualizando tu resumen...</p>
             <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              Procesando pagos y asistencias en paralelo. Esto puede tardar unos segundos.
+              Revisando tus pagos y asistencias. Puede tardar unos segundos.
             </p>
           </div>
         </div>

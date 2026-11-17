@@ -1,3 +1,4 @@
+import { mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import {
@@ -76,7 +77,7 @@ async function downloadBackupFile(filename) {
     const res = await fetch(`/api/superadmin/backups/download/${encodeURIComponent(filename)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(mensajePorEstado(res.status));
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
