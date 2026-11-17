@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -98,7 +99,7 @@ export default function UserMembershipRenewal() {
       });
       setTimeout(() => navigate("/user/dashboard"), 3500);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setProcessing(false);
     }

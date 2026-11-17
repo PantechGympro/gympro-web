@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * TrainerDiets.jsx — Módulo completo de Nutrición del entrenador.
  *
@@ -113,7 +114,7 @@ function ItemRow({item,recipes,onUpdate,onRemove}){
       if(!data.encontrado){ alert(data.mensaje||"Producto no encontrado en Open Food Facts."); return; }
       onUpdate({...item,id_receta:null,nombre_alimento:data.nombre,calorias:data.calorias??"",proteinas_g:data.proteinas_g??"",carbohidratos_g:data.carbohidratos_g??"",grasas_g:data.grasas_g??"",imagen:data.imagen??null});
       setMostrarBarcode(false); setCodigoBarras("");
-    }catch(e){ alert(e.message||"No se pudo buscar el código de barras"); }
+    }catch(e){ alert(mensajeAmigable(e, "No se pudo buscar el código de barras")); }
     finally{ setBuscandoCodigo(false); }
   };
   return(
@@ -585,7 +586,7 @@ function ImportarIATab({clients,onPlanExtracted}){
     try{
       const data=await trainerService.importDietAI(file);
       setPlan(data.plan);setRecetas(data.recetas||[]);setVia(data.via||"llm");
-    }catch(err){setError(err.message);}
+    }catch(err){setError(mensajeAmigable(err));}
     finally{setLoading(false);}
   };
   const handleSave=async()=>{
@@ -594,7 +595,7 @@ function ImportarIATab({clients,onPlanExtracted}){
     try{
       await trainerService.confirmDietImport(plan,recetas,{id_miembro_pg:resolvedPgId(),archivo:file?.name});
       setSaved(true);onPlanExtracted?.();
-    }catch(err){setError(err.message);}
+    }catch(err){setError(mensajeAmigable(err));}
     finally{setSaving(false);}
   };
   const reset=()=>{setFile(null);setPlan(null);setRecetas([]);setError(null);setSaved(false);setSelectedClientOid("");setVia(null);setShowRecetas(false);};
@@ -1085,7 +1086,7 @@ export default function TrainerDiets(){
       const [dietsData,recipesData,clientsData]=await Promise.all([trainerService.getDiets(),trainerService.getRecipes(),trainerService.getClients(1,'','all',500)]);
       setDiets(dietsData);setRecipes(recipesData);
       setClients((clientsData.clients||clientsData||[]).map(c=>({id:c.id,pg_id:c.pg_id??null,name:c.name||c.nombre})));
-    }catch(err){setError(err.message||"Error al cargar datos");}
+    }catch(err){setError(mensajeAmigable(err, "Error al cargar datos"));}
     finally{setLoading(false);}
   },[]);
 
@@ -1095,7 +1096,7 @@ export default function TrainerDiets(){
     if(!form.nombre?.trim()){alert("El nombre es obligatorio");return;}
     setSaving(true);
     try{editPlan?await trainerService.updateDiet(editPlan.id,form):await trainerService.createDiet(form);setShowPlan(false);setEditPlan(null);await loadAll();}
-    catch(err){alert("Error: "+err.message);}finally{setSaving(false);}
+    catch(err){alert(mensajeAmigable(err));}finally{setSaving(false);}
   };
   const handleDeletePlan=(id)=>setConfirmDel({ids:[id],type:"plan",deleting:false});
   const handleDeleteRecipe=(id)=>setConfirmDel({ids:[id],type:"recipe",deleting:false});
@@ -1118,7 +1119,7 @@ export default function TrainerDiets(){
       if(type==="plan") setDiets(p=>p.filter(d=>!ids.includes(d.id)));
       else setRecipes(p=>p.filter(r=>!ids.includes(r.id)));
       setSelectedIds(new Set()); setSelectMode(false);
-    }catch(err){alert("Error: "+err.message);}
+    }catch(err){alert(mensajeAmigable(err));}
     finally{setConfirmDel(null);}
   };
   const handleAssignPlan=async(id,id_miembro_pg)=>{await trainerService.assignDiet(id,id_miembro_pg);await loadAll();};
@@ -1127,7 +1128,7 @@ export default function TrainerDiets(){
     if(!form.nombre?.trim()){alert("El nombre es obligatorio");return;}
     setSaving(true);
     try{editRecipe?await trainerService.updateRecipe(editRecipe.id,form):await trainerService.createRecipe(form);setShowRecipe(false);setEditRecipe(null);await loadAll();}
-    catch(err){alert("Error: "+err.message);}finally{setSaving(false);}
+    catch(err){alert(mensajeAmigable(err));}finally{setSaving(false);}
   };
 
   const filteredDiets=diets.filter(d=>{

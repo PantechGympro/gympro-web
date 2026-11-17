@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useCallback } from "react";
 import "../../css/CSSUnificado.css";
 
@@ -82,12 +83,12 @@ export default function AnalyticsKMeans() {
           });
           return;
         }
-        throw new Error(json.error || `Error ${res.status}: ${res.statusText}`);
+        throw new Error(json.error || mensajePorEstado(res.status));
       }
       setData(json);
       setPage(1);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
@@ -122,13 +123,13 @@ export default function AnalyticsKMeans() {
           });
           return;
         }
-        throw new Error(json.error || `Error ${res.status}: ${res.statusText}`);
+        throw new Error(json.error || mensajePorEstado(res.status));
       }
       setData(json);
       setPage(1);
       setTrainMsg(json.mensaje || "Grupos actualizados correctamente.");
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setTrainLoading(false);
     }

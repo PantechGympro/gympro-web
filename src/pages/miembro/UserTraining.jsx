@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * UserTraining.jsx — Hub de entrenamiento del miembro.
  *
@@ -583,7 +584,7 @@ function RatingWidget({ trainerId, trainerName }) {
       setOpen(false);
       setMsg({ type: "ok", text: "¡Calificación guardada!" });
     } catch (e) {
-      setMsg({ type: "err", text: e.message });
+      setMsg({ type: "err", text: mensajeAmigable(e) });
     } finally { setSaving(false); }
   };
 
@@ -756,7 +757,7 @@ function TabEntrenador() {
       setVista("solicitudes");
       cargar();
     } catch (e) {
-      setMsg({ type: "err", text: e.message });
+      setMsg({ type: "err", text: mensajeAmigable(e) });
     } finally { setSaving(false); }
   };
 
@@ -766,7 +767,7 @@ function TabEntrenador() {
       await API("DELETE", `/pt-request/${id}`);
       cargar();
     } catch (e) {
-      alert(e.message);
+      alert(mensajeAmigable(e));
     }
   };
 
@@ -776,7 +777,7 @@ function TabEntrenador() {
       await API("DELETE", "/pt-activo");
       cargar();
     } catch (e) {
-      alert(e.message);
+      alert(mensajeAmigable(e));
     }
   };
 
@@ -1291,7 +1292,7 @@ function TabAlertas() {
       cerrarForm();
       cargar();
     } catch (e) {
-      setErr(e.message);
+      setErr(mensajeAmigable(e));
     } finally { setSaving(false); }
   };
 

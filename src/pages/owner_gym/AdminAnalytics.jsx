@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 /**
  * AdminAnalytics.jsx — Dashboard unificado de Analytics con Recharts
  * Sprint 4 / US17
@@ -132,9 +133,9 @@ function TabMapReduce() {
     setLoading(true); setError(null); setTrainMsg(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/mapreduce`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   // headers deriva de localStorage (estable durante la sesión); no debe reactivar el callback
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,7 +148,7 @@ function TabMapReduce() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setTrainMsg("Modelo actualizado");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 
@@ -277,9 +278,9 @@ export function TabKMeans() {
     setLoading(true); setError(null); setTrainMsg(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/kmeans?k=${k}`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   // headers deriva de localStorage (estable durante la sesión); no debe reactivar el callback
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -294,7 +295,7 @@ export function TabKMeans() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setTrainMsg("Grupos actualizados correctamente.");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 
@@ -440,9 +441,9 @@ export function TabRegresion() {
     setLoading(true); setError(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/regresion`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   // headers deriva de localStorage (estable durante la sesión); no debe reactivar el callback
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -455,7 +456,7 @@ export function TabRegresion() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setTrainMsg("Tendencias actualizadas correctamente.");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 
@@ -573,11 +574,11 @@ function TabCancelaciones() {
     setLoading(true); setError(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/cancelaciones?page=${p}&per_page=6`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       const j = await r.json();
       setData(j);
       setPage(j.pagina || p);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   // headers deriva de localStorage (estable durante la sesión); no debe reactivar el callback
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -590,7 +591,7 @@ function TabCancelaciones() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setPage(1); setTrainMsg("Análisis actualizado correctamente");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 
@@ -939,9 +940,9 @@ function TabHeatmap() {
     try {
       const token = localStorage.getItem("token");
       const r = await fetch(`${API_BASE}/api/analytics/heatmap-asistencia`, { headers: { Authorization: `Bearer ${token}`, ...gymHeader() } });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -1022,9 +1023,9 @@ function TabRFM() {
     try {
       const token = localStorage.getItem("token");
       const r = await fetch(`${API_BASE}/api/analytics/rfm`, { headers: { Authorization: `Bearer ${token}`, ...gymHeader() } });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -1118,9 +1119,9 @@ function TabFuerza() {
     try {
       const token = localStorage.getItem("token");
       const r = await fetch(`${API_BASE}/api/analytics/fuerza`, { headers: { Authorization: `Bearer ${token}`, ...gymHeader() } });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -1225,9 +1226,9 @@ export function TabModelos() {
     try {
       const token = localStorage.getItem("token");
       const r = await fetch(`${API_BASE}/api/analytics/modelos`, { headers: { Authorization: `Bearer ${token}`, ...gymHeader() } });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
 
@@ -1239,7 +1240,7 @@ export function TabModelos() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 

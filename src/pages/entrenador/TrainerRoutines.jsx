@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * TrainerRoutines.jsx — Biblioteca de rutinas + biblioteca de ejercicios.
  *
@@ -287,7 +288,7 @@ function VideoSlot({ video, onChange, exerciseId }) {
       // pre-cachear el resultado
       getVideoBlobUrl(b64, exerciseId);
     } catch (e) {
-      setErr(e.message);
+      setErr(mensajeAmigable(e));
     } finally {
       setProcessing(false);
       setProgress("");
@@ -913,7 +914,7 @@ function ImportarIARoutinesTab({ clients, onImportDone, onSaveRoutine, onSaveExe
       // resultado real llega por polling vía useRoutineImportJob, no aquí.
       const data = await trainerService.importRoutinesAI(file);
       startRoutineImportJob(data.job_id, file.name);
-    } catch (err) { setError(err.message); }
+    } catch (err) { setError(mensajeAmigable(err)); }
     finally { setSubmitting(false); }
   };
 
@@ -1420,8 +1421,8 @@ export default function TrainerRoutines() {
       setRoutines(data.routines || []);
       setCategoryCounts(data.categoryCounts || {});
     } catch (err) {
-      setErrorR(err.message);
-      toast.error("Error al cargar", err.message);
+      setErrorR(mensajeAmigable(err));
+      toast.error("Error al cargar", mensajeAmigable(err));
     } finally {
       setLoadingR(false);
     }
@@ -1441,7 +1442,7 @@ export default function TrainerRoutines() {
       setExercises(data.exercises || []);
       setSelectedEx(new Set()); // limpiar selección al recargar
     } catch (err) {
-      setErrorE(err.message);
+      setErrorE(mensajeAmigable(err));
     } finally {
       setLoadingE(false);
     }
@@ -1454,7 +1455,7 @@ export default function TrainerRoutines() {
       toast.success("Ejercicio reactivado", ex.nombre);
       await loadExercises();
     } catch (err) {
-      toast.error("No se pudo reactivar", err.message);
+      toast.error("No se pudo reactivar", mensajeAmigable(err));
     }
   };
 
@@ -1490,7 +1491,7 @@ export default function TrainerRoutines() {
       await trainerService.duplicateRoutine(id);
       toast.success("Rutina duplicada", `"${name}" fue copiada.`);
       await loadRoutines();
-    } catch (err) { toast.error("Error", err.message); }
+    } catch (err) { toast.error("Error", mensajeAmigable(err)); }
     finally { setActionLoading(false); }
   };
 
@@ -1508,7 +1509,7 @@ export default function TrainerRoutines() {
       setSelectedRoutine(null);
       toast.success("Rutina eliminada", `"${name}" eliminada correctamente.`);
       await loadRoutines();
-    } catch (err) { toast.error("Error", err.message); }
+    } catch (err) { toast.error("Error", mensajeAmigable(err)); }
     finally { setActionLoading(false); }
   };
 
@@ -1559,7 +1560,7 @@ export default function TrainerRoutines() {
       setShowForm(false);
       await loadRoutines();
     } catch (err) {
-      toast.error("Error al guardar", err.message);
+      toast.error("Error al guardar", mensajeAmigable(err));
     } finally {
       setActionLoading(false);
     }
@@ -1630,7 +1631,7 @@ export default function TrainerRoutines() {
       setShowExForm(false);
       setEditingEx(null);
       await loadExercises();
-    } catch (err) { toast.error("Error", err.message); }
+    } catch (err) { toast.error("Error", mensajeAmigable(err)); }
     finally { setSavingEx(false); }
   };
 
@@ -1646,7 +1647,7 @@ export default function TrainerRoutines() {
       await trainerService.deleteExercise(ex.id);
       toast.success("Ejercicio movido a la papelera", ex.nombre);
       await loadExercises();
-    } catch (err) { toast.error("Error", err.message); }
+    } catch (err) { toast.error("Error", mensajeAmigable(err)); }
     finally { setActionLoading(false); }
   };
 
@@ -1662,7 +1663,7 @@ export default function TrainerRoutines() {
       await trainerService.permanentDeleteExercise(ex.id);
       toast.success("Ejercicio eliminado definitivamente", ex.nombre);
       await loadExercises();
-    } catch (err) { toast.error("Error", err.message); }
+    } catch (err) { toast.error("Error", mensajeAmigable(err)); }
     finally { setActionLoading(false); }
   };
 
@@ -1709,7 +1710,7 @@ export default function TrainerRoutines() {
       if (fail) toast.error("Algunos no se eliminaron", `${fail} fallaron`);
       setSelectedEx(new Set());
       await loadExercises();
-    } catch (err) { toast.error("Error", err.message); }
+    } catch (err) { toast.error("Error", mensajeAmigable(err)); }
     finally { setActionLoading(false); }
   };
 

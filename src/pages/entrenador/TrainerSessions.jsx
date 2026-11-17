@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -18,7 +19,7 @@ function NotesModal({ session, onClose, onSaved }) {
     try {
       await trainerService.updateSession(session.id_sesion, { notas: notes });
       onSaved(); onClose();
-    } catch (e) { alert(`Error: ${e.message}`); }
+    } catch (e) { alert(mensajeAmigable(e)); }
     finally { setSaving(false); }
   };
 
@@ -50,7 +51,7 @@ function DeleteModal({ session, onClose, onDeleted }) {
   const handleDelete = async () => {
     setDeleting(true);
     try { await trainerService.deleteSession(session.id_sesion); onDeleted(); onClose(); }
-    catch (e) { alert(`Error: ${e.message}`); }
+    catch (e) { alert(mensajeAmigable(e)); }
     finally { setDeleting(false); }
   };
   return (
@@ -100,7 +101,7 @@ export default function TrainerSessions() {
       setSessions(data.sessions || []);
       setStats(data.stats || {});
       setTotal(data.total || 0);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, [filterStatus, dateRange, page]);
 
@@ -110,7 +111,7 @@ export default function TrainerSessions() {
   const handleStatusUpdate = async (sessionId, newStatus) => {
     setActionLoading(sessionId);
     try { await trainerService.updateSessionStatus(sessionId, newStatus); fetchSessions(); }
-    catch (e) { alert(`Error: ${e.message}`); }
+    catch (e) { alert(mensajeAmigable(e)); }
     finally { setActionLoading(null); }
   };
 

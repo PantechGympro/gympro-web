@@ -1,7 +1,8 @@
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { FiLoader, FiCheckCircle, FiAlertCircle, FiX } from "react-icons/fi";
 import Sidebar from "./Sidebar";
+import CargandoPagina from "./CargandoPagina";
 import PerfilCompletoBadge from "./PerfilCompletoBadge";
 import SystemGuide from "../guide/SystemGuide";
 import {
@@ -447,7 +448,11 @@ export default function Layout({ role = "owner_gym" }) {
             flexDirection: "column",
           }}
         >
-          <Outlet context={{ funcionesPlan: sesion.funcionesPlan }} />
+          {/* Las páginas se cargan bajo demanda (ver App.jsx): mientras llega
+              el archivo de la pantalla, la barra lateral se queda en su sitio. */}
+          <Suspense fallback={<CargandoPagina />}>
+            <Outlet context={{ funcionesPlan: sesion.funcionesPlan }} />
+          </Suspense>
         </div>
 
         {guideEnabled && (

@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { forgotPassword, resetPassword } from "../../api/auth";
@@ -31,7 +32,7 @@ export default function ForgotPassword() {
       setInfo(res.msg || "Si el correo está registrado, te enviamos un código.");
       setStep(2);
     } catch (err) {
-      setError(err.message);
+      setError(mensajeAmigable(err));
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export default function ForgotPassword() {
       await resetPassword(email.trim().toLowerCase(), code.trim(), password);
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message);
+      setError(mensajeAmigable(err));
     } finally {
       setLoading(false);
     }

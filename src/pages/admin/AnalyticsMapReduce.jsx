@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect } from "react";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -42,10 +43,10 @@ export default function AnalyticsMapReduce() {
       const r = await fetch(`${API_BASE}/api/analytics/mapreduce`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
@@ -62,12 +63,12 @@ export default function AnalyticsMapReduce() {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       const json = await r.json();
       setData(json);
       setTrainMsg(json.mensaje || "MapReduce re-ejecutado correctamente.");
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setTrainLoading(false);
     }

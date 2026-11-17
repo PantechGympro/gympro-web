@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -46,10 +47,10 @@ function PredictionModal({ member, onClose }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `Error ${res.status}`);
+      if (!res.ok) throw new Error(json.error || mensajePorEstado(res.status));
       setData(json);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
@@ -318,7 +319,7 @@ export default function AnalyticsRegresion() {
       const r = await fetch(`${API_BASE}/api/analytics/regresion`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setGlobalData(await r.json());
     } catch (e) {
       setGlobalError(e.message);
@@ -335,7 +336,7 @@ export default function AnalyticsRegresion() {
       const r = await fetch(`${API_BASE}/api/analytics/regresion/train`, {
         method: "POST", headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       const json = await r.json();
       setGlobalData(json);
       setTrainMsg(json.mensaje || "Tendencias actualizadas correctamente.");

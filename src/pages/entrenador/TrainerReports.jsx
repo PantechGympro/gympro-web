@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * TrainerReports.jsx — Reportes y estadísticas del entrenador.
  *
@@ -198,7 +199,7 @@ export default function TrainerReports() {
       const result = await trainerService.getReports(timeRange);
       setData(result);
     } catch (err) {
-      setError(err.message);
+      setError(mensajeAmigable(err));
     } finally {
       setLoading(false);
     }

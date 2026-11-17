@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * TrainerRequests.jsx — Panel del entrenador: solicitudes PT, chat y asignación de rutinas.
  *
@@ -152,7 +153,7 @@ function TabSolicitudes({ onChatWith }) {
         ...(rech.solicitudes || []),
       ]);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
@@ -181,7 +182,7 @@ function TabSolicitudes({ onChatWith }) {
       setModal(null);
       cargar();
     } catch (e) {
-      alert(e.message);
+      alert(mensajeAmigable(e));
     } finally {
       setSaving(false);
     }
@@ -631,7 +632,7 @@ function ChatView({ miembro, onBack }) {
       cargar();
     } catch (e) {
       setTexto(t);
-      alert(e.message);
+      alert(mensajeAmigable(e));
     } finally {
       setSending(false);
     }
@@ -817,7 +818,7 @@ export function TabChat({ chatTarget, onClearTarget }) {
       }, []);
       lista.sort((a, b) => b.unread - a.unread);
       setMiembros(lista);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
 
@@ -970,7 +971,7 @@ function TabAsignar() {
       });
       setMiembros(Object.values(mapa));
       setRutinas(rData.routines || []);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
 
@@ -987,7 +988,7 @@ function TabAsignar() {
       });
       setOk("Rutina asignada — el miembro ya puede verla en su sección de Entrenamiento.");
       setSelRutina(""); setNotas("");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setSaving(false); }
   };
 

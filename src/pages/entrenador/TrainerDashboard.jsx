@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * TrainerDashboard.jsx — Landing principal del entrenador.
  * Muestra: KPIs del día/semana, sesiones de hoy, próximas sesiones y accesos rápidos.
@@ -142,7 +143,7 @@ export default function TrainerDashboard() {
   useEffect(() => {
     trainerService.getDashboard()
       .then(d  => setData(d))
-      .catch(e => setError(e.message || "Error al cargar el dashboard"))
+      .catch(e => setError(mensajeAmigable(e, "Error al cargar el dashboard")))
       .finally(() => setLoading(false));
   }, []);
 

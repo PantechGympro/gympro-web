@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 /**
  * SuperadminModelos.jsx — Laboratorio de Machine Learning (nivel plataforma).
  *
@@ -75,9 +76,9 @@ function TabCodoSilueta({ gymId }) {
     try {
       const r = await fetch(`${API_BASE}/api/analytics/kmeans/optimo`, { headers: authHeaders() });
       const j = await r.json();
-      if (!r.ok) throw new Error(j.error || `Error ${r.status}`);
+      if (!r.ok) throw new Error(j.error || mensajePorEstado(r.status));
       setData(j);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []); // el remontaje por key={gymId} en el padre dispara el refetch al cambiar de gimnasio
 
@@ -185,9 +186,9 @@ function TabEntrenamiento({ gymId }) {
     try {
       const r = await fetch(`${API_BASE}/api/analytics/entrenamiento`, { headers: authHeaders() });
       const j = await r.json();
-      if (!r.ok) throw new Error(j.error || `Error ${r.status}`);
+      if (!r.ok) throw new Error(j.error || mensajePorEstado(r.status));
       setData(j);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []); // el remontaje por key={gymId} en el padre dispara el refetch al cambiar de gimnasio
 

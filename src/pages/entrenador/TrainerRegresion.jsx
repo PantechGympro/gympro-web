@@ -1,3 +1,4 @@
+import { mensajePorEstado } from "../../utils/errores";
 /**
  * TrainerRegresion.jsx — Predicción de peso para entrenadores.
  * Misma API que AnalyticsRegresion, presentación orientada al usuario no técnico.
@@ -82,7 +83,7 @@ function PredictionModal({ member, onClose }) {
       });
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        const err  = new Error(json.error || `Error ${res.status}`);
+        const err  = new Error(json.error || mensajePorEstado(res.status));
         err.status = res.status;
         throw err;
       }
@@ -365,7 +366,7 @@ export default function TrainerRegresion() {
       });
       if (!r.ok) {
         const json = await r.json().catch(() => ({}));
-        const err  = new Error(json.error || `Error ${r.status}`);
+        const err  = new Error(json.error || mensajePorEstado(r.status));
         err.status = r.status;
         throw err;
       }
@@ -384,7 +385,7 @@ export default function TrainerRegresion() {
       });
       if (!r.ok) {
         const json = await r.json().catch(() => ({}));
-        const err  = new Error(json.error || `Error ${r.status}`);
+        const err  = new Error(json.error || mensajePorEstado(r.status));
         err.status = r.status;
         throw err;
       }

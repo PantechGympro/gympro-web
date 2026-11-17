@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -548,7 +549,7 @@ function DietaForm({ initial, onSave, onClose }) {
       if(!data.encontrado){ alert(data.mensaje||"Producto no encontrado en Open Food Facts."); return; }
       setAl(ci,ai,describirAlimento(data));
       setBarcodeFor(null); setCodigoBarras("");
-    }catch(e){ alert(e.message||"No se pudo buscar el código de barras"); }
+    }catch(e){ alert(mensajeAmigable(e, "No se pudo buscar el código de barras")); }
     finally{ setBuscandoCodigo(false); }
   };
 

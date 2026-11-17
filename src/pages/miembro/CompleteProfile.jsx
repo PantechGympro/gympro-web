@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -440,7 +441,7 @@ export default function CompleteProfile() {
       setDone(true);
       setTimeout(() => navigate("/user/dashboard"), 2200);
     } catch (err) {
-      setErrors({ _global: err.message });
+      setErrors({ _global: mensajeAmigable(err) });
     } finally {
       setSaving(false);
     }

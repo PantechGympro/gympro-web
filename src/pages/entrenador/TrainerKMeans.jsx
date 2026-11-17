@@ -1,3 +1,4 @@
+import { mensajePorEstado } from "../../utils/errores";
 /**
  * TrainerKMeans.jsx — Segmentación IA para entrenadores.
  * Misma API que AnalyticsKMeans, presentación orientada al usuario no técnico.
@@ -129,7 +130,7 @@ export default function TrainerKMeans() {
       });
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        const err  = new Error(json.error || `Error ${res.status}`);
+        const err  = new Error(json.error || mensajePorEstado(res.status));
         err.status = res.status;
         throw err;
       }
@@ -149,7 +150,7 @@ export default function TrainerKMeans() {
       });
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        const err  = new Error(json.error || `Error ${res.status}`);
+        const err  = new Error(json.error || mensajePorEstado(res.status));
         err.status = res.status;
         throw err;
       }

@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -81,7 +82,7 @@ export default function TrainerClients() {
       const data = await trainerService.getClientHistory(selectedClient.id);
       setClientHistory(data.historial || []);
     } catch (err) {
-      toast.error("No se pudo cargar el historial", err.message);
+      toast.error("No se pudo cargar el historial", mensajeAmigable(err));
       setClientHistory([]);
     } finally {
       setLoadingHistory(false);
@@ -104,7 +105,7 @@ export default function TrainerClients() {
       setEditingGoal(false);
       toast.success("Objetivo actualizado");
     } catch (err) {
-      toast.error("No se pudo guardar", err.message);
+      toast.error("No se pudo guardar", mensajeAmigable(err));
     } finally {
       setSavingGoal(false);
     }

@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 /**
  * AdminAnalytics.jsx — Dashboard unificado de Analytics con Recharts
  * Sprint 4 / US17
@@ -112,9 +113,9 @@ function TabMapReduce() {
     setLoading(true); setError(null); setTrainMsg(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/mapreduce`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
 
@@ -125,7 +126,7 @@ function TabMapReduce() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setTrainMsg("Modelo actualizado");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 
@@ -235,9 +236,9 @@ function TabKMeans() {
     setLoading(true); setError(null); setTrainMsg(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/kmeans?k=${k}`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
 
@@ -250,7 +251,7 @@ function TabKMeans() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setTrainMsg(`K=${kValue} reentrenado (silhouette ${j.silhouette?.toFixed(3)})`);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 
@@ -369,9 +370,9 @@ function TabRegresion() {
     setLoading(true); setError(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/regresion`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
 
@@ -382,7 +383,7 @@ function TabRegresion() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setTrainMsg("Modelo reentrenado");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 
@@ -476,9 +477,9 @@ function TabCancelaciones() {
     setLoading(true); setError(null);
     try {
       const r = await fetch(`${API_BASE}/api/analytics/cancelaciones`, { headers });
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) throw new Error(mensajePorEstado(r.status));
       setData(await r.json());
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setLoading(false); }
   }, []);
 
@@ -489,7 +490,7 @@ function TabCancelaciones() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Error");
       setData(j); setTrainMsg("Modelo Random Forest actualizado");
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
 

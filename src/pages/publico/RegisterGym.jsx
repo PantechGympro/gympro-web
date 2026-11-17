@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * pages/RegisterGym.jsx -- Onboarding de nuevo gimnasio
  *
@@ -128,7 +129,7 @@ export default function RegisterGym() {
       setSuccess(true);
       setTimeout(() => navigate("/owner/bienvenida"), 1800);
     } catch (err) {
-      setError(err.message);
+      setError(mensajeAmigable(err));
     } finally {
       setLoading(false);
     }

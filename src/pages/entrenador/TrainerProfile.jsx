@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * TrainerProfile.jsx — Perfil completo del entrenador.
  * - Todos los campos editables (incluida experiencia)
@@ -71,7 +72,7 @@ function CertificationsField({ certs, editing, onChange }) {
       const res = await trainerService.uploadCertFile(file);
       updateCert(i, "url_archivo", res.url);
     } catch (err) {
-      alert("Error al subir archivo: " + err.message);
+      alert("Error al subir archivo: " + mensajeAmigable(err));
     } finally {
       setUploading(null);
     }
@@ -227,7 +228,7 @@ export default function TrainerProfile() {
 
       setAchievements((p.achievements || []).map(a => ({ ...a })));
     } catch (err) {
-      setError(err.message || "Error al cargar el perfil");
+      setError(mensajeAmigable(err, "Error al cargar el perfil"));
     } finally {
       setLoading(false);
     }
@@ -243,7 +244,7 @@ export default function TrainerProfile() {
       await loadProfile();
       setIsEditing(false);
     } catch (err) {
-      setError(err.message || "Error al guardar el perfil");
+      setError(mensajeAmigable(err, "Error al guardar el perfil"));
     } finally {
       setSaving(false);
     }

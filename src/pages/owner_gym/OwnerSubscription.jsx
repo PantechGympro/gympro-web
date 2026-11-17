@@ -1,3 +1,4 @@
+import { mensajeAmigable } from "../../utils/errores";
 /**
  * OwnerSubscription.jsx — "Mi Suscripción" del dueño del gimnasio.
  *
@@ -150,7 +151,7 @@ export default function OwnerSubscription() {
       await cargarLotes();
       setMsg({ type: "ok", text: j.msg });
     } catch (e) {
-      setMsg({ type: "error", text: e.message });
+      setMsg({ type: "error", text: mensajeAmigable(e) });
     }
   };
 
@@ -178,7 +179,7 @@ export default function OwnerSubscription() {
       // Se sale del sitio: la autorización ocurre en la pasarela.
       window.location.href = j.url_autorizacion;
     } catch (e) {
-      setMsg({ type: "error", text: e.message });
+      setMsg({ type: "error", text: mensajeAmigable(e) });
       setProcesando(false);
     }
   };
@@ -199,7 +200,7 @@ export default function OwnerSubscription() {
           : `La pasarela reporta el acuerdo como "${j.estado}". Todavía no cobra.`,
       });
     } catch (e) {
-      if (!silencioso) setMsg({ type: "error", text: e.message });
+      if (!silencioso) setMsg({ type: "error", text: mensajeAmigable(e) });
     } finally {
       setProcesando(false);
     }
@@ -220,7 +221,7 @@ export default function OwnerSubscription() {
       await Promise.all([cargarRecurrente(), load()]);
       setMsg({ type: "ok", text: j.msg });
     } catch (e) {
-      setMsg({ type: "error", text: e.message });
+      setMsg({ type: "error", text: mensajeAmigable(e) });
     } finally {
       setProcesando(false);
     }
@@ -239,7 +240,7 @@ export default function OwnerSubscription() {
       setPay(null);
       setMsg({ type: "ok", text: "Pago simulado exitoso. Tu suscripción quedó activa." });
       await load();
-    } catch (e) { setMsg({ type: "error", text: e.message }); }
+    } catch (e) { setMsg({ type: "error", text: mensajeAmigable(e) }); }
     finally { setProcessing(false); }
   };
 

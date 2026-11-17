@@ -1,3 +1,4 @@
+import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect } from "react";
 import { FiTrendingUp } from "react-icons/fi";
 import {
@@ -125,11 +126,11 @@ export default function UserWeightPrediction() {
         setError("__no_data__");
         return;
       }
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      if (!res.ok) throw new Error(mensajePorEstado(res.status));
       const json = await res.json();
       setData(json);
     } catch (e) {
-      setError(e.message);
+      setError(mensajeAmigable(e));
     } finally {
       setLoading(false);
     }
