@@ -201,7 +201,7 @@ function SucursalModal({ open, onClose, onSave, initial, saving }) {
             <p style={{ fontSize: 11, fontWeight: 700, color: C.t3, textTransform: "uppercase", letterSpacing: ".06em", margin: 0 }}>Datos de la sucursal</p>
             <Field label="Nombre" required>
               <IcoWrap icon={<FiHome size={14} />}>
-                <input style={inputSt} value={form.nombre} onChange={set("nombre")} placeholder="Hyper Panchito Gym - Sucursal Norte" required />
+                <input style={inputSt} value={form.nombre} onChange={set("nombre")} placeholder="Vitazone - Xonacatlán" required />
               </IcoWrap>
             </Field>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>

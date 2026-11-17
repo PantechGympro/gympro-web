@@ -11,6 +11,7 @@ import {
 import { useToast } from "../../hooks/useToast";
 import { peticion } from "../../api/cliente";
 import AvisoLimitePlan from "./AvisoLimitePlan";
+import { AvisoMembresia } from "../miembro/MembresiaGate";
 // Catálogo único de roles (SCRUM-107): antes este archivo mantenía su
 // propia copia de este mapa, que podía divergir de la de otras vistas
 // (ver web/src/constants/roles.js).
@@ -459,6 +460,7 @@ export default function Layout({ role = "owner_gym" }) {
           {/* Las páginas se cargan bajo demanda (ver App.jsx): mientras llega
               el archivo de la pantalla, la barra lateral se queda en su sitio. */}
           {role === "owner_gym" && <AvisoLimitePlan onVerPlanes={() => handleNav("ow-subscription")} />}
+          {role === "user" && <AvisoMembresia />}
           <Suspense fallback={<CargandoPagina />}>
             <Outlet context={{ funcionesPlan: sesion.funcionesPlan }} />
           </Suspense>

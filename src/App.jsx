@@ -54,6 +54,7 @@ const UserHealthUpdate         = lazy(() => import("./pages/miembro/UserHealthUp
 const UserMembershipRenewal    = lazy(() => import("./pages/miembro/UserMembershipRenewal"));
 const UserWeightPrediction     = lazy(() => import("./pages/miembro/UserWeightPrediction"));
 const UserTraining             = lazy(() => import("./pages/miembro/UserTraining"));
+import { MembresiaGate } from "./components/miembro/MembresiaGate";
 const UserWorkoutLog           = lazy(() => import("./pages/miembro/UserWorkoutLog"));
 const CompleteProfile          = lazy(() => import("./pages/miembro/CompleteProfile"));
 const TrainerDashboard         = lazy(() => import("./pages/entrenador/TrainerDashboard"));
@@ -173,21 +174,21 @@ function App() {
           {/* 3. RUTAS USUARIO (MIEMBRO) */}
           <Route element={<Layout role="user" key="user" />}>
             <Route path="/user/dashboard"    element={<UserDashboard />} />
-            <Route path="/user/routine"      element={<UserRoutineCreator />} />
-            <Route path="/user/workout-log"  element={<UserWorkoutLog />} />
+            <Route path="/user/routine"      element={<MembresiaGate servicio="tus rutinas"><UserRoutineCreator /></MembresiaGate>} />
+            <Route path="/user/workout-log"  element={<MembresiaGate servicio="el registro de entrenos"><UserWorkoutLog /></MembresiaGate>} />
             <Route path="/user/progress"     element={<UserBodyProgress />} />
             <Route path="/user/prediction"   element={<UserWeightPrediction />} />
             <Route path="/user/body-metrics" element={<UserBodyProgress />} />
-            <Route path="/user/meal-plan"    element={<UserMealPlan />} />
-            <Route path="/user/nutrition"    element={<UserMealPlan />} />
-            <Route path="/user/recipes"      element={<UserMealPlan />} />
+            <Route path="/user/meal-plan"    element={<MembresiaGate servicio="tu plan de nutrición"><UserMealPlan /></MembresiaGate>} />
+            <Route path="/user/nutrition"    element={<MembresiaGate servicio="tu plan de nutrición"><UserMealPlan /></MembresiaGate>} />
+            <Route path="/user/recipes"      element={<MembresiaGate servicio="tu plan de nutrición"><UserMealPlan /></MembresiaGate>} />
             <Route path="/user/health"       element={<UserHealth />} />
             <Route path="/user-health-update" element={<UserHealthUpdate />} />
             <Route path="/user/payments"     element={<UserPayments />} />
             <Route path="/user/renew"        element={<UserMembershipRenewal />} />
             <Route path="/user/profile"      element={<UserProfile />} />
             <Route path="/user/pos"          element={<PointOfSale />} />
-            <Route path="/user/training"     element={<UserTraining />} />
+            <Route path="/user/training"     element={<MembresiaGate servicio="tus entrenamientos"><UserTraining /></MembresiaGate>} />
             <Route path="/complete-profile"  element={<CompleteProfile />} />
           </Route>
 
