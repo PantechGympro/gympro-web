@@ -17,6 +17,7 @@ import {
 import { registerGym, getPlanesPublicos } from "../../api/auth";
 import useTheme from "../../hooks/useTheme";
 import { passwordStrength } from "../../utils/passwordStrength";
+import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
 const GYM_TYPES = [
   { id: "gimnasio_tradicional", label: "Gimnasio Tradicional",  description: "Pesas, cardio y musculación libre",           Icon: FaDumbbell  },
@@ -403,6 +404,17 @@ export default function RegisterGym() {
                         })}
                       </div>
                     )}
+
+                    {/* Detalle completo del plan elegido, rol por rol (no puede ir dentro de la tarjeta: es un <button>) */}
+                    {!plansLoading && selectedPlanId && (() => {
+                      const elegido = planes.find((pl) => pl.id === selectedPlanId);
+                      return elegido ? (
+                        <div style={{ marginBottom: 16 }}>
+                          <FuncionesPorRol plan={elegido} planes={planes}
+                                           rotuloAbrir={`Ver todo lo que incluye el plan ${elegido.nombre}`} />
+                        </div>
+                      ) : null;
+                    })()}
 
                     {error && (
                       <motion.div className="error-message" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>

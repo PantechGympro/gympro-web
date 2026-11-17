@@ -221,10 +221,13 @@ const FUNCION_POR_MODULO = {
   "ow-cancelaciones": "analiticas_ia", "ow-analytics": "analiticas_ia",
   "rec-kmeans": "analiticas_ia", "rec-regresion": "analiticas_ia", "rec-analytics": "analiticas_ia",
   "trainer-kmeans": "analiticas_ia", "trainer-regresion": "analiticas_ia",
+  // Miembro: la predicción de peso es una analítica con IA (el API responde 402 si el plan no la incluye).
+  prediction: "analiticas_ia",
 };
 const NOMBRE_FUNCION = {
   pos: "el Punto de Venta", cobros_en_linea: "los cobros en línea", respaldos: "los respaldos a demanda",
   reportes_pdf: "los reportes en PDF", analiticas_ia: "las analíticas con IA",
+  rutinas_ia: "la importación con IA",
 };
 
 export default function Sidebar({
@@ -372,7 +375,11 @@ export default function Sidebar({
       icon: "info",
       title: "Disponible en un plan superior",
       html: `<p><strong>${label}</strong> no está incluido en el plan actual de tu gimnasio (${NOMBRE_FUNCION[f] || "esta función"}).</p>` +
-            (esPropietario ? "<p>Puedes mejorar tu plan cuando quieras.</p>" : "<p>Pídele al propietario que revise las opciones de plan.</p>"),
+            (esPropietario
+              ? "<p>Puedes mejorar tu plan cuando quieras.</p>"
+              : role === "user"
+                ? "<p>Esta función no está activa en tu gimnasio por ahora. Pregunta en recepción si habrá novedades.</p>"
+                : "<p>Pídele al propietario que revise las opciones de plan.</p>"),
       confirmButtonText: esPropietario ? "Ver planes" : "Entendido",
       confirmButtonColor: "#6366f1",
       showCancelButton: esPropietario,

@@ -38,6 +38,7 @@ import {
 } from "react-icons/fi";
 import { getGimnasiosDestacados, getTestimoniosDestacados, getPlanesPublicos } from "../../api/landing";
 import "../../css/CSSUnificado.css";
+import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
 const FUNCIONALIDADES = [
   { icon: <FiUsers />,       titulo: "Gestión de socios",        texto: "Altas, bajas, membresías y control de accesos en un solo lugar." },
@@ -759,6 +760,7 @@ export default function Landing() {
                         </li>
                       ))}
                     </ul>
+                    <FuncionesPorRol plan={p} planes={planes} rotuloAbrir="Ver todo lo que incluye" />
                     <button
                       className={p.destacado ? "gympro-cta-btn" : "gympro-secondary-btn"}
                       style={{

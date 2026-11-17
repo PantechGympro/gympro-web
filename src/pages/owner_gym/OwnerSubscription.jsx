@@ -14,6 +14,7 @@ import {
 } from "react-icons/fi";
 import BotonesPago from "../../components/compartido/BotonesPago";
 import "../../css/CSSUnificado.css";
+import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -495,6 +496,10 @@ export default function OwnerSubscription() {
                   ))}
                 </ul>
               )}
+
+              <div style={{ marginBottom: 12 }}>
+                <FuncionesPorRol plan={p} planes={planes} />
+              </div>
 
               <button disabled={actual}
                 onClick={() => { setMetodo("tarjeta"); setPay({ modo: "mejorar", plan: p, ciclo }); }}

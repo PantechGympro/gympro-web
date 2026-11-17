@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { getPlanes, crearPlan, editarPlan, togglePlan } from "../../api/superadmin";
+import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
 const card = (extra = {}) => ({
   background: "var(--bg-card)",
@@ -180,7 +181,7 @@ function PlanForm({ plan, planesExistentes = [], onSave, onCancel }) {
   );
 }
 
-function PlanCard({ plan, onEdit, onToggle }) {
+function PlanCard({ plan, planes, onEdit, onToggle }) {
   const precio = centavosAPesos(plan.precio_mensual_mxn).toLocaleString("es-MX", { minimumFractionDigits: 2 });
   const beneficios = plan.caracteristicas || [];
   return (
@@ -233,6 +234,8 @@ function PlanCard({ plan, onEdit, onToggle }) {
           ))}
         </ul>
       )}
+
+      <FuncionesPorRol plan={plan} planes={planes} />
 
       {plan.suscriptores_activos != null && (
         <p style={{ fontSize: 12, color: "var(--text-secondary)", borderTop: "1px solid var(--border)", paddingTop: 10 }}>
@@ -321,7 +324,7 @@ export default function SuperadminPlanes() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
           {planes.map(plan => (
-            <PlanCard key={plan.id} plan={plan} onEdit={handleEdit} onToggle={handleToggle} />
+            <PlanCard key={plan.id} plan={plan} planes={planes} onEdit={handleEdit} onToggle={handleToggle} />
           ))}
           {planes.length === 0 && (
             <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: "var(--text-secondary)" }}>

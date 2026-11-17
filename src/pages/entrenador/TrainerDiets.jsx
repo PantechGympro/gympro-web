@@ -19,6 +19,8 @@ import { GiMeal, GiCookingPot } from "react-icons/gi";
 import { MdOutlineSmartToy } from "react-icons/md";
 import { trainerService } from "../../services/entrenador/trainerService";
 import "../../css/CSSUnificado.css";
+import { useFuncionesPlan } from "../../hooks/useFuncionesPlan";
+import BloqueoFuncionPlan from "../../components/compartido/BloqueoFuncionPlan";
 
 const DIAS = ["lunes","martes","miercoles","jueves","viernes","sabado","domingo"];
 const DIA_LABEL = { lunes:"Lun",martes:"Mar",miercoles:"Mié",jueves:"Jue",viernes:"Vie",sabado:"Sáb",domingo:"Dom" };
@@ -1069,6 +1071,7 @@ function PlanDetailModal({diet,clients,recipes=[],onViewRecipe,onClose}){
 
 // ─── MAIN ──────────────────────────────────────────────────────────────────
 export default function TrainerDiets(){
+  const funcionesPlan = useFuncionesPlan(); // plan sin IA -> la pestaña "Importar IA" explica el bloqueo (el API responde 402)
   const [tab,setTab]=useState("planes");
   const [diets,setDiets]=useState([]); const [recipes,setRecipes]=useState([]); const [clients,setClients]=useState([]);
   const [loading,setLoading]=useState(true); const [error,setError]=useState(null);
@@ -1274,7 +1277,11 @@ export default function TrainerDiets(){
       )}
 
       {/* IMPORTAR IA */}
-      {tab==="ia"&&<ImportarIATab clients={clients} onPlanExtracted={()=>loadAll()}/>}
+      {tab==="ia"&&(
+        <BloqueoFuncionPlan permitido={funcionesPlan.rutinas_ia!==false} nombreFuncion="Importación de dietas con IA" planSugerido="Pro">
+          <ImportarIATab clients={clients} onPlanExtracted={()=>loadAll()}/>
+        </BloqueoFuncionPlan>
+      )}
 
       <AnimatePresence>
         {showPlan&&<PlanBuilderModal plan={editPlan} clients={clients} recipes={recipes} onSave={handleSavePlan} onClose={()=>{setShowPlan(false);setEditPlan(null);}} saving={saving}/>}

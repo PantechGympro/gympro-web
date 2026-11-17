@@ -6,6 +6,8 @@ import {
   ResponsiveContainer, Scatter,
 } from "recharts";
 import { useMetricsHistory } from "../../hooks/useMetricsHistory";
+import { useFuncionesPlan } from "../../hooks/useFuncionesPlan";
+import BloqueoFuncionPlan from "../../components/compartido/BloqueoFuncionPlan";
 import InfoGrafico, {
   COLORES_GRAFICO, COLOR_REJILLA, ejeX, ejeY, rangoPeriodo, describirTendencia,
 } from "../../components/compartido/InfoGrafico";
@@ -80,7 +82,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function UserWeightPrediction() {
+function PrediccionPesoContenido() {
   const [dias, setDias] = useState(180);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -536,4 +538,21 @@ export default function UserWeightPrediction() {
       </div>
     </div>
   );
+}
+
+/**
+ * La predicción de peso es una analítica con IA: si el plan del gimnasio no la
+ * incluye (el API responde 402), se explica de forma amable en vez de mostrar
+ * un error. `!== false`: mientras no se sabe el plan, no se bloquea.
+ */
+export default function UserWeightPrediction() {
+  const funcionesPlan = useFuncionesPlan();
+  if (funcionesPlan.analiticas_ia === false) {
+    return (
+      <BloqueoFuncionPlan permitido={false} nombreFuncion="Predicción de peso con IA" planSugerido="Pro">
+        <div style={{ minHeight: 320 }} />
+      </BloqueoFuncionPlan>
+    );
+  }
+  return <PrediccionPesoContenido />;
 }
