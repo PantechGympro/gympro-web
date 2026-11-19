@@ -24,7 +24,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "test:ci": "react-scripts test --watchAll=false --ci --coverage",
+    "lint": "eslint src --ext .js,.jsx --max-warnings=75"
   },
   "eslintConfig": {
     "extends": [
@@ -43,5 +45,29 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/utils/**/*.js",
+      "src/constants/**/*.js",
+      "src/api/cliente.js",
+      "src/pages/compartido/MembresiasPorVencer.jsx",
+      "src/pages/compartido/PagosPorConfirmar.jsx",
+      "!src/**/*.test.{js,jsx}"
+    ],
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "lcov",
+      "json-summary"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 85,
+        "lines": 85,
+        "functions": 80,
+        "branches": 70
+      }
+    }
   }
 }
