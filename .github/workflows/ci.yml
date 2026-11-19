@@ -1,13 +1,24 @@
 name: CI
 
+# Quality gate del frontend (SCRUM-182). Reutilizable (`workflow_call`): los
+# despliegues a staging/producción lo invocan y NO continúan si falla.
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-lint:
+  lint-test-build:
+    name: Lint, pruebas con cobertura y build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,10 +32,53 @@ jobs:
       - name: Instalar dependencias
         run: npm ci --legacy-peer-deps
 
-      - name: Lint
-        run: npm run lint --if-present
+      - name: Lint (0 errores; las advertencias existentes no pueden aumentar)
+        run: npm run lint
+
+      - name: Pruebas unitarias + cobertura (umbral en package.json → "jest.coverageThreshold")
+        run: npm run test:ci
+        env:
+          CI: true
+
+      - name: Resumen de cobertura en el job
+        if: always()
+        run: |
+          {
+            echo "### Cobertura del frontend"
+            echo
+            echo "Módulos medidos y umbrales: ver \`jest\` en package.json."
+            echo '```'
+            node -e 'const s=require("./coverage/coverage-summary.json").total;for(const k of ["statements","branches","functions","lines"])console.log(k.padEnd(11),s[k].pct+" %")' 2>/dev/null || echo "sin datos de cobertura"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-cobertura
+          path: coverage/
+          retention-days: 30
 
       - name: Build de producción
         run: npm run build
         env:
           CI: false
+
+  seguridad:
+    name: npm audit (informativo)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci --legacy-peer-deps
+      - name: Vulnerabilidades en dependencias de producción (severidad alta o crítica)
+        run: npm audit --omit=dev --audit-level=high | tee audit.txt || true
+      - name: Resumen
+        if: always()
+        run: |
+          { echo "### npm audit (informativo)"; echo '```'; tail -n 30 audit.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
