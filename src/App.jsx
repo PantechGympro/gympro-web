@@ -21,6 +21,7 @@ import { MembresiaGate } from "./components/miembro/MembresiaGate";
 // inicial: son la primera pintura y comparten la transición animada.
 const ForgotPassword           = lazy(() => import("./pages/publico/ForgotPassword"));
 const PrivacyPolicy            = lazy(() => import("./pages/publico/PrivacyPolicy"));
+const TerminosCondiciones      = lazy(() => import("./pages/publico/TerminosCondiciones"));
 const OwnerOnboarding          = lazy(() => import("./pages/owner_gym/OwnerOnboarding"));
 const CambiarPasswordInicial   = lazy(() => import("./pages/compartido/CambiarPasswordInicial"));
 const OwnerDashboard           = lazy(() => import("./pages/owner_gym/OwnerDashboard"));
@@ -140,6 +141,7 @@ function App() {
           </Route>
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/privacidad" element={<PrivacyPolicy />} />
+          <Route path="/terminos"   element={<TerminosCondiciones />} />
           <Route path="/owner/bienvenida" element={<OwnerOnboarding />} />
           {/* SCRUM-224: fuera de cualquier Layout por rol -- aplica a Miembro, Entrenador, Recepcionista y Administrador por igual. */}
           <Route path="/cambiar-password-inicial" element={<CambiarPasswordInicial />} />

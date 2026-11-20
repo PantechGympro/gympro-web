@@ -886,6 +886,7 @@ export default function Landing() {
         </Link>
         <div style={S.footerLinks}>
           <Link className="gympro-footer-link" to="/privacidad" target="_blank" rel="noopener noreferrer" style={S.footerLink}>Privacidad</Link>
+          <Link className="gympro-footer-link" to="/terminos" target="_blank" rel="noopener noreferrer" style={S.footerLink}>Términos</Link>
           <button type="button" className="gympro-footer-link" onClick={abrirConfiguracionCookies}
             style={{ ...S.footerLink, background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit" }}>Cookies</button>
           <a className="gympro-footer-link" href="mailto:soporteGympro@gmail.com" style={S.footerLink}>Contacto</a>
