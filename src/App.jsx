@@ -8,6 +8,7 @@ import CargandoPagina from "./components/compartido/CargandoPagina";
 // --- PÁGINAS PÚBLICAS ---
 import Landing     from "./pages/publico/Landing";
 import AuthPage    from "./components/auth/AuthPage";
+import RedirigirSiHaySesion from "./components/auth/RedirigirSiHaySesion";
 import RegisterGym from "./pages/publico/RegisterGym";
 import { MembresiaGate } from "./components/miembro/MembresiaGate";
 
@@ -130,9 +131,9 @@ function App() {
           {/* La comercial (Landing) es ahora "/" -- antes era el login. Vive
               fuera de AuthTransitionLayout (no comparte el cross-fade con
               login/registro, es una página distinta en tono y layout). */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<RedirigirSiHaySesion><Landing /></RedirigirSiHaySesion>} />
           <Route element={<AuthTransitionLayout />}>
-            <Route path="/login" element={<AuthPage />} />
+            <Route path="/login" element={<RedirigirSiHaySesion><AuthPage /></RedirigirSiHaySesion>} />
             <Route path="/register" element={<AuthPage />} />
             <Route path="/register-gym" element={<RegisterGym />} />
           </Route>

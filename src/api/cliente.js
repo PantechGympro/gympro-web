@@ -1,3 +1,5 @@
+import { leerToken, renovarSesion, limpiarSesionLocal } from "../utils/sesion";
+
 // web/src/api/cliente.js — cliente HTTP centralizado del portal.
 //
 // Actividad 09, PR-01 (M. Arriaga Mora): antes cada módulo de web/src/api
@@ -26,28 +28,57 @@
 // aplicación se migra módulo por módulo. El cierre completo del hueco de
 // PR-01 (cero lecturas de localStorage en todo el frontend) queda anotado
 // como seguimiento, no como "ya resuelto".
+//
+// Sesión: si una petición responde 401 se intenta UNA renovación silenciosa
+// (utils/sesion.js: refresh por cookie HttpOnly) y se reintenta. Solo si el
+// refresh tampoco sirve se limpia la sesión local y se manda al login. Los
+// fallos de red / 5xx NO cierran la sesión: se propagan con `error.status`.
+//
+// opciones.sinRedireccion: no redirigir al login en un 401 definitivo
+// (lo usa la guarda de rutas públicas, que decide qué hacer por su cuenta).
 export async function peticion(ruta, opciones = {}) {
-  let token = null;
-  try { token = localStorage.getItem("token"); } catch { /* ignore */ }
+  const { sinRedireccion = false, ...opcionesFetch } = opciones;
 
-  const respuesta = await fetch(ruta, {
-    ...opciones,
-    credentials: "include", // envía (y recibe) la cookie de sesión
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opciones.headers || {}),
-    },
-  });
+  const enviar = () => {
+    const token = leerToken();
+    return fetch(ruta, {
+      ...opcionesFetch,
+      credentials: "include", // envía (y recibe) la cookie de sesión
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(opcionesFetch.headers || {}),
+      },
+    });
+  };
+
+  let respuesta = await enviar();
 
   if (respuesta.status === 401) {
-    // Sesión vencida o revocada: no tiene sentido devolver el error al
-    // componente que llamó, directo al inicio de sesión.
-    window.location.replace("/login");
+    const resultado = await renovarSesion();
+    if (resultado === "ok") respuesta = await enviar();
+    else if (resultado === "error") {
+      const e = new Error("No se pudo verificar la sesión. Revisa tu conexión.");
+      e.status = 0;
+      throw e;
+    }
+  }
+
+  if (respuesta.status === 401) {
+    // Sesión vencida o revocada y sin forma de renovarla: se limpia ANTES de ir
+    // al login para que /login y / no devuelvan al panel con un token muerto.
+    if (!sinRedireccion) {
+      limpiarSesionLocal();
+      window.location.replace("/login");
+    }
     return null;
   }
 
   const datos = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) throw new Error(datos.msg || "Error en la petición");
+  if (!respuesta.ok) {
+    const e = new Error(datos.msg || "Error en la petición");
+    e.status = respuesta.status;
+    throw e;
+  }
   return datos;
 }

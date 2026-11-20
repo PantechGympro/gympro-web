@@ -10,6 +10,7 @@ import {
 } from "../../hooks/useRoutineImportJob";
 import { useToast } from "../../hooks/useToast";
 import { peticion } from "../../api/cliente";
+import { cerrarSesion } from "../../utils/sesion";
 import AvisoLimitePlan from "./AvisoLimitePlan";
 import { AvisoMembresia } from "../miembro/MembresiaGate";
 // Catálogo único de roles (SCRUM-107): antes este archivo mantenía su
@@ -279,11 +280,16 @@ export default function Layout({ role = "owner_gym" }) {
   // por el plan, sin pedirlo aparte -- ver hooks/useFuncionesPlan.js.
   const [sesion, setSesion] = useState({ estado: "cargando", rol: null, multiSucursal: false, funcionesPlan: {}, debeCambiarPassword: false });
 
+  // Reintento manual/automático cuando la verificación falla por red o 5xx.
+  const [reintento, setReintento] = useState(0);
+
   useEffect(() => {
     let vigente = true;
     peticion("/api/auth/me")
       .then((d) => {
         if (!vigente) return;
+        // peticion devuelve null cuando el 401 fue definitivo (ya redirige).
+        if (!d) { setSesion({ estado: "anonimo", rol: null }); return; }
         // Antes se usaba (d?.role || "").toLowerCase() directo -- duplicaba
         // a mano lo que normalizarRol() ya resuelve (alias + mayúsculas),
         // y cualquier rol nuevo (p. ej. "Administrador", HU-45) quedaba a
@@ -305,9 +311,28 @@ export default function Layout({ role = "owner_gym" }) {
         });
         readImpersonationState();
       })
-      .catch(() => { if (vigente) setSesion({ estado: "anonimo", rol: null }); });
+      .catch((e) => {
+        if (!vigente) return;
+        // Sin red o error del servidor (status 0, ausente o >= 500) NO significa
+        // que la sesión terminó: antes cualquier fallo mandaba al login, y con
+        // una red inestable el usuario creía que se le había cerrado la sesión.
+        // Solo un rechazo real del servidor (401/403/404...) cierra el acceso.
+        const transitorio = !e?.status || e.status >= 500;
+        if (!transitorio) { setSesion({ estado: "anonimo", rol: null }); return; }
+        // Si el panel ya estaba abierto se deja como está (un fallo al navegar no
+        // debe tirarlo); si aún no se conocía la sesión se ofrece reintentar.
+        setSesion((prev) => (prev.estado === "listo" ? prev : { ...prev, estado: "error" }));
+      });
     return () => { vigente = false; };
-  }, [location.pathname, role]);
+  }, [location.pathname, role, reintento]);
+
+  // Al recuperar la conexión se reintenta solo.
+  useEffect(() => {
+    if (sesion.estado !== "error") return undefined;
+    const alVolverRed = () => setReintento((n) => n + 1);
+    window.addEventListener("online", alVolverRed);
+    return () => window.removeEventListener("online", alVolverRed);
+  }, [sesion.estado]);
 
   const handleExitImpersonation = () => {
     const prevToken = sessionStorage.getItem("sa_prev_token");
@@ -359,9 +384,10 @@ export default function Layout({ role = "owner_gym" }) {
     const dest = NAV_MAP[role]?.[tabId];
     if (dest) navigate(dest);
   };
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  // Revoca el refresh de 90 días en el servidor (antes solo se borraba
+  // localStorage y la cookie de refresco seguía viva) y limpia lo local.
+  const handleLogout = async () => {
+    await cerrarSesion();
     navigate("/login", { replace: true });
   };
 
@@ -379,6 +405,25 @@ export default function Layout({ role = "owner_gym" }) {
       >
         <FiLoader size={20} />
         <span style={{ fontSize: 14 }}>Verificando sesión…</span>
+      </div>
+    );
+  }
+
+  if (sesion.estado === "error") {
+    return (
+      <div
+        role="alert"
+        style={{
+          width: "100vw", height: "100vh", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 14,
+          background: "var(--bg-main)", color: "var(--text-secondary)", textAlign: "center", padding: 24,
+        }}
+      >
+        <FiAlertCircle size={28} />
+        <span style={{ fontSize: 14 }}>No pudimos verificar tu sesión. Revisa tu conexión; tu sesión sigue abierta.</span>
+        <button type="button" className="btn-primary" onClick={() => setReintento((n) => n + 1)}>
+          Reintentar
+        </button>
       </div>
     );
   }
