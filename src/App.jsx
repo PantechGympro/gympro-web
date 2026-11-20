@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "./hooks/ThemeContext";
 import Layout from "./components/compartido/Layout";
 import CargandoPagina from "./components/compartido/CargandoPagina";
+import BannerCookies from "./components/compartido/BannerCookies";
 
 // --- PÁGINAS PÚBLICAS ---
 import Landing     from "./pages/publico/Landing";
@@ -268,6 +269,7 @@ function App() {
           } />
         </Routes>
         </Suspense>
+        <BannerCookies />
       </BrowserRouter>
     </ThemeProvider>
   );

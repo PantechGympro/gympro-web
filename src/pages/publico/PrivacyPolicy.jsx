@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowLeft, FiShield, FiMail } from "react-icons/fi";
 import "../../css/CSSUnificado.css";
+import { abrirConfiguracionCookies } from "../../utils/consentimiento";
 
-const ULTIMA_ACTUALIZACION = "14 de octubre de 2026";
+const ULTIMA_ACTUALIZACION = "20 de noviembre de 2026";
 const CORREO_SOPORTE = "soporteGympro@gmail.com";
 
 const page = {
@@ -80,6 +82,8 @@ const p = { lineHeight: 1.7, color: "var(--text-primary, #E5FDF1)", marginBottom
 
 const ul = { lineHeight: 1.7, color: "var(--text-primary, #E5FDF1)", fontSize: 15, paddingLeft: 20, marginBottom: 12 };
 
+const linkBtn = { background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--accent-soft, #4DFFBC)" };
+
 const strong = { color: "var(--accent-soft, #4DFFBC)" };
 
 const contactBox = {
@@ -96,6 +100,14 @@ const contactBox = {
 };
 
 export default function PrivacyPolicy() {
+  // El enlace del banner (/privacidad#cookies) abre en una pestaña nueva: la SPA
+  // no desplaza sola hasta el ancla, así que se hace aquí.
+  useEffect(() => {
+    if (window.location.hash === "#cookies") {
+      document.getElementById("cookies")?.scrollIntoView?.();
+    }
+  }, []);
+
   return (
     <div style={page}>
       <div style={topBar}>
@@ -269,11 +281,33 @@ export default function PrivacyPolicy() {
           </p>
         </div>
 
-        <div style={card}>
+        <div style={card} id="cookies">
           <h2 style={h2}>10. Cookies y almacenamiento local</h2>
           <p style={p}>
-            Usamos almacenamiento local del navegador y cookies técnicas únicamente para mantener tu sesión iniciada.
-            No utilizamos cookies de rastreo publicitario de terceros.
+            No utilizamos cookies de rastreo, analítica ni publicidad de terceros. Esto es lo único que guardamos en
+            tu navegador:
+          </p>
+          <ul style={ul}>
+            <li>
+              <strong style={strong}>Necesarias (siempre activas).</strong> Cookies HttpOnly de acceso
+              (<code>access_token_cookie</code>, 8 horas) y de renovación (<code>refresh_token_cookie</code>, hasta
+              90 días) que mantienen tu sesión iniciada, junto con tu sesión y perfil básico en el almacenamiento
+              local del navegador. Se eliminan al cerrar sesión (la renovación también se revoca en el servidor).
+              Guardamos además tu elección de cookies (<code>gympro_consentimiento</code>).
+            </li>
+            <li>
+              <strong style={strong}>Preferencias (opcionales, solo si las aceptas).</strong> El tema visual que
+              elijas (<code>theme</code>). Si las rechazas, la app funciona igual pero no recuerda esa preferencia.
+            </li>
+          </ul>
+          <p style={p}>
+            Para mostrar la tipografía, las páginas cargan fuentes de Google Fonts, lo que implica una solicitud al
+            servicio de Google (tu dirección IP y navegador). Al pagar con PayPal o Mercado Pago eres dirigido a
+            sus sitios, que aplican sus propias políticas.
+          </p>
+          <p style={p}>
+            Puedes cambiar tu elección en cualquier momento:{" "}
+            <button type="button" onClick={abrirConfiguracionCookies} style={linkBtn}>Configurar cookies</button>.
           </p>
         </div>
 

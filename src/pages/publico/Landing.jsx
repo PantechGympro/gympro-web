@@ -39,6 +39,7 @@ import {
 import { getGimnasiosDestacados, getTestimoniosDestacados, getPlanesPublicos } from "../../api/landing";
 import "../../css/CSSUnificado.css";
 import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
+import { abrirConfiguracionCookies } from "../../utils/consentimiento";
 
 const FUNCIONALIDADES = [
   { icon: <FiUsers />,       titulo: "Gestión de socios",        texto: "Altas, bajas, membresías y control de accesos en un solo lugar." },
@@ -885,6 +886,8 @@ export default function Landing() {
         </Link>
         <div style={S.footerLinks}>
           <Link className="gympro-footer-link" to="/privacidad" target="_blank" rel="noopener noreferrer" style={S.footerLink}>Privacidad</Link>
+          <button type="button" className="gympro-footer-link" onClick={abrirConfiguracionCookies}
+            style={{ ...S.footerLink, background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit" }}>Cookies</button>
           <a className="gympro-footer-link" href="mailto:soporteGympro@gmail.com" style={S.footerLink}>Contacto</a>
           <Link className="gympro-footer-link" to="/login" style={S.footerLink}>Iniciar sesión</Link>
         </div>
