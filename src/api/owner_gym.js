@@ -53,6 +53,11 @@ export const eliminarReporteAutomatico = (id) =>
 /** Lo manda ya, fuera de su horario -- para probar que el correo llega. */
 export const ejecutarReporteAutomaticoAhora = (id) =>
   API.post(`/owner_gym/reportes/automaticos/${id}/ejecutar`);
+/** A quién resuelven hoy las casillas Propietario/Administrador de la sucursal. */
+export const getReporteDestinatarios = (idGimnasio) =>
+  API.get("/owner_gym/reportes/automaticos/destinatarios", {
+    params: idGimnasio ? { id_gimnasio: idGimnasio } : {},
+  });
 
 // ── Staff (entrenadores + recepcionistas) ─────────────────────────────────
 export const getStaff            = (params = {}) => API.get("/owner_gym/staff", { params });
