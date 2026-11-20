@@ -17,7 +17,7 @@ import { AvisoMembresia } from "../miembro/MembresiaGate";
 // (ver web/src/constants/roles.js).
 import { ROLES_PERMITIDOS_POR_PANEL as ROLE_MAP, normalizarRol } from "../../constants/roles";
 
-const ROUTE_MAP = {
+export const ROUTE_MAP = {
   owner_gym: {
     "/owner":              "ow-dashboard",
     "/owner/members":      "ow-miembros",
@@ -28,8 +28,9 @@ const ROUTE_MAP = {
     "/owner/sucursales":   "ow-sucursales",
     "/owner/verificar-sucursal": "ow-verificar-sucursal",
     "/owner/memberships":  "ow-membresias",
-    "/owner/por-vencer":   "ow-por-vencer",
-    "/owner/checkin":      "ow-checkin",
+    // Las dos rutas viven en una sola pantalla con pestañas (EntradasYVencimientos).
+    "/owner/por-vencer":   "ow-entradas",
+    "/owner/checkin":      "ow-entradas",
     "/owner/confirmar-pagos": "ow-confirmar-pagos",
     "/owner/deliveries":   "ow-entregas",
     "/owner/mi-perfil":    "ow-mi-perfil",
@@ -110,7 +111,7 @@ const ROUTE_MAP = {
   },
 };
 
-const NAV_MAP = {
+export const NAV_MAP = {
   owner_gym: {
     "ow-dashboard":  "/owner",
     "ow-miembros":   "/owner/members",
@@ -121,8 +122,7 @@ const NAV_MAP = {
     "ow-sucursales": "/owner/sucursales",
     "ow-verificar-sucursal": "/owner/verificar-sucursal",
     "ow-membresias": "/owner/memberships",
-    "ow-por-vencer": "/owner/por-vencer",
-    "ow-checkin":    "/owner/checkin",
+    "ow-entradas":   "/owner/checkin",
     "ow-confirmar-pagos": "/owner/confirmar-pagos",
     "ow-entregas":   "/owner/deliveries",
     "ow-mi-perfil":  "/owner/mi-perfil",

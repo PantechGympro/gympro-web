@@ -26,7 +26,7 @@ const OwnerStaff               = lazy(() => import("./pages/owner_gym/OwnerStaff
 const OwnerSucursales          = lazy(() => import("./pages/owner_gym/OwnerSucursales"));
 const VerificarMiembro         = lazy(() => import("./pages/compartido/VerificarMiembro"));
 const MembresiasPorVencer      = lazy(() => import("./pages/compartido/MembresiasPorVencer"));
-const CheckinManual            = lazy(() => import("./pages/owner_gym/CheckinManual"));
+const EntradasYVencimientos     = lazy(() => import("./pages/owner_gym/EntradasYVencimientos"));
 const OwnerMemberships         = lazy(() => import("./pages/owner_gym/OwnerMemberships"));
 const OwnerProfile             = lazy(() => import("./pages/owner_gym/OwnerProfile"));
 const OwnerMiPerfil            = lazy(() => import("./pages/owner_gym/OwnerMiPerfil"));
@@ -156,8 +156,8 @@ function App() {
             <Route path="/owner/sucursales"    element={<OwnerSucursales />}  />
             <Route path="/owner/verificar-sucursal" element={<VerificarMiembro />} />
             <Route path="/owner/memberships"   element={<OwnerMemberships />} />
-            <Route path="/owner/por-vencer"    element={<MembresiasPorVencer />} />
-            <Route path="/owner/checkin"       element={<CheckinManual />}    />
+            <Route path="/owner/por-vencer"    element={<EntradasYVencimientos tab="por-vencer" />} />
+            <Route path="/owner/checkin"       element={<EntradasYVencimientos tab="checkin" />}    />
             <Route path="/owner/confirmar-pagos" element={<PagosPorConfirmar />} />
             <Route path="/owner/deliveries"    element={<ReceptionistDeliveries />} />
             <Route path="/owner/profile"       element={<OwnerProfile />}     />
