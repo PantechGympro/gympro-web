@@ -5,7 +5,18 @@ import { VERSION_AVISO, VERSION_TERMINOS } from "../../constants/legal";
 
 jest.mock("react-router-dom", () => ({
   Link: ({ to, children, ...rest }) => <a href={to} {...rest}>{children}</a>,
+  useLocation: () => ({ pathname: "/privacidad", hash: "", search: "" }),
 }), { virtual: true });
+
+// jsdom no implementa IntersectionObserver, que es lo que usa el índice lateral
+// para resaltar la sección en pantalla.
+beforeAll(() => {
+  global.IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+});
 
 describe("Aviso de Privacidad", () => {
   const montar = () => render(<PrivacyPolicy />);
@@ -32,7 +43,7 @@ describe("Aviso de Privacidad", () => {
   test("tiene las secciones que se enlazan desde el producto", () => {
     montar();
     ["responsable", "datos", "finalidades", "salud", "pagos", "seguridad",
-      "conservacion", "derechos", "menores", "cookies"].forEach((id) => {
+      "conservacion", "eliminar-cuenta", "derechos", "menores", "cookies"].forEach((id) => {
       // eslint-disable-next-line testing-library/no-node-access
       expect(document.getElementById(id)).not.toBeNull();
     });
@@ -42,6 +53,29 @@ describe("Aviso de Privacidad", () => {
     montar();
     expect(screen.getByText(/no almacena, no procesa y no/)).toBeInTheDocument();
     expect(screen.getByText(/PCI DSS 4\.0\.1/)).toBeInTheDocument();
+  });
+
+  test("trae índice navegable con una entrada por sección", () => {
+    montar();
+    const indices = screen.getAllByRole("navigation", { name: /Índice del documento/i });
+    expect(indices.length).toBeGreaterThan(0);
+    // Mismo número de entradas que de encabezados de sección.
+    const entradas = indices[0].querySelectorAll("a"); // eslint-disable-line testing-library/no-node-access
+    expect(entradas.length).toBe(screen.getAllByRole("heading", { level: 2 }).length);
+  });
+
+  test("permite cambiar de documento desde la barra", () => {
+    montar();
+    const nav = screen.getByRole("navigation", { name: /Documentos legales/i });
+    expect(nav).toBeInTheDocument();
+  });
+
+  test("explica qué pasa al cancelar el plan y al eliminar la cuenta", () => {
+    montar();
+    expect(screen.getByText(/La eliminación es/)).toBeInTheDocument();
+    expect(screen.getByText(/30 días de margen/)).toBeInTheDocument();
+    // eslint-disable-next-line testing-library/no-node-access
+    expect(document.getElementById("eliminar-cuenta")).not.toBeNull();
   });
 
   test("enlaza a los Términos y permite reconfigurar las cookies", () => {
