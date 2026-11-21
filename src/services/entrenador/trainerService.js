@@ -1,3 +1,5 @@
+import { renovarSesion } from '../../utils/sesion';
+
 const API_BASE_URL = '/api';
 
 const getAuthToken = () => localStorage.getItem('token');
@@ -11,10 +13,16 @@ const getHeaders = () => {
 };
 
 const apiFetch = async (url, options = {}) => {
-  const response = await fetch(url, {
+  const enviar = () => fetch(url, {
     ...options,
     headers: getHeaders(),
   });
+  let response = await enviar();
+  // 401: se intenta una renovación silenciosa de la sesión antes de rendirse
+  // (utils/sesion.js); getHeaders() vuelve a leer el token ya renovado.
+  if (response.status === 401 && (await renovarSesion()) === 'ok') {
+    response = await enviar();
+  }
 
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('application/json')) {

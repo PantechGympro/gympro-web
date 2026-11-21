@@ -11,6 +11,8 @@ import {
 import { GiPineTree } from "react-icons/gi";
 import { normalizarRol, ROL_PROPIETARIO, ROL_ADMINISTRADOR, ROL_MIEMBRO, ROL_ENTRENADOR, ROL_RECEPCIONISTA } from "../../constants/roles";
 
+const enlaceLegal = { color: "var(--text-secondary, #94a3b8)", textDecoration: "none" };
+
 export default function AuthPage() {
   // --- ESTADOS GENERALES ---
   const [loading, setLoading] = useState(false);
@@ -200,9 +202,15 @@ export default function AuthPage() {
               {loading ? <span className="spinner" /> : "Ingresar al sistema"}
             </motion.button>
 
-            <p style={{ textAlign: "center", marginTop: 14, fontSize: 13 }}>
-              <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-secondary, #94a3b8)", textDecoration: "none" }}>
-                Política de Privacidad
+            {/* Aviso y Términos a la vista antes de entrar: la LFPDPPP pide que el
+                aviso esté disponible en el punto de obtención de los datos. */}
+            <p style={{ textAlign: "center", marginTop: 14, fontSize: 13, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={enlaceLegal}>
+                Aviso de Privacidad
+              </a>
+              <span style={{ color: "var(--text-secondary, #94a3b8)" }} aria-hidden="true">·</span>
+              <a href="/terminos" target="_blank" rel="noopener noreferrer" style={enlaceLegal}>
+                Términos y Condiciones
               </a>
             </p>
           </form>

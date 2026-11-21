@@ -4,10 +4,12 @@ import { AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "./hooks/ThemeContext";
 import Layout from "./components/compartido/Layout";
 import CargandoPagina from "./components/compartido/CargandoPagina";
+import BannerCookies from "./components/compartido/BannerCookies";
 
 // --- PÁGINAS PÚBLICAS ---
 import Landing     from "./pages/publico/Landing";
 import AuthPage    from "./components/auth/AuthPage";
+import RedirigirSiHaySesion from "./components/auth/RedirigirSiHaySesion";
 import RegisterGym from "./pages/publico/RegisterGym";
 import { MembresiaGate } from "./components/miembro/MembresiaGate";
 
@@ -19,6 +21,7 @@ import { MembresiaGate } from "./components/miembro/MembresiaGate";
 // inicial: son la primera pintura y comparten la transición animada.
 const ForgotPassword           = lazy(() => import("./pages/publico/ForgotPassword"));
 const PrivacyPolicy            = lazy(() => import("./pages/publico/PrivacyPolicy"));
+const TerminosCondiciones      = lazy(() => import("./pages/publico/TerminosCondiciones"));
 const OwnerOnboarding          = lazy(() => import("./pages/owner_gym/OwnerOnboarding"));
 const CambiarPasswordInicial   = lazy(() => import("./pages/compartido/CambiarPasswordInicial"));
 const OwnerDashboard           = lazy(() => import("./pages/owner_gym/OwnerDashboard"));
@@ -26,7 +29,7 @@ const OwnerStaff               = lazy(() => import("./pages/owner_gym/OwnerStaff
 const OwnerSucursales          = lazy(() => import("./pages/owner_gym/OwnerSucursales"));
 const VerificarMiembro         = lazy(() => import("./pages/compartido/VerificarMiembro"));
 const MembresiasPorVencer      = lazy(() => import("./pages/compartido/MembresiasPorVencer"));
-const CheckinManual            = lazy(() => import("./pages/owner_gym/CheckinManual"));
+const EntradasYVencimientos     = lazy(() => import("./pages/owner_gym/EntradasYVencimientos"));
 const OwnerMemberships         = lazy(() => import("./pages/owner_gym/OwnerMemberships"));
 const OwnerProfile             = lazy(() => import("./pages/owner_gym/OwnerProfile"));
 const OwnerMiPerfil            = lazy(() => import("./pages/owner_gym/OwnerMiPerfil"));
@@ -38,6 +41,7 @@ const CobrarMembresia          = lazy(() => import("./pages/owner_gym/CobrarMemb
 const PointOfSale              = lazy(() => import("./pages/owner_gym/PointOfSale"));
 const BackupsDashboard         = lazy(() => import("./pages/owner_gym/BackupsDashboard"));
 const OwnerSubscription        = lazy(() => import("./pages/owner_gym/OwnerSubscription"));
+const OwnerCuenta              = lazy(() => import("./pages/owner_gym/OwnerCuenta"));
 const AdminAnalytics           = lazy(() => import("./pages/owner_gym/AdminAnalytics"));
 const AnalyticsMapReduce       = lazy(() => import("./pages/owner_gym/AnalyticsMapReduce"));
 const AnalyticsKMeans          = lazy(() => import("./pages/owner_gym/AnalyticsKMeans"));
@@ -130,14 +134,15 @@ function App() {
           {/* La comercial (Landing) es ahora "/" -- antes era el login. Vive
               fuera de AuthTransitionLayout (no comparte el cross-fade con
               login/registro, es una página distinta en tono y layout). */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<RedirigirSiHaySesion><Landing /></RedirigirSiHaySesion>} />
           <Route element={<AuthTransitionLayout />}>
-            <Route path="/login" element={<AuthPage />} />
+            <Route path="/login" element={<RedirigirSiHaySesion><AuthPage /></RedirigirSiHaySesion>} />
             <Route path="/register" element={<AuthPage />} />
             <Route path="/register-gym" element={<RegisterGym />} />
           </Route>
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/privacidad" element={<PrivacyPolicy />} />
+          <Route path="/terminos"   element={<TerminosCondiciones />} />
           <Route path="/owner/bienvenida" element={<OwnerOnboarding />} />
           {/* SCRUM-224: fuera de cualquier Layout por rol -- aplica a Miembro, Entrenador, Recepcionista y Administrador por igual. */}
           <Route path="/cambiar-password-inicial" element={<CambiarPasswordInicial />} />
@@ -156,8 +161,8 @@ function App() {
             <Route path="/owner/sucursales"    element={<OwnerSucursales />}  />
             <Route path="/owner/verificar-sucursal" element={<VerificarMiembro />} />
             <Route path="/owner/memberships"   element={<OwnerMemberships />} />
-            <Route path="/owner/por-vencer"    element={<MembresiasPorVencer />} />
-            <Route path="/owner/checkin"       element={<CheckinManual />}    />
+            <Route path="/owner/por-vencer"    element={<EntradasYVencimientos tab="por-vencer" />} />
+            <Route path="/owner/checkin"       element={<EntradasYVencimientos tab="checkin" />}    />
             <Route path="/owner/confirmar-pagos" element={<PagosPorConfirmar />} />
             <Route path="/owner/deliveries"    element={<ReceptionistDeliveries />} />
             <Route path="/owner/profile"       element={<OwnerProfile />}     />
@@ -165,6 +170,7 @@ function App() {
             <Route path="/owner/reportes"      element={<OwnerReportes />}    />
             <Route path="/owner/reportes-automaticos" element={<OwnerReportesAutomaticos />} />
             <Route path="/owner/subscription"  element={<OwnerSubscription />} />
+            <Route path="/owner/cuenta"        element={<OwnerCuenta />} />
             <Route path="/owner/pagos-online"  element={<OwnerPagos />}       />
             <Route path="/owner/perfil-publico" element={<OwnerPerfilPublico />} />
             <Route path="/owner/backups"       element={<BackupsDashboard />} />
@@ -267,6 +273,7 @@ function App() {
           } />
         </Routes>
         </Suspense>
+        <BannerCookies />
       </BrowserRouter>
     </ThemeProvider>
   );

@@ -31,7 +31,7 @@ const MIN_BUSQUEDA = 2;
 // Una búsqueda es válida con 2+ caracteres o con un número de socio (aunque sea de 1 dígito).
 const esBusqueda = (q) => q.length >= MIN_BUSQUEDA || /^\d+$/.test(q);
 
-export default function CheckinManual() {
+export default function CheckinManual({ embebido = false }) {
   const esMovil = useIsMobile();
   const [q, setQ] = useState("");
   const [miembros, setMiembros] = useState([]);
@@ -97,7 +97,7 @@ export default function CheckinManual() {
   };
 
   return (
-    <div style={{ padding: esMovil ? "72px 16px 24px" : "28px 32px", color: "var(--text-primary)", maxWidth: 820 }}>
+    <div style={{ padding: esMovil ? `${embebido ? 16 : 72}px 16px 24px` : `${embebido ? 16 : 28}px 32px`, color: "var(--text-primary)", maxWidth: 820 }}>
       <h1 style={{ margin: 0, fontSize: 24 }}>Registrar entrada</h1>
       <p style={{ color: "var(--text-secondary)", margin: "4px 0 16px" }}>
         Elige al miembro de la lista o fíltralo por nombre, correo, teléfono o número de socio y registra su llegada.

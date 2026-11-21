@@ -1,16 +1,18 @@
 /**
  * OwnerReportesAutomaticos.jsx — Automatizar el reporte ejecutivo por correo.
  *
- * El dueño configura "recetas" de reporte (qué secciones, con qué filtros y
- * cada cuándo: día/semana/mes/año) que el servidor genera y manda solo, por
- * correo al Propietario -- para tener el corte de caja sin entrar a
- * Reportes y descargar el PDF a mano cada vez.
+ * El dueño configura "recetas" de reporte (qué secciones, con qué filtros,
+ * cada cuándo: día/semana/mes/año, y a quién le llega: Propietario,
+ * Administrador, ambos y/u otros correos) que el servidor genera y manda
+ * solo, por correo -- para tener el corte de caja sin entrar a Reportes y
+ * descargar el PDF a mano cada vez.
  *
  *   GET    /api/owner_gym/reportes/automaticos                listar
  *   POST   /api/owner_gym/reportes/automaticos                crear
  *   PUT    /api/owner_gym/reportes/automaticos/:id             editar
  *   DELETE /api/owner_gym/reportes/automaticos/:id             eliminar
  *   POST   /api/owner_gym/reportes/automaticos/:id/ejecutar    probar ahora
+ *   GET    /api/owner_gym/reportes/automaticos/destinatarios   a quién resuelve cada casilla
  *
  * Reutiliza /reportes/opciones (catálogo de secciones) y /reportes/sucursales
  * -- los mismos que usa OwnerReportes.jsx para el reporte manual.
@@ -25,10 +27,11 @@ import {
 import {
   getReporteOpciones, getReporteSucursales,
   getReportesAutomaticos, crearReporteAutomatico, actualizarReporteAutomatico,
-  eliminarReporteAutomatico, ejecutarReporteAutomaticoAhora,
+  eliminarReporteAutomatico, ejecutarReporteAutomaticoAhora, getReporteDestinatarios,
 } from "../../api/owner_gym";
 import { useFuncionesPlan } from "../../hooks/useFuncionesPlan";
 import BloqueoFuncionPlan from "../../components/compartido/BloqueoFuncionPlan";
+import SelectorDestinatarios from "../../components/compartido/SelectorDestinatarios";
 
 const C = {
   card:   "var(--bg-card)",
@@ -88,6 +91,9 @@ const detalleEnvio = (frecuencia, momento, hora) => {
   return MAPA[frecuencia]?.[momento] || "";
 };
 
+// Por omisión solo el Propietario -- igual que antes de que fuera configurable.
+const DESTINATARIOS_DEFAULT = { propietario: true, administrador: false, extras: [] };
+
 const SECCIONES_DEFAULT = ["resumen", "ingresos", "membresias", "pos", "asistencias", "miembros"];
 
 const swalTema = () => {
@@ -106,6 +112,7 @@ export default function OwnerReportesAutomaticos() {
 
   const [opciones,   setOpciones]   = useState(null);
   const [sucursales, setSucursales] = useState([]);
+  const [destinatariosInfo, setDestinatariosInfo] = useState(null);
   const [idGimnasio, setIdGimnasio] = useState(null);
   const [configs,    setConfigs]    = useState([]);
   const [cargando,   setCargando]   = useState(true);
@@ -123,6 +130,7 @@ export default function OwnerReportesAutomaticos() {
   const [secciones,   setSecciones]   = useState(SECCIONES_DEFAULT);
   const [comparar,    setComparar]    = useState(true);
   const [graficas,    setGraficas]    = useState(true);
+  const [destinatarios, setDestinatarios] = useState(DESTINATARIOS_DEFAULT);
 
   useEffect(() => {
     getReporteSucursales()
@@ -134,12 +142,16 @@ export default function OwnerReportesAutomaticos() {
     setCargando(true);
     setError(false);
     try {
-      const [{ data: ops }, { data: lista }] = await Promise.all([
+      const [{ data: ops }, { data: lista }, { data: dest }] = await Promise.all([
         getReporteOpciones(idGimnasio),
         getReportesAutomaticos(idGimnasio),
+        // Solo informativo (a quién resuelve cada casilla): si falla, el
+        // formulario funciona igual sin esos detalles.
+        getReporteDestinatarios(idGimnasio).catch(() => ({ data: null })),
       ]);
       setOpciones(ops);
       setConfigs(Array.isArray(lista) ? lista : []);
+      setDestinatariosInfo(dest);
     } catch {
       setError(true);
     } finally {
@@ -161,6 +173,7 @@ export default function OwnerReportesAutomaticos() {
     setSecciones(SECCIONES_DEFAULT);
     setComparar(true);
     setGraficas(true);
+    setDestinatarios(DESTINATARIOS_DEFAULT);
   };
 
   const abrirNuevo = () => { limpiarForm(); setFormAbierto(true); };
@@ -174,6 +187,11 @@ export default function OwnerReportesAutomaticos() {
     setSecciones(cfg.secciones?.length ? cfg.secciones : SECCIONES_DEFAULT);
     setComparar(cfg.comparar);
     setGraficas(cfg.graficas);
+    setDestinatarios({
+      propietario:   cfg.enviar_propietario ?? true,
+      administrador: cfg.enviar_administrador ?? false,
+      extras:        cfg.correos_extra ?? [],
+    });
     setFormAbierto(true);
   };
 
@@ -189,11 +207,19 @@ export default function OwnerReportesAutomaticos() {
       Swal.fire({ ...swalTema(), icon: "warning", title: "Elige al menos una sección" });
       return;
     }
+    if (!destinatarios.propietario && !destinatarios.administrador && destinatarios.extras.length === 0) {
+      Swal.fire({ ...swalTema(), icon: "warning", title: "Elige a quién le llega",
+                  text: "Marca Propietario, Administrador o agrega un correo." });
+      return;
+    }
     setGuardando(true);
     try {
       const payload = {
         nombre: nombre.trim(), frecuencia, secciones, comparar, graficas,
         momento_envio: momentoEnvio, hora_envio: horaEnvio,
+        enviar_propietario: destinatarios.propietario,
+        enviar_administrador: destinatarios.administrador,
+        correos_extra: destinatarios.extras,
       };
       if (editandoId) {
         await actualizarReporteAutomatico(editandoId, payload);
@@ -242,7 +268,7 @@ export default function OwnerReportesAutomaticos() {
     try {
       const { data } = await ejecutarReporteAutomaticoAhora(cfg.id);
       Swal.fire({ ...swalTema(), icon: "success", title: "Enviado",
-                  text: data?.msg || "Revisa el correo del propietario." });
+                  text: data?.msg || "Revisa la bandeja de los destinatarios." });
       await cargarTodo();
     } catch (e) {
       Swal.fire({ ...swalTema(), icon: "error", title: "No se pudo enviar",
@@ -292,7 +318,7 @@ export default function OwnerReportesAutomaticos() {
           <div>
             <h1 style={S.title}>Automatizar reportes</h1>
             <p style={{ ...S.sub, marginBottom: 0 }}>
-              Elige qué reporte, con qué filtros y cada cuándo -- se manda solo por correo al propietario.
+              Elige qué reporte, con qué filtros, cada cuándo y a quién -- se manda solo por correo.
             </p>
           </div>
         </div>
@@ -392,6 +418,15 @@ export default function OwnerReportesAutomaticos() {
           <p style={{ margin: "0 0 22px", fontSize: 12.5, color: C.accent, fontWeight: 600 }}>
             {detalleEnvio(frecuencia, momentoEnvio, horaEnvio)}
           </p>
+
+          <label style={S.label}><FiMail style={{ verticalAlign: -2 }} /> Quién lo recibe</label>
+          <div style={{ marginBottom: 22 }}>
+            <SelectorDestinatarios
+              value={destinatarios}
+              onChange={setDestinatarios}
+              disponibles={destinatariosInfo}
+            />
+          </div>
 
           <label style={S.label}>Qué incluir</label>
           <div style={{ display: "grid", gap: 9, marginBottom: 22 }}>
@@ -493,6 +528,9 @@ export default function OwnerReportesAutomaticos() {
                   {cfg.secciones.length} sección{cfg.secciones.length === 1 ? "" : "es"}
                   {cfg.graficas && " · con gráficas"}
                   {cfg.comparar && " · con comparativa"}
+                </p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: C.t2, wordBreak: "break-word" }}>
+                  Para: {cfg.destinatarios_label || "Propietario"}
                 </p>
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: C.t2 }}>
                   Se envía: {cfg.momento_envio_label} · {String(cfg.hora_envio).padStart(2, "0")}:00

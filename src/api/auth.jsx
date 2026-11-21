@@ -100,3 +100,13 @@ export async function registerGym(gymData, adminData, idPlan = null) {
   if (!response.ok) throw new Error(data.msg || "Error al registrar el gimnasio");
   return data;
 }
+
+// ── Aviso de privacidad (migración 036) ──────────────────────────────────────
+// La LFPDPPP exige poder acreditar qué versión aceptó cada persona y cuándo.
+// `peticion` adjunta la sesión y renueva el token si hiciera falta.
+export function aceptarAvisoPrivacidad(version) {
+  return peticion("/api/auth/aviso-privacidad", {
+    method: "POST",
+    body: JSON.stringify({ version }),
+  });
+}

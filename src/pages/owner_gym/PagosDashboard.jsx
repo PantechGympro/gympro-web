@@ -477,8 +477,13 @@ export default function PagosDashboard() {
     if (!confirmEliminar) return;
     setEliminando(true);
     try {
-      await eliminarPago(confirmEliminar.id);
-      toast.success("Pago eliminado", "El historial y la membresía quedaron revertidos.");
+      const res = await eliminarPago(confirmEliminar.id);
+      toast.success(
+        "Pago eliminado",
+        res?.membresia_revertida
+          ? "El historial y la membresía quedaron revertidos."
+          : "Se quitó del historial. La membresía vigente no se modificó.",
+      );
       setConfirmEliminar(null);
       loadData(pagination.page, tipoFiltro, catFiltro, calcularPeriodo());
     } catch (err) {
@@ -740,7 +745,7 @@ export default function PagosDashboard() {
       <ConfirmDialog
         open={Boolean(confirmEliminar)}
         title={`¿Eliminar este pago?`}
-        message={`Se eliminará el pago de "${confirmEliminar?.titulo || ""}" y, si activó una membresía, esta volverá a su estado anterior. Esta acción no se puede deshacer.`}
+        message={`Se eliminará el pago de "${confirmEliminar?.titulo || ""}". Si es el último pago del miembro y activó una membresía, esta volverá a su estado anterior; si ya hay pagos más nuevos, la membresía vigente no cambia. Esta acción no se puede deshacer.`}
         onConfirm={confirmarEliminar}
         onCancel={() => !eliminando && setConfirmEliminar(null)}
       />

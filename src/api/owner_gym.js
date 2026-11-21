@@ -53,6 +53,11 @@ export const eliminarReporteAutomatico = (id) =>
 /** Lo manda ya, fuera de su horario -- para probar que el correo llega. */
 export const ejecutarReporteAutomaticoAhora = (id) =>
   API.post(`/owner_gym/reportes/automaticos/${id}/ejecutar`);
+/** A quién resuelven hoy las casillas Propietario/Administrador de la sucursal. */
+export const getReporteDestinatarios = (idGimnasio) =>
+  API.get("/owner_gym/reportes/automaticos/destinatarios", {
+    params: idGimnasio ? { id_gimnasio: idGimnasio } : {},
+  });
 
 // ── Staff (entrenadores + recepcionistas) ─────────────────────────────────
 export const getStaff            = (params = {}) => API.get("/owner_gym/staff", { params });
@@ -137,3 +142,17 @@ export const crearAdministrador         = (data)        => API.post("/owner_gym/
 export const reasignarSucursalesAdmin   = (id, sucursales) =>
   API.put(`/owner_gym/administradores/${id}/sucursales`, { sucursales });
 export const toggleAdministrador        = (id)          => API.patch(`/owner_gym/administradores/${id}/toggle`);
+
+// ── Cuenta y datos: cancelar el plan o eliminar la cuenta ─────────────────
+// Ver api/app/routes/owner_gym/cuenta.py. "estado" trae el plan vigente, la
+// baja programada (si hay) y el conteo REAL de lo que se eliminaria.
+export const getEstadoCuenta       = ()            => API.get("/owner_gym/cuenta/estado");
+export const cancelarSuscripcion   = (motivo)      =>
+  API.post("/owner_gym/cuenta/suscripcion/cancelar", { motivo });
+export const reactivarSuscripcion  = ()            => API.post("/owner_gym/cuenta/suscripcion/reactivar");
+export const programarEliminacion  = (datos)       => API.post("/owner_gym/cuenta/eliminar", datos);
+export const cancelarEliminacion   = ()            => API.post("/owner_gym/cuenta/eliminar/cancelar");
+// La copia de datos se descarga como archivo: responseType blob para no
+// pasarla por JSON.parse y poder entregarla tal cual.
+export const exportarDatosCuenta   = ()            =>
+  API.get("/owner_gym/cuenta/exportar", { responseType: "blob" });
