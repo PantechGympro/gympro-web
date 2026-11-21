@@ -13,6 +13,7 @@ import {
 } from "../../api/miembros";
 import DetalleUsuarioModal, { fechaFicha } from "../../components/compartido/DetalleUsuarioModal";
 import HistorialAsistencias from "../../components/compartido/HistorialAsistencias";
+import MiembroRegistradoModal from "../../components/compartido/MiembroRegistradoModal";
 import EmailDomainInput from "../../components/compartido/EmailDomainInput";
 import "../../css/CSSUnificado.css";
 
@@ -230,6 +231,7 @@ export default function ReceptionistMembers() {
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState(null);
   const [aviso, setAviso] = useState(null); // { tipo: "ok"|"error", msg }
+  const [registrado, setRegistrado] = useState(null); // { nombre, id } del miembro recién dado de alta
 
   // Ver / editar / desactivar / reactivar / reenviar credenciales -- mismas
   // acciones que ya tiene el panel de Propietario/Administrador.
@@ -312,12 +314,14 @@ export default function ReceptionistMembers() {
     setGuardando(true);
     setFormError(null);
     try {
-      await createMiembro({
+      const { data: nuevo } = await createMiembro({
         nombre:   form.nombre.trim(),
         email:    form.email.trim().toLowerCase(),
         telefono: form.telefono.trim() || undefined,
       });
       setModalOpen(false);
+      // numero_socio = el "ID #n" de su ficha: recepción se lo dice al miembro
+      setRegistrado({ nombre: form.nombre.trim(), id: nuevo?.numero_socio ?? nuevo?.id_usuario_pg });
       setAviso({ tipo: "ok", msg: `${form.nombre.trim()} se registró y recibirá su contraseña por correo.` });
       fetchMembers(1, search, mostrarInactivos);
     } catch (err) {
@@ -446,6 +450,8 @@ export default function ReceptionistMembers() {
           )}
         </div>
       </motion.div>
+
+      <MiembroRegistradoModal miembro={registrado} onClose={() => setRegistrado(null)} />
 
       {aviso && (
         <div style={{

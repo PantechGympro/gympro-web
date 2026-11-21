@@ -10,6 +10,7 @@ import { FiCamera, FiSearch, FiUsers, FiCheck, FiRepeat, FiMail } from "react-ic
 import EmailDomainInput from "../../components/compartido/EmailDomainInput";
 import DetalleUsuarioModal, { fechaFicha } from "../../components/compartido/DetalleUsuarioModal";
 import HistorialAsistencias from "../../components/compartido/HistorialAsistencias";
+import MiembroRegistradoModal from "../../components/compartido/MiembroRegistradoModal";
 import {
   getMiembros, createMiembro, updateMiembro,
   deleteMiembro, reactivateMiembro, reenviarCredencialesMiembro,
@@ -326,8 +327,11 @@ function MiembroForm({ initial, onSave, onCancel }) {
         await updateMiembro(initial.id, payload);
         toast.success("Miembro actualizado");
       } else {
-        await createMiembro(payload);
+        const { data: nuevo } = await createMiembro(payload);
         toast.success(`${form.nombre} registrado`);
+        // numero_socio = el "ID #n" de su ficha: se le muestra a quien lo registró
+        onSave({ nombre: form.nombre.trim(), id: nuevo?.numero_socio ?? nuevo?.id_usuario_pg });
+        return;
       }
       onSave();
     } catch (e) {
@@ -631,6 +635,7 @@ export default function MiembrosDashboard() {
   // Miembro cuya ficha completa se está viendo; null cierra el modal.
   const [detalle,    setDetalle]    = useState(null);
   const [modal,      setModal]      = useState(null);   // null | {} | {miembro}
+  const [registrado, setRegistrado] = useState(null);   // { nombre, id } del miembro recién dado de alta
   const [confirm,    setConfirm]    = useState(null);   // null | {title,msg,fn,danger}
 
   // -- Traslado de sucursal, seleccion multiple (HU-48 / SCRUM-219) ---------
@@ -757,11 +762,18 @@ export default function MiembrosDashboard() {
     },
   });
 
-  const handleSave = () => { setModal(null); load(page); };
+  // `creado` solo llega en un alta (no en una edición): { nombre, id }
+  const handleSave = (creado) => {
+    setModal(null);
+    load(page);
+    if (creado) setRegistrado(creado);
+  };
 
   return (
     <div style={{ padding: "24px 28px", background: C.bg, minHeight: "100vh", fontFamily: "Inter,system-ui,sans-serif" }}>
       <Toasts />
+
+      <MiembroRegistradoModal miembro={registrado} onClose={() => setRegistrado(null)} />
 
       {/* Modal crear/editar */}
       <Modal

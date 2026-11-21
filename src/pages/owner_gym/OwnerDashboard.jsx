@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiUsers, FiDollarSign, FiTrendingUp, FiTrendingDown,
   FiAlertTriangle, FiShoppingCart, FiUserCheck, FiRefreshCw,
   FiAward, FiActivity, FiChevronLeft, FiChevronRight,
   FiXCircle, FiCheckCircle, FiBell, FiCreditCard, FiUserPlus,
-  FiPackage, FiCalendar, FiSlash,
+  FiPackage, FiCalendar, FiSlash, FiTruck,
 } from "react-icons/fi";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -133,6 +134,7 @@ function Pager({ page, total, onChange }) {
 }
 
 export default function OwnerDashboard() {
+  const navigate = useNavigate();
   const [kpis,      setKpis]      = useState(null);
   const [ingresos,  setIngresos]  = useState([]);
   const [actividad, setActividad] = useState([]);
@@ -454,16 +456,23 @@ export default function OwnerDashboard() {
                           const isError = al.nivel === "error";
                           const color   = isError ? "var(--danger)" : "var(--warning)";
                           return (
-                            <div key={i} style={{
+                            <div key={i}
+                              role={al.ruta ? "link" : undefined}
+                              tabIndex={al.ruta ? 0 : undefined}
+                              onClick={al.ruta ? () => navigate(al.ruta) : undefined}
+                              onKeyDown={al.ruta ? (e) => { if (e.key === "Enter") navigate(al.ruta); } : undefined}
+                              style={{
                               display: "flex", alignItems: "flex-start", gap: 12,
+                              cursor: al.ruta ? "pointer" : "default",
                               padding: "10px 12px", borderRadius: 10,
                               background: isError ? "rgba(239,68,68,.07)" : "rgba(234,179,8,.07)",
                               border: `1px solid ${isError ? "rgba(239,68,68,.2)" : "rgba(234,179,8,.2)"}`,
                             }}>
                               <span style={{ flexShrink: 0, marginTop: 2, color }}>
-                                {al.tipo === "stock"    ? <FiPackage size={16} />
-                                : al.tipo === "vencimiento" ? <FiCalendar size={16} />
-                                : al.tipo === "inactivo"    ? <FiSlash size={16} />
+                                {al.tipo === "sin_stock" || al.tipo === "stock_bajo" ? <FiPackage size={16} />
+                                : al.tipo === "membresias_por_vencer"  ? <FiCalendar size={16} />
+                                : al.tipo === "membresias_vencidas"    ? <FiSlash size={16} />
+                                : al.tipo === "entregas_pendientes"    ? <FiTruck size={16} />
                                 : isError ? <FiXCircle size={16} /> : <FiAlertTriangle size={16} />}
                               </span>
                               <div style={{ flex: 1 }}>
