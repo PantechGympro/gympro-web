@@ -11,6 +11,7 @@ import {
 import { useToast } from "../../hooks/useToast";
 import { peticion } from "../../api/cliente";
 import { cerrarSesion } from "../../utils/sesion";
+import AvisoPrivacidadGate from "./AvisoPrivacidadGate";
 import AvisoLimitePlan from "./AvisoLimitePlan";
 import { AvisoMembresia } from "../miembro/MembresiaGate";
 // Catálogo único de roles (SCRUM-107): antes este archivo mantenía su
@@ -39,6 +40,7 @@ export const ROUTE_MAP = {
     "/owner/reportes":     "ow-reportes",
     "/owner/reportes-automaticos": "ow-reportes-auto",
     "/owner/subscription": "ow-subscription",
+    "/owner/cuenta":       "ow-subscription",   // vive dentro de Mi Suscripción
     "/owner/pagos-online": "ow-pagos-online",
     "/owner/perfil-publico": "ow-perfil-publico",
     "/owner/backups":      "ow-backups",
@@ -308,6 +310,11 @@ export default function Layout({ role = "owner_gym" }) {
           // navegando directo a otra URL en vez de usar la redirección de
           // AuthPage.jsx (que solo corre una vez, justo tras el login).
           debeCambiarPassword: !!d?.debe_cambiar_password,
+          // Migración 036: hasta que no acepte el aviso vigente, no se monta
+          // ningún panel (la ley pide ponerlo a disposición ANTES de tratar
+          // los datos, y queda constancia de qué versión aceptó).
+          avisoPendiente: !!d?.aviso_privacidad?.pendiente,
+          versionAviso: d?.aviso_privacidad?.version_vigente,
         });
         readImpersonationState();
       })
@@ -431,6 +438,17 @@ export default function Layout({ role = "owner_gym" }) {
   const permitidos = ROLE_MAP[role] || [];
   if (sesion.estado === "anonimo" || !permitidos.includes(sesion.rol)) {
     return <Navigate to="/login" replace />;
+  }
+
+  // El aviso de privacidad va antes que cualquier panel: es el consentimiento
+  // informado de las finalidades necesarias. Se acepta una vez por versión.
+  if (sesion.avisoPendiente) {
+    return (
+      <AvisoPrivacidadGate
+        version={sesion.versionAviso}
+        onAceptado={() => setSesion((prev) => ({ ...prev, avisoPendiente: false }))}
+      />
+    );
   }
 
   // SCRUM-224: ningún panel se monta (ni sus peticiones) hasta que esta
