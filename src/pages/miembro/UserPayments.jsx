@@ -89,9 +89,10 @@ export default function UserPaymentsHistory() {
 <meta charset="utf-8"/>
 <title>Recibo ${payment.id}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  /* El recibo se abre en una ventana aparte: usa la tipografía del sistema en
+     lugar de pedirle una fuente a Google desde el equipo del socio. */
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b;padding:40px 24px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#f8fafc;color:#1e293b;padding:40px 24px}
   .page{max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}
   .header{background:linear-gradient(135deg,#4f46e5,#6366f1);padding:36px 32px;color:#fff;text-align:center}
   .header h1{font-size:28px;font-weight:800;margin-bottom:4px}

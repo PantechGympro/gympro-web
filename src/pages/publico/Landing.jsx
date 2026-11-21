@@ -282,7 +282,7 @@ export default function Landing() {
   return (
     <div className="gympro-landing" style={S.page}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap');
+        /* Big Shoulders Display se autoaloja (src/css/fuentes.js). */
 
         .gympro-landing {
           --gympro-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
