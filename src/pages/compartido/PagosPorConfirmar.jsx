@@ -77,7 +77,9 @@ export default function PagosPorConfirmar() {
       const { data } = await getPagosPendientes();
       setVentas(data.ventas || []);
       setRenovaciones(data.renovaciones || []);
-      setError(null);
+      // La recarga silenciosa (30 s o tras un 409) NO debe borrar el aviso que el
+      // usuario aún no leyó, p. ej. "Este pago ya fue resuelto por otra persona".
+      if (!silencioso) setError(null);
     } catch (e) {
       if (!silencioso) setError(mensajeAmigable(e?.response?.data?.error || e, "No se pudo cargar la bandeja."));
     } finally {

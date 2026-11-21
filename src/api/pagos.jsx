@@ -69,8 +69,9 @@ export const editarPago = async (id, data) => {
   return res.data;
 };
 
-// Elimina un pago registrado por error -- el backend revierte también la
-// membresía que ese pago activó, si aplica (ver eliminar_pago() en el API).
+// Elimina un pago registrado por error. El backend revierte también la
+// membresía que ese pago activó SOLO si es el último pago del miembro;
+// `membresia_revertida` en la respuesta indica qué ocurrió (ver eliminar_pago()).
 export const eliminarPago = async (id) => {
   const res = await axios.delete(`${API_URL}/${id}`, {
     headers: authHeader(),

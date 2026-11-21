@@ -40,7 +40,7 @@ function telefonoWhatsApp(tel) {
   return d.length === 10 ? `52${d}` : d;
 }
 
-export default function MembresiasPorVencer() {
+export default function MembresiasPorVencer({ embebido = false }) {
   const esMovil = useIsMobile();
   const [dias, setDias] = useState(7);
   const [incluirVencidas, setIncluirVencidas] = useState(false);
@@ -103,7 +103,7 @@ export default function MembresiasPorVencer() {
   };
 
   return (
-    <div style={{ padding: esMovil ? "72px 16px 24px" : "28px 32px", color: "var(--text-primary)" }}>
+    <div style={{ padding: esMovil ? `${embebido ? 16 : 72}px 16px 24px` : `${embebido ? 16 : 28}px 32px`, color: "var(--text-primary)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 24 }}>Membresías por vencer</h1>

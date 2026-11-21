@@ -10,6 +10,8 @@ import {
 } from "../../hooks/useRoutineImportJob";
 import { useToast } from "../../hooks/useToast";
 import { peticion } from "../../api/cliente";
+import { cerrarSesion } from "../../utils/sesion";
+import AvisoPrivacidadGate from "./AvisoPrivacidadGate";
 import AvisoLimitePlan from "./AvisoLimitePlan";
 import { AvisoMembresia } from "../miembro/MembresiaGate";
 // Catálogo único de roles (SCRUM-107): antes este archivo mantenía su
@@ -17,7 +19,7 @@ import { AvisoMembresia } from "../miembro/MembresiaGate";
 // (ver web/src/constants/roles.js).
 import { ROLES_PERMITIDOS_POR_PANEL as ROLE_MAP, normalizarRol } from "../../constants/roles";
 
-const ROUTE_MAP = {
+export const ROUTE_MAP = {
   owner_gym: {
     "/owner":              "ow-dashboard",
     "/owner/members":      "ow-miembros",
@@ -28,8 +30,9 @@ const ROUTE_MAP = {
     "/owner/sucursales":   "ow-sucursales",
     "/owner/verificar-sucursal": "ow-verificar-sucursal",
     "/owner/memberships":  "ow-membresias",
-    "/owner/por-vencer":   "ow-por-vencer",
-    "/owner/checkin":      "ow-checkin",
+    // Las dos rutas viven en una sola pantalla con pestañas (EntradasYVencimientos).
+    "/owner/por-vencer":   "ow-entradas",
+    "/owner/checkin":      "ow-entradas",
     "/owner/confirmar-pagos": "ow-confirmar-pagos",
     "/owner/deliveries":   "ow-entregas",
     "/owner/mi-perfil":    "ow-mi-perfil",
@@ -37,6 +40,7 @@ const ROUTE_MAP = {
     "/owner/reportes":     "ow-reportes",
     "/owner/reportes-automaticos": "ow-reportes-auto",
     "/owner/subscription": "ow-subscription",
+    "/owner/cuenta":       "ow-subscription",   // vive dentro de Mi Suscripción
     "/owner/pagos-online": "ow-pagos-online",
     "/owner/perfil-publico": "ow-perfil-publico",
     "/owner/backups":      "ow-backups",
@@ -110,7 +114,7 @@ const ROUTE_MAP = {
   },
 };
 
-const NAV_MAP = {
+export const NAV_MAP = {
   owner_gym: {
     "ow-dashboard":  "/owner",
     "ow-miembros":   "/owner/members",
@@ -121,8 +125,7 @@ const NAV_MAP = {
     "ow-sucursales": "/owner/sucursales",
     "ow-verificar-sucursal": "/owner/verificar-sucursal",
     "ow-membresias": "/owner/memberships",
-    "ow-por-vencer": "/owner/por-vencer",
-    "ow-checkin":    "/owner/checkin",
+    "ow-entradas":   "/owner/checkin",
     "ow-confirmar-pagos": "/owner/confirmar-pagos",
     "ow-entregas":   "/owner/deliveries",
     "ow-mi-perfil":  "/owner/mi-perfil",
@@ -279,11 +282,16 @@ export default function Layout({ role = "owner_gym" }) {
   // por el plan, sin pedirlo aparte -- ver hooks/useFuncionesPlan.js.
   const [sesion, setSesion] = useState({ estado: "cargando", rol: null, multiSucursal: false, funcionesPlan: {}, debeCambiarPassword: false });
 
+  // Reintento manual/automático cuando la verificación falla por red o 5xx.
+  const [reintento, setReintento] = useState(0);
+
   useEffect(() => {
     let vigente = true;
     peticion("/api/auth/me")
       .then((d) => {
         if (!vigente) return;
+        // peticion devuelve null cuando el 401 fue definitivo (ya redirige).
+        if (!d) { setSesion({ estado: "anonimo", rol: null }); return; }
         // Antes se usaba (d?.role || "").toLowerCase() directo -- duplicaba
         // a mano lo que normalizarRol() ya resuelve (alias + mayúsculas),
         // y cualquier rol nuevo (p. ej. "Administrador", HU-45) quedaba a
@@ -302,12 +310,36 @@ export default function Layout({ role = "owner_gym" }) {
           // navegando directo a otra URL en vez de usar la redirección de
           // AuthPage.jsx (que solo corre una vez, justo tras el login).
           debeCambiarPassword: !!d?.debe_cambiar_password,
+          // Migración 036: hasta que no acepte el aviso vigente, no se monta
+          // ningún panel (la ley pide ponerlo a disposición ANTES de tratar
+          // los datos, y queda constancia de qué versión aceptó).
+          avisoPendiente: !!d?.aviso_privacidad?.pendiente,
+          versionAviso: d?.aviso_privacidad?.version_vigente,
         });
         readImpersonationState();
       })
-      .catch(() => { if (vigente) setSesion({ estado: "anonimo", rol: null }); });
+      .catch((e) => {
+        if (!vigente) return;
+        // Sin red o error del servidor (status 0, ausente o >= 500) NO significa
+        // que la sesión terminó: antes cualquier fallo mandaba al login, y con
+        // una red inestable el usuario creía que se le había cerrado la sesión.
+        // Solo un rechazo real del servidor (401/403/404...) cierra el acceso.
+        const transitorio = !e?.status || e.status >= 500;
+        if (!transitorio) { setSesion({ estado: "anonimo", rol: null }); return; }
+        // Si el panel ya estaba abierto se deja como está (un fallo al navegar no
+        // debe tirarlo); si aún no se conocía la sesión se ofrece reintentar.
+        setSesion((prev) => (prev.estado === "listo" ? prev : { ...prev, estado: "error" }));
+      });
     return () => { vigente = false; };
-  }, [location.pathname, role]);
+  }, [location.pathname, role, reintento]);
+
+  // Al recuperar la conexión se reintenta solo.
+  useEffect(() => {
+    if (sesion.estado !== "error") return undefined;
+    const alVolverRed = () => setReintento((n) => n + 1);
+    window.addEventListener("online", alVolverRed);
+    return () => window.removeEventListener("online", alVolverRed);
+  }, [sesion.estado]);
 
   const handleExitImpersonation = () => {
     const prevToken = sessionStorage.getItem("sa_prev_token");
@@ -359,9 +391,10 @@ export default function Layout({ role = "owner_gym" }) {
     const dest = NAV_MAP[role]?.[tabId];
     if (dest) navigate(dest);
   };
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  // Revoca el refresh de 90 días en el servidor (antes solo se borraba
+  // localStorage y la cookie de refresco seguía viva) y limpia lo local.
+  const handleLogout = async () => {
+    await cerrarSesion();
     navigate("/login", { replace: true });
   };
 
@@ -383,9 +416,39 @@ export default function Layout({ role = "owner_gym" }) {
     );
   }
 
+  if (sesion.estado === "error") {
+    return (
+      <div
+        role="alert"
+        style={{
+          width: "100vw", height: "100vh", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 14,
+          background: "var(--bg-main)", color: "var(--text-secondary)", textAlign: "center", padding: 24,
+        }}
+      >
+        <FiAlertCircle size={28} />
+        <span style={{ fontSize: 14 }}>No pudimos verificar tu sesión. Revisa tu conexión; tu sesión sigue abierta.</span>
+        <button type="button" className="btn-primary" onClick={() => setReintento((n) => n + 1)}>
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
   const permitidos = ROLE_MAP[role] || [];
   if (sesion.estado === "anonimo" || !permitidos.includes(sesion.rol)) {
     return <Navigate to="/login" replace />;
+  }
+
+  // El aviso de privacidad va antes que cualquier panel: es el consentimiento
+  // informado de las finalidades necesarias. Se acepta una vez por versión.
+  if (sesion.avisoPendiente) {
+    return (
+      <AvisoPrivacidadGate
+        version={sesion.versionAviso}
+        onAceptado={() => setSesion((prev) => ({ ...prev, avisoPendiente: false }))}
+      />
+    );
   }
 
   // SCRUM-224: ningún panel se monta (ni sus peticiones) hasta que esta

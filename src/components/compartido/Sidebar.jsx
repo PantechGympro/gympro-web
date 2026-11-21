@@ -39,21 +39,28 @@ const P = {
   badgeBg:   "var(--warning-bg, rgba(234,179,8,.15))",
 };
 
-const MENUS = {
+// Exportado para que las pruebas verifiquen que cada entrada del menú tiene ruta.
+export const MENUS = {
   owner_gym: [
-    { id: "ow-dashboard",  label: "Dashboard",       icon: <FiBarChart2 />    },
-    { id: "ow-miembros",   label: "Miembros",         icon: <FiUsers />        },
-    { id: "ow-pagos",      label: "Pagos",            icon: <FiDollarSign />   },
-    { id: "ow-cobrar",     label: "Cobrar Membresía", icon: <FiDollarSign />   },
-    { id: "ow-pos",        label: "Punto de Venta",   icon: <FiShoppingCart /> },
-    { id: "ow-confirmar-pagos", label: "Pagos por confirmar", icon: <FiCheckCircle /> },
-    { id: "ow-entregas",   label: "Entregas pendientes", icon: <FiPackage />   },
-    { id: "ow-checkin",    label: "Registrar entrada", icon: <FiUserCheck />    },
-    { id: "ow-por-vencer", label: "Por vencer",       icon: <FiClock />        },
-    // HU-47/SCRUM-218: solo visible si la organización tiene 2+ sucursales
-    // (multiSucursal, prop venida de /api/auth/me) -- ver filtrarOcultos abajo.
-    { id: "ow-verificar-sucursal", label: "Verificar Visitante", icon: <FiSearch /> },
+    // A la vista solo lo que se usa todo el día. Lo demás vive en desplegables
+    // (antes eran 14 filas sueltas, ver "Pagos y Entregas" y "Entradas y
+    // Vencimientos"): mismo acceso, un clic de profundidad, menú sin saturar.
+    { id: "ow-dashboard",  label: "Dashboard",         icon: <FiBarChart2 />    },
+    { id: "ow-miembros",   label: "Miembros",          icon: <FiUsers />        },
+    { id: "ow-cobrar",     label: "Cobrar Membresía",  icon: <FiDollarSign />   },
+    { id: "ow-pos",        label: "Punto de Venta",    icon: <FiShoppingCart /> },
+    // Una sola fila, dos pestañas (Registrar entrada | Por vencer): son tareas
+    // de mostrador que se hacen juntas -- ver pages/owner_gym/EntradasYVencimientos.jsx.
+    { id: "ow-entradas",   label: "Entradas y Vencimientos", icon: <FiUserCheck /> },
     { type: "divider" },
+    {
+      id: "ow-caja", label: "Pagos y Entregas", icon: <FiDollarSign />,
+      children: [
+        { id: "ow-pagos",           label: "Pagos",               icon: <FiDollarSign /> },
+        { id: "ow-confirmar-pagos", label: "Pagos por confirmar", icon: <FiCheckCircle /> },
+        { id: "ow-entregas",        label: "Entregas pendientes", icon: <FiPackage />     },
+      ],
+    },
     // Agrupados bajo un mismo desplegable (antes 3 filas sueltas + Reportes
     // suelto): reduce el amontonamiento del panel sin esconder nada más de
     // un clic de profundidad.
@@ -62,6 +69,9 @@ const MENUS = {
       children: [
         { id: "ow-staff",      label: "Staff",       icon: <FiUserCheck />  },
         { id: "ow-sucursales", label: "Sucursales",  icon: <FiMapPin />     },
+        // HU-47/SCRUM-218: solo visible si la organización tiene 2+ sucursales
+        // (multiSucursal, prop venida de /api/auth/me) -- ver filtrarOcultos abajo.
+        { id: "ow-verificar-sucursal", label: "Verificar Visitante", icon: <FiSearch /> },
         { id: "ow-membresias", label: "Membresías",   icon: <FiCreditCard /> },
         { id: "ow-reportes",   label: "Reportes",    icon: <FiFileText />   },
         { id: "ow-reportes-auto", label: "Automatizar reportes", icon: <FiClock />   },
