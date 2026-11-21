@@ -8,9 +8,10 @@ import { mensajeAmigable } from "../../utils/errores";
  * Solo iconos (react-icons), sin emojis.
  */
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import {
   FiCreditCard, FiCheckCircle, FiClock, FiRefreshCw, FiArrowUpCircle,
-  FiCalendar, FiFileText, FiX, FiZap, FiAlertCircle, FiRepeat, FiCheck, FiUsers,
+  FiCalendar, FiFileText, FiX, FiZap, FiAlertCircle, FiRepeat, FiCheck, FiUsers, FiSettings,
 } from "react-icons/fi";
 import BotonesPago from "../../components/compartido/BotonesPago";
 import "../../css/CSSUnificado.css";
@@ -256,6 +257,12 @@ export default function OwnerSubscription() {
       <div style={{ marginBottom: 22 }}>
         <h1 style={S.title}>Mi Suscripción</h1>
         <p style={S.sub}>Tu plan con la plataforma: estado, vencimiento, renovación y facturas.</p>
+        {/* Cancelar el plan, descargar los datos o eliminar la cuenta viven en
+            su propia pantalla: son acciones de otra naturaleza y no deben
+            quedar a un clic de distancia de "renovar". */}
+        <Link to="/owner/cuenta" style={S.enlaceCuenta}>
+          <FiSettings size={13} /> Cuenta y datos: cancelar el plan, descargar o eliminar tu información
+        </Link>
       </div>
 
       {msg && (
@@ -671,6 +678,11 @@ const S = {
   page: { padding: "28px 32px", minHeight: "100vh", background: "var(--bg-main)", width: "100%", maxWidth: 1240, margin: "0 auto", boxSizing: "border-box" },
   title: { fontSize: 26, fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.3px" },
   sub: { fontSize: 14, color: "var(--text-secondary)", margin: "4px 0 0" },
+  enlaceCuenta: {
+    display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10,
+    fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", textDecoration: "none",
+    border: "1px solid var(--border)", borderRadius: 999, padding: "6px 12px",
+  },
   card: { background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 22, marginBottom: 8 },
   section: { fontSize: 15, fontWeight: 700, color: "var(--text-primary)", margin: "26px 0 12px" },
   planCard: {

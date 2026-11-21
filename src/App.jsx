@@ -41,6 +41,7 @@ const CobrarMembresia          = lazy(() => import("./pages/owner_gym/CobrarMemb
 const PointOfSale              = lazy(() => import("./pages/owner_gym/PointOfSale"));
 const BackupsDashboard         = lazy(() => import("./pages/owner_gym/BackupsDashboard"));
 const OwnerSubscription        = lazy(() => import("./pages/owner_gym/OwnerSubscription"));
+const OwnerCuenta              = lazy(() => import("./pages/owner_gym/OwnerCuenta"));
 const AdminAnalytics           = lazy(() => import("./pages/owner_gym/AdminAnalytics"));
 const AnalyticsMapReduce       = lazy(() => import("./pages/owner_gym/AnalyticsMapReduce"));
 const AnalyticsKMeans          = lazy(() => import("./pages/owner_gym/AnalyticsKMeans"));
@@ -169,6 +170,7 @@ function App() {
             <Route path="/owner/reportes"      element={<OwnerReportes />}    />
             <Route path="/owner/reportes-automaticos" element={<OwnerReportesAutomaticos />} />
             <Route path="/owner/subscription"  element={<OwnerSubscription />} />
+            <Route path="/owner/cuenta"        element={<OwnerCuenta />} />
             <Route path="/owner/pagos-online"  element={<OwnerPagos />}       />
             <Route path="/owner/perfil-publico" element={<OwnerPerfilPublico />} />
             <Route path="/owner/backups"       element={<BackupsDashboard />} />
