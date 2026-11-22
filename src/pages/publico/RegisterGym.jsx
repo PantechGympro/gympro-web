@@ -333,6 +333,8 @@ export default function RegisterGym() {
                       borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12.5,
                       color: "var(--text-secondary, #ccc)", lineHeight: 1.5,
                     }}>
+                      Los planes de pago incluyen días de prueba sin tarjeta: al terminar, si no
+                      contratas, tu gimnasio pasa al plan gratuito y no pierdes tu información.{" "}
                       Por defecto te registramos con <strong>Starter</strong>, el plan gratuito y más
                       básico — perfecto para empezar. Puedes elegir otro ahora o cambiarlo después
                       desde tu panel de administración.
@@ -387,6 +389,14 @@ export default function RegisterGym() {
                                     RECOMENDADO
                                   </span>
                                 )}
+                                {/* La duración la manda el API junto con el plan
+                                    (PlanSuscripcion.to_dict → dias_prueba), para no
+                                    repetir el número en el frontend. */}
+                                {plan.dias_prueba > 0 && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--success, #4cd964)", background: "rgba(76,217,100,0.14)", borderRadius: 6, padding: "2px 6px" }}>
+                                    {plan.dias_prueba} DÍAS GRATIS
+                                  </span>
+                                )}
                               </div>
                               <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginBottom: 6 }}>
                                 {plan.titulo_comercial || plan.descripcion}
@@ -394,6 +404,11 @@ export default function RegisterGym() {
                               <div style={{ fontSize: 15, fontWeight: 700, color: isSelected ? "var(--accent)" : "var(--text-primary, #fff)" }}>
                                 {plan.precio_mensual_mxn === 0 ? "Gratis" : plan.precio_display}
                               </div>
+                              {plan.dias_prueba > 0 && (
+                                <div style={{ fontSize: 11.5, color: "var(--success, #4cd964)", marginTop: 2 }}>
+                                  Los primeros {plan.dias_prueba} días no se cobran. Sin tarjeta.
+                                </div>
+                              )}
                               {Array.isArray(plan.caracteristicas) && plan.caracteristicas.length > 0 && (
                                 <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 11.5, color: "var(--text-secondary, #ccc)", lineHeight: 1.6 }}>
                                   {plan.caracteristicas.slice(0, 3).map((c, i) => <li key={i}>{c}</li>)}
