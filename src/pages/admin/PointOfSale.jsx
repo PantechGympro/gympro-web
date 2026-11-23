@@ -129,7 +129,7 @@ export default function PointOfSale() {
                 key={cat}
                 onClick={() => setCategoria(cat)}
                 style={{
-                  padding: "6px 14px", borderRadius: 99, border: "none", cursor: "pointer",
+                  padding: "6px 14px", borderRadius: 99, cursor: "pointer",
                   fontSize: 13, fontWeight: 600, transition: "all .15s",
                   background: categoria === cat ? "var(--accent)" : "var(--bg-card)",
                   color: categoria === cat ? "#fff" : "var(--text-secondary)",

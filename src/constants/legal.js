@@ -4,8 +4,8 @@
 // LFPDPPP exige poder acreditar QUÉ texto aceptó cada persona y CUÁNDO: cuando
 // se registre la aceptación del aviso, se guardará esta versión junto con la
 // fecha. Al cambiar el texto se sube la versión y se actualiza la fecha.
-export const VERSION_AVISO = "2.0";
-export const FECHA_AVISO = "20 de noviembre de 2026";
+export const VERSION_AVISO = "2.1";
+export const FECHA_AVISO = "21 de noviembre de 2026";
 
 export const VERSION_TERMINOS = "1.0";
 export const FECHA_TERMINOS = "20 de noviembre de 2026";

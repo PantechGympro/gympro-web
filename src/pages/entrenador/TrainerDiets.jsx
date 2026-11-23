@@ -1078,7 +1078,7 @@ export default function TrainerDiets(){
   const [search,setSearch]=useState(""); const [filterObj,setFilterObj]=useState(""); const [filterCli,setFilterCli]=useState("");
   const [showPlan,setShowPlan]=useState(false); const [editPlan,setEditPlan]=useState(null);
   const [showRecipe,setShowRecipe]=useState(false); const [editRecipe,setEditRecipe]=useState(null);
-  const [saving,setSaving]=useState(false); const [deletingId,setDeletingId]=useState(null);
+  const [saving,setSaving]=useState(false); const [deletingId]=useState(null);
   const [viewPlan,setViewPlan]=useState(null); const [viewRecipe,setViewRecipe]=useState(null);
   const [confirmDel,setConfirmDel]=useState(null);
   const [selectMode,setSelectMode]=useState(false); const [selectedIds,setSelectedIds]=useState(new Set());

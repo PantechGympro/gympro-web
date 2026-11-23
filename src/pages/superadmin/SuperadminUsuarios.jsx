@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import { avisos, confirmar } from "../../utils/avisos";
+import { FilasSkeleton } from "../../components/ui/Skeleton";
 import { getUsuarios, toggleUsuario, impersonar, eliminarUsuario } from "../../api/superadmin";
 import { FiUserCheck, FiInfo } from "react-icons/fi";
 // Catálogo único de roles (SCRUM-107): antes este archivo definía su propia
@@ -35,7 +36,7 @@ const btnStyle = (variant = "primary") => {
     success: { background: "rgba(16,185,129,.1)",    color: "var(--success)" },
     purple:  { background: "rgba(168,85,247,.1)",    color: "#a855f7" },
   };
-  return { border: "none", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "opacity .15s", ...(v[variant] || v.primary) };
+  return { border: "none", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "opacity .15s, transform .14s cubic-bezier(0.23, 1, 0.32, 1)", ...(v[variant] || v.primary) };
 };
 
 export default function SuperadminUsuarios() {
@@ -61,79 +62,56 @@ export default function SuperadminUsuarios() {
   useEffect(() => { load(1, filter); }, []);
 
   const handleToggle = async (user) => {
-    const { isConfirmed } = await Swal.fire({
-      title: `${user.activo ? "Desactivar" : "Activar"} a "${user.nombre}"`,
-      text: user.activo ? "El usuario no podrá iniciar sesión." : "El usuario recuperará acceso.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: user.activo ? "Desactivar" : "Activar",
-      confirmButtonColor: user.activo ? "var(--danger)" : "var(--success)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
+    const confirmado = await confirmar({
+      titulo: `${user.activo ? "Desactivar" : "Activar"} a "${user.nombre}"`,
+      mensaje: user.activo
+        ? "No podrá iniciar sesión hasta que lo vuelvas a activar. Sus datos se conservan."
+        : "Recuperará el acceso con los mismos permisos que tenía.",
+      confirmar: user.activo ? "Desactivar" : "Activar",
+      tono: user.activo ? "peligro" : "neutro",
     });
-    if (!isConfirmed) return;
+    if (!confirmado) return;
     try {
       await toggleUsuario(user.id);
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, activo: !u.activo } : u));
-      Swal.fire({ icon: "success", title: user.activo ? "Usuario desactivado" : "Usuario activado", timer: 1500, showConfirmButton: false, background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.exito(user.activo ? "Usuario desactivado" : "Usuario activado");
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error", text: e?.response?.data?.msg || "No se pudo cambiar", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo cambiar el estado", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
   const handleDelete = async (user) => {
-    const { isConfirmed, value: typed } = await Swal.fire({
-      title: `Eliminar PERMANENTEMENTE a "${user.nombre}"`,
-      html: `
-        <p style="margin-bottom:8px">Esto borra su cuenta y <strong>todos</strong> sus datos asociados (asistencias, pagos, rutinas, mensajes, etc.) de forma <strong>irreversible</strong>. No es una desactivación.</p>
-        <p style="margin-bottom:8px">Escribe <strong>ELIMINAR</strong> para confirmar:</p>
-      `,
-      icon: "warning",
-      input: "text",
-      inputPlaceholder: "ELIMINAR",
-      showCancelButton: true,
-      confirmButtonText: "Eliminar permanentemente",
-      confirmButtonColor: "var(--danger)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
-      preConfirm: (v) => {
-        if (v !== "ELIMINAR") {
-          Swal.showValidationMessage('Escribe "ELIMINAR" (en mayúsculas) para continuar');
-          return false;
-        }
-        return v;
-      },
+    const confirmado = await confirmar({
+      titulo: `Eliminar permanentemente a "${user.nombre}"`,
+      mensaje:
+        "Se borra su cuenta y todo lo asociado a ella: asistencias, pagos, rutinas y mensajes. " +
+        "Esto no se puede deshacer y no es lo mismo que desactivarla.",
+      confirmar: "Eliminar permanentemente",
+      tono: "peligro",
+      escribirParaConfirmar: "ELIMINAR",
     });
-    if (!isConfirmed || typed !== "ELIMINAR") return;
+    if (!confirmado) return;
 
     try {
       await eliminarUsuario(user.id);
       setUsers(prev => prev.filter(u => u.id !== user.id));
       setTotal(t => t - 1);
-      Swal.fire({ icon: "success", title: "Usuario eliminado permanentemente", timer: 1800, showConfirmButton: false, background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.exito("Usuario eliminado permanentemente");
     } catch (e) {
-      Swal.fire({ icon: "error", title: "No se pudo eliminar", text: e?.response?.data?.msg || "Error desconocido", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo eliminar", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
   const handleImpersonate = async (user) => {
-    const { isConfirmed } = await Swal.fire({
-      title: `Impersonar a "${user.nombre}"`,
-      html: `
-        <p style="margin-bottom:8px">Iniciarás sesión como este usuario por <strong>1 hora</strong>.</p>
-        <p style="color:var(--warning);font-size:13px">Esta acción queda registrada en el log de auditoría.</p>
-      `,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Continuar",
-      confirmButtonColor: "#a855f7",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
+    const confirmado = await confirmar({
+      titulo: `Entrar como "${user.nombre}"`,
+      mensaje:
+        "Usarás la plataforma como esta persona durante 1 hora. " +
+        "Queda registrado en el log de auditoría con tu cuenta como responsable.",
+      confirmar: "Continuar",
+      tono: "aviso",
     });
-    if (!isConfirmed) return;
+    if (!confirmado) return;
 
     try {
       const r = await impersonar(user.id);
@@ -143,7 +121,10 @@ export default function SuperadminUsuarios() {
       const prevToken = localStorage.getItem("token");
       const prevUser  = localStorage.getItem("user");
       if (!prevToken || !prevUser) {
-        Swal.fire({ icon: "error", title: "Error", text: "No se encontró una sesión de superadmin válida para restaurar al salir de la impersonación.", background: "var(--bg-card)", color: "var(--text-primary)" });
+        avisos.error(
+          "No se puede entrar como este usuario",
+          "No encontramos tu sesión de superadmin para devolverte a ella después. Vuelve a iniciar sesión e inténtalo otra vez."
+        );
         return;
       }
       sessionStorage.setItem("sa_prev_token", prevToken);
@@ -156,7 +137,7 @@ export default function SuperadminUsuarios() {
       const dest = ROUTE_FOR_ROLE[normalizarRol(targetUser.role).toLowerCase()] || "/owner";
       navigate(dest, { replace: true });
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error", text: e?.response?.data?.msg || "No se pudo impersonar", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo entrar como este usuario", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
@@ -223,11 +204,21 @@ export default function SuperadminUsuarios() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>Cargando…</td></tr>
+              /* Esqueleto con la forma de la tabla: al llegar los datos no
+                 salta el layout, que es lo que pasaba con el texto
+                 "Cargando…" centrado en una fila. */
+              <tr><td colSpan={7} style={{ padding: 12 }}>
+                <FilasSkeleton filas={6} columnas={["26%", "24%", "12%", "18%", "10%"]} />
+              </td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>Sin resultados</td></tr>
+              <tr><td colSpan={7} style={{ padding: 0 }}>
+                <div className="u-vacio" style={{ margin: 12 }}>
+                  <strong>Sin resultados</strong>
+                  Prueba con otro término de búsqueda o quita los filtros.
+                </div>
+              </td></tr>
             ) : users.map(u => (
-              <tr key={u.id} style={{ borderBottom: "1px solid var(--border, rgba(255,255,255,.04))" }}>
+              <tr key={u.id} className="u-fila" style={{ borderBottom: "1px solid var(--border, rgba(255,255,255,.04))" }}>
                 <td style={{ padding: "12px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--accent-dim, var(--accent-dim))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--accent, var(--accent))", flexShrink: 0 }}>
@@ -244,15 +235,16 @@ export default function SuperadminUsuarios() {
                 <td style={{ padding: "12px 16px" }}>
                   <span style={badge(u.activo ? "pos" : "neg")}>{u.activo ? "Activo" : "Inactivo"}</span>
                 </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{fmtDate(u.created_at)}</td>
+                <td className="u-tabular" style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{fmtDate(u.created_at)}</td>
                 <td style={{ padding: "12px 16px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     {u.rol?.toLowerCase() !== "superadmin" && (
-                      <button style={btnStyle("purple")} onClick={() => handleImpersonate(u)} title="Iniciar sesión como este usuario">
+                      <button className="u-presion" style={btnStyle("purple")} onClick={() => handleImpersonate(u)} title="Iniciar sesión como este usuario">
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><FiUserCheck /> Impersonar</span>
                       </button>
                     )}
                     <button
+                      className="u-presion"
                       style={btnStyle(u.activo ? "danger" : "success")}
                       onClick={() => handleToggle(u)}
                     >
@@ -260,6 +252,7 @@ export default function SuperadminUsuarios() {
                     </button>
                     {u.rol?.toLowerCase() !== "superadmin" && (
                       <button
+                        className="u-presion"
                         style={btnStyle("danger")}
                         onClick={() => handleDelete(u)}
                         title="Eliminar permanentemente (no reversible)"
@@ -278,9 +271,9 @@ export default function SuperadminUsuarios() {
 
       {pages > 1 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
-          <button style={btnStyle("ghost")} disabled={page === 1} onClick={() => load(page - 1)}>← Anterior</button>
+          <button className="u-presion" style={btnStyle("ghost")} disabled={page === 1} onClick={() => load(page - 1)}>← Anterior</button>
           <span style={{ padding: "7px 14px", fontSize: 13, color: "var(--text-secondary)" }}>{page} / {pages}</span>
-          <button style={btnStyle("ghost")} disabled={page === pages} onClick={() => load(page + 1)}>Siguiente →</button>
+          <button className="u-presion" style={btnStyle("ghost")} disabled={page === pages} onClick={() => load(page + 1)}>Siguiente →</button>
         </div>
       )}
 

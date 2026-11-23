@@ -5,6 +5,10 @@ import { ThemeProvider } from "./hooks/ThemeContext";
 import Layout from "./components/compartido/Layout";
 import CargandoPagina from "./components/compartido/CargandoPagina";
 import BannerCookies from "./components/compartido/BannerCookies";
+import AvisosHost from "./components/ui/AvisosHost";
+// Capa de interfaz compartida (botones, modales, esqueletos, campos).
+// Va aqui, una sola vez, para que este disponible en todas las rutas.
+import "./css/ui.css";
 
 // --- PÁGINAS PÚBLICAS ---
 import Landing     from "./pages/publico/Landing";
@@ -274,6 +278,11 @@ function App() {
         </Routes>
         </Suspense>
         <BannerCookies />
+        {/* Un unico <Toaster /> y un unico dialogo de confirmacion para
+            toda la app. Montarlos por pagina duplicaria cada aviso, y
+            colgarlos dentro de un contenedor con transform/overflow los
+            dejaria recortados o detras de los modales. */}
+        <AvisosHost />
       </BrowserRouter>
     </ThemeProvider>
   );

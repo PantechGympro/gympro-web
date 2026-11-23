@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiUsers, FiCalendar, FiActivity, FiCheckCircle,
-  FiClock, FiChevronRight, FiAlertCircle, FiBookOpen,
+  FiClock, FiAlertCircle, FiBookOpen,
   FiBarChart2, FiUser,
 } from "react-icons/fi";
 import trainerService from "../../services/entrenador/trainerService";

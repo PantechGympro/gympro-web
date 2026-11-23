@@ -1,5 +1,6 @@
 //frontend\src\api\auth.jsx
 import { peticion } from "./cliente";
+import { cabecerasHuella } from "../utils/huella";
 
 const API_URL = "/api/auth";
 
@@ -90,9 +91,13 @@ export async function registerGym(gymData, adminData, idPlan = null) {
   const body = { gym: gymData, admin: adminData };
   if (idPlan) body.id_plan = idPlan;
 
+  // Huella del equipo: el servidor la usa para frenar altas en serie desde la
+  // misma máquina (ver utils/huella.js y app/utils/antiabuso.py). Solo viaja
+  // aquí, en el registro, y es un hash. Si el navegador no puede calcularla,
+  // la petición sale igual: el servidor trata su ausencia como "no se sabe".
   const response = await fetch("/api/onboarding/register-gym", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await cabecerasHuella()) },
     body: JSON.stringify(body),
   });
 

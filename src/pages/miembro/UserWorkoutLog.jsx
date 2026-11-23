@@ -13,7 +13,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   FiPlus, FiTrash2, FiSave, FiActivity, FiCalendar, FiClock,
-  FiTrendingUp, FiCheckCircle, FiRefreshCw, FiBarChart2, FiList,
+  FiTrendingUp, FiCheckCircle, FiRefreshCw, FiBarChart2,
   FiChevronLeft, FiChevronRight,
 } from "react-icons/fi";
 import { GiMuscleUp } from "react-icons/gi";

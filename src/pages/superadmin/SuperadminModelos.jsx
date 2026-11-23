@@ -1,3 +1,4 @@
+import { FilasSkeleton } from "../../components/ui/Skeleton";
 import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 /**
  * SuperadminModelos.jsx — Laboratorio de Machine Learning (nivel plataforma).
@@ -58,9 +59,25 @@ const authHeaders = () => {
 // ── Estados de carga / error / vacio reutilizables ────────────────────────────
 
 function Estado({ loading, error, empty }) {
-  if (loading) return <p style={{ fontSize: 13, color: "var(--text-secondary)", padding: 20 }}>Cargando análisis…</p>;
-  if (error)   return <p style={{ fontSize: 13, color: "var(--danger)", padding: 20 }}>{error}</p>;
-  if (empty)   return <p style={{ fontSize: 13, color: "var(--text-secondary)", padding: 20 }}>Sin datos suficientes para este gimnasio.</p>;
+  // El esqueleto reserva el alto del análisis que viene, para que al
+  // llegar los resultados no salte la página.
+  if (loading) return (
+    <div style={{ padding: 12 }} aria-busy="true">
+      <FilasSkeleton filas={4} columnas={["34%", "24%", "18%"]} />
+    </div>
+  );
+  if (error)   return (
+    <div className="u-vacio" style={{ margin: 12, color: "var(--danger)" }} role="alert">
+      <strong>No se pudo cargar el análisis</strong>
+      {error}
+    </div>
+  );
+  if (empty)   return (
+    <div className="u-vacio" style={{ margin: 12 }}>
+      <strong>Todavía no hay datos suficientes</strong>
+      Este gimnasio necesita más historial para que el modelo produzca un resultado confiable.
+    </div>
+  );
   return null;
 }
 
@@ -426,10 +443,13 @@ export default function SuperadminModelos() {
               return (
                 <button
                   key={t.id}
+                  className="u-presion"
+                  aria-pressed={on}
                   onClick={() => setActive(t.id)}
                   style={{
                     display: "flex", alignItems: "center", gap: 8, border: "1px solid var(--border)",
                     borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    transition: "background-color .15s cubic-bezier(0.23, 1, 0.32, 1), color .15s cubic-bezier(0.23, 1, 0.32, 1), border-color .15s cubic-bezier(0.23, 1, 0.32, 1), transform .14s cubic-bezier(0.23, 1, 0.32, 1)",
                     background: on ? "var(--accent-dim, rgba(251,227,121,.12))" : "var(--bg-card)",
                     color: on ? "var(--accent-soft, " + ACCENT + ")" : "var(--text-secondary)",
                     borderColor: on ? ACCENT : "var(--border)",

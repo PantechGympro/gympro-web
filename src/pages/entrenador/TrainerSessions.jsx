@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FiClock, FiCheckCircle, FiXCircle, FiPlay, FiFilter,
   FiUser, FiMapPin, FiFileText, FiAlertCircle, FiRefreshCw,
-  FiEdit2, FiTrash2, FiCheck, FiX
+  FiEdit2, FiTrash2, FiCheck
 } from "react-icons/fi";
 import trainerService from "../../services/entrenador/trainerService";
 import "../../css/CSSUnificado.css";

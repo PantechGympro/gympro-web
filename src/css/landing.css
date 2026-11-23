@@ -1,0 +1,943 @@
+/* ============================================================
+   landing.css — Página comercial pública (pages/publico/Landing.jsx)
+   ------------------------------------------------------------
+   Antes vivía en un <style>{`...`}</style> dentro del JSX. Se saca a un
+   archivo real por tres razones concretas:
+     1. Un backtick dentro de un comentario CSS cerraba el template literal
+        y rompía el build (pasó el 2026-11-22).
+     2. Las @media queries no pueden sobreescribir estilos inline de React,
+        así que todo lo que deba ser responsivo tiene que vivir en clases.
+     3. Se cachea aparte del bundle y se puede leer con resaltado de sintaxis.
+
+   Criterio de movimiento (skills `animate`, `review-animations`,
+   `animation-performance`, `apple-design`):
+     - Solo se animan `transform` y `opacity` (saltan layout y paint). La
+       única excepción es `filter: blur()` puntual para enmascarar cruces,
+       siempre < 20px.
+     - Curvas exactas del vocabulario compartido, nunca aproximadas.
+     - Nada de `transition: all`.
+     - Todo hover va detrás de `@media (hover: hover) and (pointer: fine)`:
+       en táctil el hover se dispara al tocar y produce falsos positivos.
+     - `prefers-reduced-motion` quita el desplazamiento pero conserva los
+       fundidos de opacidad, que sí ayudan a entender qué cambió.
+     - `prefers-reduced-transparency` apaga el vidrio esmerilado.
+   ============================================================ */
+
+.gympro-landing {
+  /* Curvas: valores exactos del vocabulario de las skills de animación. */
+  --gympro-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --gympro-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --gympro-font-display: 'Big Shoulders Display', 'Plus Jakarta Sans', sans-serif;
+
+  /* Una sola rejilla para toda la página: mismos márgenes en cada sección. */
+  --l-max: 1180px;
+  --l-gutter: clamp(20px, 5vw, 28px);
+  --l-section-y: clamp(72px, 9vw, 112px);
+
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+.gympro-display {
+  font-family: var(--gympro-font-display);
+  font-weight: 800;
+  /* Tracking específico por tamaño (apple-design §15): el texto grande se
+     lee demasiado separado si se deja en 0, el cuerpo no. */
+  letter-spacing: -0.02em;
+}
+
+.l-shell {
+  max-width: var(--l-max);
+  margin: 0 auto;
+  padding-left: var(--l-gutter);
+  padding-right: var(--l-gutter);
+}
+
+.l-section    { padding-block: var(--l-section-y); }
+.l-section-alt {
+  padding-block: var(--l-section-y);
+  background: var(--bg-card);
+}
+
+.l-h2 {
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0 0 10px;
+  text-align: center;
+}
+.l-sub {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 54ch;          /* medida de lectura cómoda, no el ancho del contenedor */
+  margin: 0 auto clamp(36px, 5vw, 56px);
+}
+
+/* ── Barra de navegación: capa translúcida con el contenido pasando por
+   debajo (apple-design §12), no una franja opaca que come una tira fija.
+   `position: sticky` solo funciona porque <body> dejó de ser contenedor de
+   scroll — ver la nota en CSSUnificado.css sobre overflow-x: clip. ─────── */
+.l-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px var(--l-gutter);
+  background: transparent;
+  transition: background-color 250ms var(--gympro-ease-out),
+              box-shadow 250ms var(--gympro-ease-out),
+              backdrop-filter 250ms var(--gympro-ease-out);
+}
+.l-nav.is-scrolled {
+  background: var(--bg-main);                                   /* respaldo sin color-mix */
+  background: color-mix(in srgb, var(--bg-main) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-sm);
+}
+/* Borde de luz en el canto superior: el material captando luz, en vez de
+   una línea divisoria dura (apple-design §12). */
+.l-nav.is-scrolled::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  pointer-events: none;
+}
+
+.l-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 19px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.l-brand img { width: 26px; height: 26px; border-radius: 7px; }
+
+.l-nav-links { display: flex; align-items: center; gap: 4px; }
+.l-nav-link {
+  position: relative;
+  appearance: none;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color 160ms var(--gympro-ease-out);
+}
+.l-nav-link[data-activo="true"] { color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .l-nav-link:hover { color: var(--text-primary); }
+}
+/* Subrayado que viaja entre enlaces (layoutId de framer-motion). */
+.l-nav-indicador {
+  position: absolute;
+  left: 12px; right: 12px; bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.l-nav-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ── Botones ───────────────────────────────────────────────────────────── */
+.l-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 20px;
+  border-radius: var(--r-md);
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  /* La retroalimentación vive en el press y es instantánea (apple-design §1). */
+  transition: transform 160ms var(--gympro-ease-out),
+              background-color 180ms var(--gympro-ease-out),
+              border-color 180ms var(--gympro-ease-out),
+              box-shadow 220ms var(--gympro-ease-out),
+              color 180ms var(--gympro-ease-out);
+}
+.l-btn:active { transform: scale(0.97); }
+
+.l-btn-primario {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.l-btn-secundario {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.l-btn-fantasma {
+  background: transparent;
+  color: var(--text-primary);
+  padding: 9px 12px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .l-btn-primario:hover { background: var(--accent-hover); box-shadow: var(--shadow-accent); }
+  .l-btn-secundario:hover { border-color: var(--border-hover); }
+  .l-btn-fantasma:hover { color: var(--accent); }
+}
+
+.l-icon-btn {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: transform 160ms var(--gympro-ease-out),
+              color 180ms var(--gympro-ease-out),
+              border-color 180ms var(--gympro-ease-out);
+}
+.l-icon-btn:active { transform: scale(0.92); }
+@media (hover: hover) and (pointer: fine) {
+  .l-icon-btn:hover { color: var(--accent); border-color: var(--border-hover); }
+}
+
+.l-btn:focus-visible,
+.l-icon-btn:focus-visible,
+.l-nav-link:focus-visible,
+.l-rol-fila:focus-visible,
+.l-toggle-opcion:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+.l-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  gap: clamp(32px, 5vw, 56px);
+  align-items: center;
+  padding-block: clamp(48px, 7vw, 84px) clamp(56px, 8vw, 96px);
+}
+.l-h1 {
+  font-size: clamp(38px, 6vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;   /* tracking negativo: crece el tamaño, se cierra el espaciado */
+  margin: 0 0 18px;
+}
+.l-hero-sub {
+  font-size: clamp(15px, 1.6vw, 17px);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 46ch;
+  margin: 0 0 28px;
+}
+.l-hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.l-hero-nota {
+  margin: 18px 0 0;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+
+/* Entrada escalonada del hero: un solo momento protagonista en la página. */
+.l-hero-copy > * {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 600ms var(--gympro-ease-out),
+              transform 600ms var(--gympro-ease-out);
+}
+.l-hero-copy.is-visible > * { opacity: 1; transform: translateY(0); }
+.l-hero-copy.is-visible > *:nth-child(1) { transition-delay: 0ms; }
+.l-hero-copy.is-visible > *:nth-child(2) { transition-delay: 70ms; }
+.l-hero-copy.is-visible > *:nth-child(3) { transition-delay: 140ms; }
+.l-hero-copy.is-visible > *:nth-child(4) { transition-delay: 210ms; }
+
+/* Resaltador detrás de "Hazlo crecer.": trazo de plumón, no un subrayado
+   azul (texto azul + subrayado se lee como un enlace que no existe). */
+.l-h1-acento { position: relative; display: inline-block; z-index: 0; color: var(--accent); }
+.l-h1-acento::before {
+  content: "";
+  position: absolute;
+  left: -6px; right: -6px; top: 44%; bottom: 2px;
+  background: var(--accent-dim);
+  border-radius: 5px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 550ms var(--gympro-ease-out);
+  transition-delay: 460ms;
+  z-index: -1;
+}
+.l-hero-copy.is-visible .l-h1-acento::before { transform: scaleX(1); }
+
+/* ── Mockup del panel: profundidad real con sombra multicapa y una
+   inclinación leve que le da presencia sin estorbar la lectura. ───────── */
+.l-mock-wrap { perspective: 1600px; }
+.l-mock {
+  position: relative;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  overflow: hidden;
+  transform: rotateY(-7deg) rotateX(3deg);
+  /* Sombra en capas: contacto + elevación media + proyección larga. Una sola
+     sombra difusa se lee como neblina, no como un objeto que flota. */
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.22),
+    0 10px 28px rgba(0,0,0,.26),
+    0 36px 70px rgba(0,0,0,.30);
+  opacity: 0;
+  transition: opacity 700ms var(--gympro-ease-out),
+              transform 700ms var(--gympro-ease-out),
+              box-shadow 400ms var(--gympro-ease-out);
+  transition-delay: 120ms;
+}
+.l-mock.is-visible { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .l-mock-wrap:hover .l-mock.is-visible { transform: rotateY(-2deg) rotateX(1deg); }
+}
+
+.l-mock-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-main);
+}
+.l-mock-ident { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.l-mock-avatar {
+  width: 26px; height: 26px; flex-shrink: 0;
+  border-radius: var(--r-full);
+  background: var(--accent-dim);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+}
+.l-mock-titulo { font-size: 12.5px; font-weight: 700; }
+.l-mock-etiqueta { font-size: 10.5px; color: var(--text-tertiary); }
+
+/* Pestañas del mockup: el indicador se desplaza con layoutId. */
+.l-mock-tabs { display: flex; gap: 2px; padding: 10px 12px 0; }
+.l-mock-tab {
+  position: relative;
+  appearance: none; background: none; border: none; font: inherit;
+  font-size: 11.5px; font-weight: 700;
+  color: var(--text-tertiary);
+  padding: 6px 10px 9px;
+  cursor: pointer;
+  transition: color 160ms var(--gympro-ease-out);
+}
+.l-mock-tab[aria-selected="true"] { color: var(--text-primary); }
+.l-mock-tab-indicador {
+  position: absolute;
+  left: 8px; right: 8px; bottom: 0;
+  height: 2px; border-radius: 2px;
+  background: var(--accent);
+}
+.l-mock-cuerpo { padding: 14px; min-height: 212px; }
+
+.l-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.l-kpi { background: var(--bg-main); border-radius: var(--r-sm); padding: 11px 13px; }
+.l-kpi-label { font-size: 10.5px; color: var(--text-tertiary); margin-bottom: 3px; }
+.l-kpi-valor { font-size: 21px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.l-kpi-delta { font-size: 10.5px; font-weight: 700; color: var(--success); margin-top: 3px; }
+
+.l-barras {
+  display: flex; align-items: flex-end; gap: 6px;
+  height: 78px;
+  background: var(--bg-main);
+  border-radius: var(--r-sm);
+  padding: 10px 13px;
+}
+.l-barra {
+  flex: 1;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--accent);
+  opacity: .85;
+  transform-origin: bottom;
+  transform: scaleY(0);
+  transition: transform 650ms var(--gympro-ease-out);
+}
+.l-barra.is-visible { transform: scaleY(1); }
+.l-barra[data-fuerte="true"] { opacity: 1; }
+
+.l-mock-nota { font-size: 10.5px; color: var(--text-tertiary); text-align: center; margin: 10px 0 0; }
+
+/* Filas de check-in / desglose dentro del mockup */
+.l-mock-filas { display: flex; flex-direction: column; gap: 7px; }
+.l-mock-fila {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-main);
+  border-radius: var(--r-sm);
+  padding: 8px 11px;
+  font-size: 11.5px;
+}
+.l-mock-fila-nombre { font-weight: 700; }
+.l-mock-fila-dato { margin-left: auto; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.l-pastilla {
+  font-size: 10px; font-weight: 800;
+  padding: 2px 7px; border-radius: var(--r-full);
+  background: var(--success-bg); color: var(--success);
+}
+.l-pastilla[data-tono="aviso"] { background: var(--warning-bg); color: var(--warning); }
+.l-pastilla[data-tono="acento"] { background: var(--accent-dim); color: var(--accent); }
+
+.l-medida { height: 6px; border-radius: var(--r-full); background: var(--bg-input); overflow: hidden; flex: 1; }
+.l-medida > i {
+  display: block; height: 100%; border-radius: inherit;
+  background: var(--accent);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 700ms var(--gympro-ease-out);
+}
+.l-medida.is-visible > i { transform: scaleX(1); }
+
+@media (max-width: 920px) {
+  .l-hero { grid-template-columns: 1fr; }
+  .l-mock { transform: none; }        /* la inclinación cuesta legibilidad en pantallas chicas */
+  .l-nav-links { display: none; }
+}
+
+/* ── Revelado al hacer scroll: un solo sistema, mismas curvas en toda la
+   página. Nunca una curva distinta por sección. ───────────────────────── */
+.l-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 550ms var(--gympro-ease-out),
+              transform 550ms var(--gympro-ease-out);
+}
+.l-reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+/* ── Bento de funcionalidades ──────────────────────────────────────────
+   Rejilla asimétrica: cada tarjeta tiene su propia micro-UI, no el mismo
+   bloque "icono arriba + título + párrafo" repetido seis veces. El ritmo
+   desigual (4/2, 2/4, 3/3) es lo que evita que se lea como plantilla. ── */
+.l-bento {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+}
+.l-bento-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 550ms var(--gympro-ease-out),
+              transform 350ms var(--gympro-ease-out),
+              border-color 220ms var(--gympro-ease-out),
+              box-shadow 220ms var(--gympro-ease-out);
+}
+.l-bento-card.is-visible { opacity: 1; transform: translateY(0); }
+@media (hover: hover) and (pointer: fine) {
+  .l-bento-card.is-visible:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+  }
+  /* El icono es lo único que se mueve al hover: un gesto, no seis. */
+  .l-bento-card.is-visible:hover .l-bento-icono {
+    transform: scale(1.09) rotate(-4deg);
+  }
+}
+.l-bento-a { grid-column: span 4; }
+.l-bento-b { grid-column: span 2; }
+.l-bento-c { grid-column: span 2; }
+.l-bento-d { grid-column: span 4; }
+.l-bento-e { grid-column: span 3; }
+.l-bento-f { grid-column: span 3; }
+
+.l-bento-encabezado { display: flex; align-items: flex-start; gap: 11px; }
+.l-bento-icono {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  transition: transform 220ms var(--gympro-ease-out);
+}
+.l-bento-titulo { font-size: 16px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+.l-bento-texto { font-size: 13px; line-height: 1.55; color: var(--text-secondary); margin: 0; max-width: 46ch; }
+
+/* Lienzo de micro-UI: la "demostración" dentro de cada tarjeta. */
+.l-micro {
+  margin-top: auto;
+  background: var(--bg-main);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.l-micro-fila {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 11.5px;
+}
+.l-micro-avatar {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: var(--r-full);
+  background: var(--accent-dim); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 800;
+}
+.l-micro-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.l-chip {
+  font-size: 10.5px; font-weight: 700;
+  padding: 4px 9px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--bg-card);
+}
+.l-chip[data-tono="acento"] { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* Teléfono de la tarjeta "App para tus socios" */
+.l-telefono {
+  width: 128px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--bg-main);
+  padding: 9px 8px 10px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.l-telefono-muesca {
+  width: 38px; height: 4px; border-radius: var(--r-full);
+  background: var(--border); margin: 0 auto 3px;
+}
+.l-telefono-tarjeta {
+  background: var(--bg-card);
+  border-radius: var(--r-sm);
+  padding: 7px 8px;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.l-bento-split { display: flex; gap: 14px; align-items: stretch; }
+.l-bento-split > .l-micro { flex: 1; margin-top: 0; }
+
+@media (max-width: 980px) {
+  .l-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .l-bento-a, .l-bento-d { grid-column: span 2; }
+  .l-bento-b, .l-bento-c, .l-bento-e, .l-bento-f { grid-column: span 1; }
+}
+@media (max-width: 620px) {
+  .l-bento { grid-template-columns: minmax(0, 1fr); }
+  .l-bento-a, .l-bento-b, .l-bento-c,
+  .l-bento-d, .l-bento-e, .l-bento-f { grid-column: span 1; }
+  .l-bento-split { flex-direction: column; }
+  .l-telefono { width: 100%; }
+}
+
+/* ── Showcase de roles: dos columnas. La izquierda selecciona, la derecha
+   muestra lo que ve ese rol. Antes los 5 roles se apilaban a la izquierda
+   y la mitad derecha quedaba en blanco. ──────────────────────────────── */
+.l-roles {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(24px, 4vw, 44px);
+  align-items: start;
+}
+.l-roles-lista { display: flex; flex-direction: column; gap: 2px; }
+.l-rol-fila {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 13px;
+  width: 100%;
+  text-align: left;
+  appearance: none; background: none; border: none; font: inherit;
+  padding: 14px 14px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: color 180ms var(--gympro-ease-out);
+}
+.l-rol-resalte {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-md);
+  background: var(--bg-active);
+  border: 1px solid var(--border-hover);
+  z-index: 0;
+}
+.l-rol-contenido {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  width: 100%;
+}
+.l-rol-indice {
+  flex-shrink: 0;
+  font-size: 22px;
+  line-height: 1.25;
+  width: 28px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  transition: color 180ms var(--gympro-ease-out);
+}
+.l-rol-fila[aria-selected="true"] .l-rol-indice { color: var(--accent); }
+.l-rol-icono {
+  flex-shrink: 0;
+  width: 30px; height: 30px; margin-top: 1px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  transition: background-color 180ms var(--gympro-ease-out),
+              color 180ms var(--gympro-ease-out);
+}
+.l-rol-fila[aria-selected="true"] .l-rol-icono { background: var(--accent-dim); color: var(--accent); }
+.l-rol-nombre { font-size: 14.5px; font-weight: 700; margin: 0 0 3px; }
+.l-rol-texto { font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); margin: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .l-rol-fila:hover .l-rol-nombre { color: var(--accent); }
+}
+
+/* Panel derecho: vista previa de lo que ve el rol seleccionado. */
+.l-rol-panel {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-card);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.16), 0 14px 36px rgba(0,0,0,.20);
+  min-height: 330px;
+}
+.l-rol-panel-top {
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.l-rol-panel-punto { width: 8px; height: 8px; border-radius: var(--r-full); background: var(--accent); flex-shrink: 0; }
+.l-rol-panel-titulo { font-size: 12px; font-weight: 700; }
+.l-rol-panel-sub { font-size: 10.5px; color: var(--text-tertiary); margin-left: auto; }
+.l-rol-panel-cuerpo { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+
+@media (max-width: 900px) {
+  .l-roles { grid-template-columns: minmax(0, 1fr); }
+  .l-rol-panel { min-height: 300px; }
+}
+
+/* ── Planes ────────────────────────────────────────────────────────────── */
+.l-toggle {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  margin: 0 auto clamp(28px, 4vw, 40px);
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.l-toggle-opcion {
+  position: relative;
+  appearance: none; background: none; border: none; font: inherit;
+  font-size: 13px; font-weight: 700;
+  color: var(--text-secondary);
+  padding: 8px 18px;
+  border-radius: var(--r-full);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 180ms var(--gympro-ease-out);
+}
+.l-toggle-opcion[aria-pressed="true"] { color: var(--text-on-accent); }
+.l-toggle-pastilla {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  z-index: 0;
+}
+.l-toggle-rotulo { position: relative; z-index: 1; }
+.l-toggle-ahorro {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--success);
+  margin-left: 7px;
+}
+.l-toggle-opcion[aria-pressed="true"] .l-toggle-ahorro { color: var(--text-on-accent); opacity: .85; }
+
+.l-planes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.l-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px 20px 20px;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 550ms var(--gympro-ease-out),
+              transform 350ms var(--gympro-ease-out),
+              border-color 220ms var(--gympro-ease-out),
+              box-shadow 220ms var(--gympro-ease-out);
+}
+.l-plan.is-visible { opacity: 1; transform: translateY(0); }
+/* El plan destacado: borde de acento + halo tenue. Esa es la señal, no una
+   píldora flotante encima de la tarjeta. */
+.l-plan[data-destacado="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-dim), 0 18px 50px var(--accent-dim);
+}
+@media (hover: hover) and (pointer: fine) {
+  .l-plan.is-visible:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md); }
+  .l-plan[data-destacado="true"].is-visible:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-dim), 0 22px 58px var(--accent-dim);
+  }
+}
+.l-plan-encabezado { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.l-plan-nombre { font-size: 17px; font-weight: 800; margin: 0; text-transform: capitalize; letter-spacing: -0.01em; }
+.l-plan-recomendado {
+  font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--accent);
+}
+.l-plan-tagline {
+  font-size: 12.5px; line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  min-height: 2.9em;      /* alinea los precios entre tarjetas sin recortar texto */
+}
+.l-plan-precio { display: flex; align-items: baseline; gap: 6px; min-height: 44px; }
+.l-plan-precio-num { font-size: 31px; line-height: 1; font-variant-numeric: tabular-nums; }
+.l-plan-precio-unidad { font-size: 12.5px; color: var(--text-tertiary); }
+.l-plan-precio-pie {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: 5px 0 16px;
+  min-height: 1.4em;
+}
+.l-plan-lista {
+  list-style: none; margin: 0 0 18px; padding: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  flex: 1;
+}
+.l-plan-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 12.5px; line-height: 1.45;
+  color: var(--text-secondary);
+}
+.l-plan-item svg { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.l-plan-prueba {
+  display: inline-flex; align-self: flex-start;
+  font-size: 10.5px; font-weight: 800;
+  padding: 3px 9px; border-radius: var(--r-full);
+  background: var(--success-bg); color: var(--success);
+  margin-bottom: 14px;
+}
+
+/* ── Gimnasios: carrusel con los bordes desvanecidos, para que las tarjetas
+   no se corten en seco contra el borde del viewport. ──────────────────── */
+.l-marquee-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.l-marquee-track {
+  display: flex;
+  gap: 18px;
+  width: max-content;
+  animation: l-marquee 38s linear infinite;
+}
+@keyframes l-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.l-gym-grid { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; }
+.l-gym-card {
+  width: 224px; flex-shrink: 0;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-main);
+  transition: transform 220ms var(--gympro-ease-out),
+              border-color 220ms var(--gympro-ease-out),
+              box-shadow 220ms var(--gympro-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .l-gym-card:hover { transform: translateY(-4px); border-color: var(--border-hover); box-shadow: var(--shadow-md); }
+}
+.l-gym-img { width: 100%; height: 132px; object-fit: cover; display: block; background: var(--bg-input); }
+.l-gym-nombre { padding: 10px 12px 2px; font-size: 13.5px; font-weight: 700; }
+.l-gym-direccion { padding: 0 12px 12px; font-size: 11.5px; color: var(--text-tertiary); }
+
+/* ── Testimonios ───────────────────────────────────────────────────────── */
+.l-testi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(264px, 1fr));
+  gap: 16px;
+}
+.l-testi {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 550ms var(--gympro-ease-out),
+              transform 350ms var(--gympro-ease-out),
+              border-color 220ms var(--gympro-ease-out);
+}
+.l-testi.is-visible { opacity: 1; transform: translateY(0); }
+.l-testi-texto { font-size: 13.5px; line-height: 1.6; color: var(--text-primary); margin: 0; }
+.l-testi-autor { font-size: 13px; font-weight: 700; }
+.l-testi-cargo { font-size: 12px; color: var(--text-secondary); }
+.l-testi-gym { font-size: 11.5px; color: var(--text-tertiary); }
+
+/* ── Estados de carga y de vacío ───────────────────────────────────────── */
+.l-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-input);
+  border-radius: var(--r-sm);
+}
+/* El brillo se mueve con `transform` (compositor), no con background-position,
+   que repinta en cada frame. */
+.l-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--bg-hover), transparent);
+  animation: l-shimmer 1.4s linear infinite;
+}
+@keyframes l-shimmer {
+  to { transform: translateX(100%); }
+}
+.l-skeleton-gym { width: 224px; flex-shrink: 0; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border); background: var(--bg-main); }
+.l-skeleton-gym-img { height: 132px; border-radius: 0; }
+
+/* Estado vacío honesto: un párrafo tranquilo y centrado. Sin caja de
+   borde punteado -- eso se lee como "algo falló" cuando en realidad el
+   dato simplemente todavía no existe. */
+.l-vacio {
+  text-align: center;
+  padding: 30px 22px;
+  border-radius: var(--r-lg);
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  max-width: 56ch;
+  margin: 0 auto;
+}
+.l-vacio strong { color: var(--text-secondary); font-weight: 700; display: block; margin-bottom: 4px; }
+
+/* ── Franja de cifras del producto ─────────────────────────────────────── */
+.l-cifras { background: var(--bg-sidebar); padding-block: clamp(36px, 5vw, 52px); }
+.l-cifras-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  text-align: center;
+}
+.l-cifra-num { font-size: clamp(34px, 4.5vw, 46px); line-height: 1; color: var(--accent-soft); font-variant-numeric: tabular-nums; }
+.l-cifra-label { font-size: 12.5px; color: rgba(255,255,255,.66); margin-top: 6px; }
+@media (max-width: 700px) {
+  .l-cifras-grid { grid-template-columns: repeat(2, 1fr); row-gap: 26px; }
+}
+
+/* ── Banda de cierre y pie ─────────────────────────────────────────────── */
+.l-cta-band {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; flex-wrap: wrap;
+  background: var(--bg-sidebar);
+  color: #fff;
+  border-radius: var(--r-xl);
+  padding: clamp(26px, 4vw, 36px);
+}
+.l-cta-band h3 { font-size: clamp(20px, 2.6vw, 25px); margin: 0 0 4px; letter-spacing: -0.02em; }
+.l-cta-band p { font-size: 13.5px; color: rgba(255,255,255,.7); margin: 0; }
+
+.l-footer {
+  border-top: 1px solid var(--border);
+  padding-block: 26px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 14px;
+}
+.l-footer-links { display: flex; flex-wrap: wrap; gap: 18px; }
+.l-footer-link {
+  appearance: none; background: none; border: none; padding: 0;
+  font: inherit; font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 160ms var(--gympro-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .l-footer-link:hover { color: var(--accent); }
+}
+.l-footer-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ── Superficies del navegador: lo más barato que distingue una página
+   construida de una ensamblada (craft-floor "browser surfaces"). ─────── */
+.gympro-landing ::selection { background: var(--accent-dim); color: var(--text-primary); }
+
+/* ── Transparencia reducida: el vidrio se vuelve sólido, nunca ilegible ── */
+@media (prefers-reduced-transparency: reduce) {
+  .l-nav.is-scrolled {
+    background: var(--bg-main);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ── Movimiento reducido: menos y más suave, no cero. Se conserva el
+   fundido de opacidad (ayuda a entender qué cambió) y se quita todo
+   desplazamiento, inclinación y bucle. ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .l-hero-copy > *,
+  .l-mock,
+  .l-reveal,
+  .l-bento-card,
+  .l-plan,
+  .l-testi {
+    transform: none !important;
+    transition-duration: 240ms;
+  }
+  .l-h1-acento::before { transition: none; transform: scaleX(1); }
+  .l-barra { transform: scaleY(1); transition: none; }
+  .l-medida > i { transform: scaleX(1); transition: none; }
+  .l-marquee-track { animation: none; }
+  .l-skeleton::after { animation: none; }
+  .l-btn:active,
+  .l-icon-btn:active { transform: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .l-bento-card.is-visible:hover,
+    .l-gym-card:hover,
+    .l-bento-card.is-visible:hover .l-bento-icono { transform: none; }
+  }
+}
+
+/* Las secciones son destino de los enlaces del nav: con la barra pegada
+   arriba, su borde superior quedaría tapado sin este margen de scroll. */
+.l-ancla { scroll-margin-top: 84px; }

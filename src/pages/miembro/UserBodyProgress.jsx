@@ -459,7 +459,7 @@ const RecomendacionCard = ({ recomendacion, idx }) => (
 export default function UserHealthProgress() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [selectedGender, setSelectedGender] = useState("female");
+  const [, setSelectedGender] = useState("female");
   const [showUpdate, setShowUpdate] = useState(false);   // modal "Actualizar Datos"
   const [bodyMetrics, setBodyMetrics] = useState({
     peso: { actual: 0, inicial: 0, meta: 0 },
@@ -473,7 +473,7 @@ export default function UserHealthProgress() {
     condiciones: [], alergias: [], medicamentos: [], lesiones: [],
     ultimaActualizacion: null, notas: ""
   });
-  const [progressHistory, setProgressHistory] = useState([]);
+  const [, setProgressHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hasDatos, setHasDatos] = useState(false);

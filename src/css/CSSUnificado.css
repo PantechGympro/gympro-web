@@ -262,7 +262,19 @@ body {
   font-family: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', system-ui, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-primary);
+  /* `overflow-x: hidden` en <body> obliga al navegador a calcular
+     `overflow-y: auto` (regla de CSS Overflow: si un eje no es `visible`,
+     el otro deja de serlo). Eso convierte a <body> en contenedor de scroll,
+     y como <body> crece con el contenido en vez de desplazarse, CUALQUIER
+     `position: sticky` de la app deja de pegarse: su ancestro de scroll mas
+     cercano pasa a ser <body>, que nunca hace scroll. Ese era el motivo de
+     que la barra de navegacion de la landing apareciera a media pagina en
+     vez de fijarse arriba.
+     `overflow-x: clip` recorta igual el desbordamiento horizontal pero NO
+     crea contenedor de scroll, asi que sticky vuelve a funcionar. Se deja
+     `hidden` antes como respaldo para navegadores sin soporte de `clip`. */
   overflow-x: hidden;
+  overflow-x: clip;
   line-height: 1.6;
   transition: background-color 0.25s ease, color 0.25s ease;
 }

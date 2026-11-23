@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  FiSave, FiArrowLeft, FiUser, FiActivity, FiAlertCircle, 
+  FiSave, FiArrowLeft, FiAlertCircle, 
   FiCheckCircle, FiEdit2, FiTarget
 } from "react-icons/fi";
-import { GiBodyHeight, GiWeightScale, GiChest, GiLeg, GiMuscleUp, GiFootTrip } from "react-icons/gi";
+import { GiWeightScale, GiChest, GiLeg, GiMuscleUp, GiFootTrip } from "react-icons/gi";
 import Swal from "sweetalert2";
 import "../../css/CSSUnificado.css";
 

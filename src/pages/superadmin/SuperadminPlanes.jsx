@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import Swal from "sweetalert2";
+import { avisos, confirmar } from "../../utils/avisos";
+import Modal from "../../components/ui/Modal";
+import { TarjetasSkeleton } from "../../components/ui/Skeleton";
 import { getPlanes, crearPlan, editarPlan, togglePlan } from "../../api/superadmin";
 import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
@@ -75,14 +77,14 @@ function PlanForm({ plan, planesExistentes = [], onSave, onCancel }) {
 
     const nombre = form.nombre.trim();
     if (!NOMBRE_PLAN_RE.test(nombre)) {
-      Swal.fire({ icon: "warning", title: "Nombre inválido", text: "Usa solo letras, números, espacios y guiones (2-50 caracteres).", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.advertencia("Nombre inválido", "Usa solo letras, números, espacios y guiones (2 a 50 caracteres).");
       return;
     }
     const duplicado = planesExistentes.some(
       p => p.id !== plan?.id && p.nombre.trim().toLowerCase() === nombre.toLowerCase()
     );
     if (duplicado) {
-      Swal.fire({ icon: "warning", title: "Nombre en uso", text: `Ya existe un plan llamado "${nombre}".`, background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.advertencia("Ese nombre ya existe", `Ya hay un plan llamado "${nombre}". Elige otro para no confundirlos en la página de precios.`);
       return;
     }
 
@@ -105,7 +107,7 @@ function PlanForm({ plan, planesExistentes = [], onSave, onCancel }) {
       onSave();
     } catch (err) {
       const msg = err?.response?.data?.msg || "Error al guardar";
-      Swal.fire({ icon: "error", title: "Error", text: msg, background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo guardar el plan", msg);
     } finally {
       setSaving(false);
     }
@@ -172,9 +174,20 @@ function PlanForm({ plan, planesExistentes = [], onSave, onCancel }) {
         </p>
       </div>
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <button type="button" style={btnStyle("ghost")} onClick={onCancel} disabled={saving}>Cancelar</button>
-        <button type="submit" style={{ ...btnStyle("primary"), opacity: saving ? .6 : 1, cursor: saving ? "not-allowed" : "pointer" }} disabled={saving}>
-          {saving ? "Guardando…" : (plan?.id ? "Guardar cambios" : "Crear plan")}
+        <button type="button" className="u-presion" style={btnStyle("ghost")} onClick={onCancel} disabled={saving}>Cancelar</button>
+        <button
+          type="submit"
+          className="u-presion u-btn-carga-host"
+          style={{ ...btnStyle("primary"), opacity: saving ? .7 : 1, cursor: saving ? "not-allowed" : "pointer" }}
+          disabled={saving}
+          aria-busy={saving || undefined}
+        >
+          {/* La etiqueta se queda en su sitio y el spinner se superpone:
+              el botón no cambia de ancho al pasar a "guardando". */}
+          <span className="u-btn-etiqueta" data-cargando={saving}>
+            {plan?.id ? "Guardar cambios" : "Crear plan"}
+          </span>
+          {saving && <span className="u-btn-spinner" />}
         </button>
       </div>
     </form>
@@ -267,35 +280,34 @@ export default function SuperadminPlanes() {
   useEffect(() => { load(); }, []);
 
   const handleToggle = async (plan) => {
-    const { isConfirmed } = await Swal.fire({
-      title: `${plan.activo ? "Desactivar" : "Activar"} plan "${plan.nombre}"`,
-      text: plan.activo ? "Los gimnasios con este plan no perderán acceso de inmediato, pero no podrán renovarlo." : "El plan estará disponible para nuevas suscripciones.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: plan.activo ? "Desactivar" : "Activar",
-      confirmButtonColor: plan.activo ? "var(--danger)" : "var(--success)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
+    const confirmado = await confirmar({
+      titulo: `${plan.activo ? "Desactivar" : "Activar"} el plan "${plan.nombre}"`,
+      mensaje: plan.activo
+        ? "Los gimnasios que ya lo tienen conservan su acceso, pero no podrán renovarlo y dejará de ofrecerse a gimnasios nuevos."
+        : "Volverá a aparecer en la página de precios y podrá contratarse.",
+      confirmar: plan.activo ? "Desactivar" : "Activar",
+      tono: plan.activo ? "peligro" : "neutro",
     });
-    if (!isConfirmed) return;
+    if (!confirmado) return;
     try {
       const r = await togglePlan(plan.id);
       if (r.data.advertencia) {
-        Swal.fire({ icon: "warning", title: "Plan desactivado", text: r.data.advertencia, background: "var(--bg-card)", color: "var(--text-primary)" });
+        // La advertencia del backend explica a cuántos gimnasios afecta:
+        // merece quedarse en pantalla más tiempo que un "listo".
+        avisos.advertencia("Plan desactivado", r.data.advertencia);
       } else {
-        Swal.fire({ icon: "success", title: "Listo", timer: 1500, showConfirmButton: false, background: "var(--bg-card)", color: "var(--text-primary)" });
+        avisos.exito(plan.activo ? "Plan desactivado" : "Plan activado");
       }
       load();
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error", text: e?.response?.data?.msg || "No se pudo cambiar", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo cambiar el plan", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
   const handleEdit = (plan) => { setEditing(plan); setShowForm(true); };
   const handleNew  = ()     => { setEditing(null);  setShowForm(true); };
-  const handleSave = ()     => { setShowForm(false); setEditing(null); load();
-    Swal.fire({ icon: "success", title: "Plan guardado", timer: 1500, showConfirmButton: false, background: "var(--bg-card)", color: "var(--text-primary)" }); };
+  const cerrarForm = () => { setShowForm(false); setEditing(null); };
+  const handleSave = () => { cerrarForm(); load(); avisos.exito("Plan guardado"); };
 
   return (
     <div className="superadmin-page" style={{ minHeight: "100vh", background: "var(--bg-input)", fontFamily: "inherit" }}>
@@ -304,31 +316,35 @@ export default function SuperadminPlanes() {
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>Planes de Suscripción</h1>
           <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>Gestiona los planes disponibles para los gimnasios</p>
         </div>
-        <button style={btnStyle("primary")} onClick={handleNew}>+ Nuevo Plan</button>
+        <button className="u-presion" style={btnStyle("primary")} onClick={handleNew}>+ Nuevo Plan</button>
       </div>
 
-      {/* Form modal */}
-      {showForm && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 24 }}>
-          <div style={{ ...card(), width: "100%", maxWidth: 540, maxHeight: "90vh", overflowY: "auto" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)", marginBottom: 20 }}>
-              {editing?.id ? "Editar Plan" : "Nuevo Plan"}
-            </h2>
-            <PlanForm plan={editing} planesExistentes={planes} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null); }} />
-          </div>
-        </div>
-      )}
+      {/* Antes era un overlay hecho a mano: sin Escape, sin clic fuera, sin
+          bloqueo de scroll del fondo y sin manejo de foco. El Modal
+          compartido trae esas cuatro cosas y la entrada/salida animada. */}
+      <Modal
+        abierto={showForm}
+        onCerrar={cerrarForm}
+        titulo={editing?.id ? "Editar plan" : "Nuevo plan"}
+        ancho={540}
+        /* Un formulario a medio llenar no debe perderse por un clic
+           distraído fuera del panel. */
+        cerrarAlClicarFuera={false}
+      >
+        <PlanForm plan={editing} planesExistentes={planes} onSave={handleSave} onCancel={cerrarForm} />
+      </Modal>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 60, color: "var(--text-secondary)" }}>Cargando planes…</div>
+        <TarjetasSkeleton tarjetas={4} />
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
           {planes.map(plan => (
             <PlanCard key={plan.id} plan={plan} planes={planes} onEdit={handleEdit} onToggle={handleToggle} />
           ))}
           {planes.length === 0 && (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: "var(--text-secondary)" }}>
-              Sin planes configurados. Crea el primero.
+            <div className="u-vacio" style={{ gridColumn: "1/-1" }}>
+              <strong>Todavía no hay planes configurados</strong>
+              Crea el primero y aparecerá en la página pública de precios.
             </div>
           )}
         </div>

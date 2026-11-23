@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
   FiUserCheck, FiCalendar, FiDollarSign, FiAlertCircle,
-  FiRefreshCw, FiClock, FiUsers, FiActivity,
+  FiRefreshCw, FiClock, FiUsers,
 } from "react-icons/fi";
 import "../../css/CSSUnificado.css";
 
