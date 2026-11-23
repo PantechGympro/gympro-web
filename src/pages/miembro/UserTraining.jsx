@@ -243,9 +243,6 @@ const ROUTINES_API = async (method, path, body) => {
 };
 
 /* ── Palette & helpers ──────────────────────────────────────── */
-const DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
-const DIAS_LABEL = { lunes: "L", martes: "M", miercoles: "X", jueves: "J", viernes: "V", sabado: "S", domingo: "D" };
-
 const card = (extra = {}) => ({
   background: "var(--bg-card)",
   border: "1px solid var(--border)",

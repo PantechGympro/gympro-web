@@ -15,7 +15,6 @@ import {
   FaBicycle, FaSwimmer, FaGem, FaCog,
 } from "react-icons/fa";
 import { registerGym, getPlanesPublicos } from "../../api/auth";
-import useTheme from "../../hooks/useTheme";
 import { passwordStrength } from "../../utils/passwordStrength";
 import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
@@ -45,7 +44,6 @@ const btnBack = {
 
 export default function RegisterGym() {
   const navigate  = useNavigate();
-  const { theme } = useTheme();
 
   const [step, setStep]         = useState(0);
   const [loading, setLoading]   = useState(false);
