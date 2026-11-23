@@ -227,7 +227,7 @@ export default function Layout({ role = "owner_gym" }) {
 
   // Diálogo de confirmación propio (mismo look que el resto del sistema, ver
   // hooks/useToast.jsx) para el botón "Cancelar", en vez de window.confirm().
-  const { confirm: confirmImportCancel, ToastPortal: ImportToastPortal } = useToast();
+  const { confirm: confirmImportCancel } = useToast();
 
   // ── Aviso de activación de Web Push (SCRUM-130) ──────────────────────────
   // Visible para TODOS los roles -- a diferencia de AvisoLimitePlan (solo

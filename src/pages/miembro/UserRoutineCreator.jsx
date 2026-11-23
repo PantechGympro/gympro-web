@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiPlus, FiTrash2, FiSave, FiCopy, FiAlertCircle, FiCheckCircle, FiX,
-  FiChevronDown, FiChevronUp, FiSearch, FiZap, FiActivity, FiMoon
+  FiPlus, FiTrash2, FiSave, FiAlertCircle, FiCheckCircle, FiX,
+  FiChevronDown, FiChevronUp, FiZap, FiActivity, FiMoon
 } from "react-icons/fi";
 import "../../css/CSSUnificado.css";
 

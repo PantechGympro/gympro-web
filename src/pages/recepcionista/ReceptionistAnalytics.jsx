@@ -237,7 +237,6 @@ export default function ReceptionistAnalytics() {
   const metricas   = regData?.metricas || {};
   const r2         = metricas?.r2 ?? null;
   const rmse       = metricas?.rmse ?? null;
-  const maeVal     = metricas?.mae ?? null;
   const nRegistros = metricas?.n_registros || metricas?.n || 0;
 
   function r2Label(r2) {

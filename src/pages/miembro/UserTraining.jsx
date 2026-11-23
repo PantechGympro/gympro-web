@@ -8,8 +8,7 @@ import { mensajeAmigable } from "../../utils/errores";
  *   3. Alertas       — recordatorios y notificaciones de entrenamiento
  */
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  FiFileText, FiUser, FiBell, FiPlus, FiSend,
+import { FiUser, FiBell, FiPlus, FiSend,
   FiCheck, FiX, FiClock, FiAlertCircle, FiCheckCircle,
   FiMessageSquare, FiZap, FiToggleLeft, FiToggleRight,
   FiChevronDown, FiChevronUp, FiRefreshCw, FiStar,

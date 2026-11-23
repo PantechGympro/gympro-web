@@ -24,7 +24,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartTooltip,
-  ResponsiveContainer, Cell, CartesianGrid, Legend,
+  ResponsiveContainer, Cell, CartesianGrid,
 } from "recharts";
 import {
   FiBarChart2, FiTrendingUp, FiUsers, FiCalendar,
@@ -94,11 +94,6 @@ const RANGE_LABELS = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function pct(n, total) {
-  if (!total) return 0;
-  return Math.round((n / total) * 100);
-}
-
 function initials(name = "") {
   return name.split(" ").filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
 }

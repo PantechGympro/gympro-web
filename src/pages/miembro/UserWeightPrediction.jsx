@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { FiTrendingUp } from "react-icons/fi";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Scatter,
+  ResponsiveContainer,
 } from "recharts";
 import { useMetricsHistory } from "../../hooks/useMetricsHistory";
 import { useFuncionesPlan } from "../../hooks/useFuncionesPlan";
@@ -188,9 +188,7 @@ function PrediccionPesoContenido() {
   const historial    = data?.historial_peso       || [];
   const predicciones = data?.predicciones_futuras || [];
   const pesoActual   = _pesoVal(historial[historial.length - 1] ?? null);
-  const pesoInicial  = _pesoVal(historial[0] ?? null);
   const pesoMeta     = _pesoVal(predicciones[predicciones.length - 1] ?? null);
-  const cambioReal      = (pesoActual != null && pesoInicial != null) ? (pesoActual - pesoInicial)  : null;
   const cambioEstimado  = (pesoMeta   != null && pesoActual  != null) ? (pesoMeta   - pesoActual)   : null;
 
   const tendencia = data?.tendencia || "";

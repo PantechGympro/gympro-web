@@ -42,29 +42,6 @@ const btnStyle = (variant = "primary", extra = {}) => {
 };
 
 // ── Mini Bar Chart ──────────────────────────────────────────────
-function MiniBarChart({ data, valueKey, labelKey, color = "var(--accent)", height = 140 }) {
-  if (!data?.length) return <p style={{ fontSize: 13, color: "var(--text-secondary)", padding: "20px 0" }}>Sin datos</p>;
-  const max = Math.max(...data.map(d => d[valueKey] || 0), 1);
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height, overflowX: "auto", paddingBottom: 4 }}>
-      {data.map((d, i) => {
-        const h = Math.max(2, ((d[valueKey] || 0) / max) * (height - 24));
-        return (
-          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, flexShrink: 0 }}>
-            <div
-              title={`${d[labelKey]}: ${d[valueKey]}`}
-              style={{ width: 22, height: h, background: color, borderRadius: "4px 4px 0 0", opacity: .85 }}
-            />
-            <span style={{ fontSize: 9, color: "var(--text-secondary)", transform: "rotate(-40deg)", transformOrigin: "top center", whiteSpace: "nowrap" }}>
-              {String(d[labelKey] || "").slice(-5)}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Line Chart SVG ─────────────────────────────────────────────
 function LineChart({ hist, proj, height = 160 }) {
   if (!hist?.length) return <p style={{ fontSize: 13, color: "var(--text-secondary)", padding: "20px 0" }}>Sin datos</p>;

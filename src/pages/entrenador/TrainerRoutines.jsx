@@ -1382,7 +1382,7 @@ export default function TrainerRoutines() {
   const [routines, setRoutines]             = useState([]);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [loadingR, setLoadingR]             = useState(true);
-  const [errorR, setErrorR]                 = useState(null);
+  const [, setErrorR]                       = useState(null);
   const [actionLoading, setActionLoading]   = useState(false);
   const [searchTerm, setSearchTerm]         = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
@@ -1403,7 +1403,7 @@ export default function TrainerRoutines() {
   /* ── Estado: ejercicios ── */
   const [exercises, setExercises]           = useState([]);
   const [loadingE, setLoadingE]             = useState(false);
-  const [errorE, setErrorE]                 = useState(null);
+  const [, setErrorE]                       = useState(null);
   const [searchEx, setSearchEx]             = useState("");
   const [showExForm, setShowExForm]         = useState(false);
   const [editingEx, setEditingEx]           = useState(null);
@@ -1609,7 +1609,6 @@ export default function TrainerRoutines() {
 
   const handlePickExercise = (ex) => {
     const { di, ei } = showLibraryPicker;
-    const current = formData.days[di].exercises[ei];
     updateExercise(di, ei, "name",  ex.nombre);
     if (ex.series)      updateExercise(di, ei, "sets", String(ex.series));
     if (ex.repeticiones) updateExercise(di, ei, "reps", ex.repeticiones);
