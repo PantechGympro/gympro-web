@@ -17,7 +17,7 @@
  */
 import { useEffect, useState, useCallback } from "react";
 import {
-  FiMapPin, FiPlus, FiEdit2, FiHome, FiPhone, FiMail, FiLock,
+  FiMapPin, FiPlus, FiEdit2, FiHome, FiPhone, FiMail,
   FiUser, FiShield, FiUsers, FiUserPlus, FiDollarSign, FiPercent,
 } from "react-icons/fi";
 import {

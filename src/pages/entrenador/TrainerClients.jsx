@@ -144,7 +144,6 @@ export default function TrainerClients() {
     ? Math.round(clients.reduce((acc, c) => acc + (c.attendance || 0), 0) / clients.length)
     : 0;
   const totalSessions = clients.reduce((acc, c) => acc + (c.sessionsTotal || 0), 0);
-  const activeClients = clients.filter(c => c.status === "active").length;
   const riskClients   = clients.filter(c => c.status === "risk" || c.status === "inactive").length;
 
   /* ── Animaciones ── */

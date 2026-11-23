@@ -15,7 +15,6 @@ import {
   FaBicycle, FaSwimmer, FaGem, FaCog,
 } from "react-icons/fa";
 import { registerGym, getPlanesPublicos } from "../../api/auth";
-import useTheme from "../../hooks/useTheme";
 import { passwordStrength } from "../../utils/passwordStrength";
 import FuncionesPorRol from "../../components/compartido/FuncionesPorRol";
 
@@ -45,7 +44,6 @@ const btnBack = {
 
 export default function RegisterGym() {
   const navigate  = useNavigate();
-  const { theme } = useTheme();
 
   const [step, setStep]         = useState(0);
   const [loading, setLoading]   = useState(false);
@@ -210,7 +208,10 @@ export default function RegisterGym() {
           {/* Éxito */}
           <AnimatePresence>
             {success && (
-              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
                 style={{ textAlign: "center", padding: "32px 0" }}
               >
                 <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -259,7 +260,10 @@ export default function RegisterGym() {
                             }}
                           >
                             {isSelected && (
-                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                              <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
                                 style={{ position: "absolute", top: 8, right: 8, width: 18, height: 18, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center" }}
                               >
                                 <FiCheck size={10} color="#fff" />
@@ -333,6 +337,8 @@ export default function RegisterGym() {
                       borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12.5,
                       color: "var(--text-secondary, #ccc)", lineHeight: 1.5,
                     }}>
+                      Los planes de pago incluyen días de prueba sin tarjeta: al terminar, si no
+                      contratas, tu gimnasio pasa al plan gratuito y no pierdes tu información.{" "}
                       Por defecto te registramos con <strong>Starter</strong>, el plan gratuito y más
                       básico — perfecto para empezar. Puedes elegir otro ahora o cambiarlo después
                       desde tu panel de administración.
@@ -367,7 +373,10 @@ export default function RegisterGym() {
                               }}
                             >
                               {isSelected && (
-                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
                                   style={{ position: "absolute", top: 10, right: 10, width: 18, height: 18, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 >
                                   <FiCheck size={10} color="#fff" />
@@ -387,6 +396,14 @@ export default function RegisterGym() {
                                     RECOMENDADO
                                   </span>
                                 )}
+                                {/* La duración la manda el API junto con el plan
+                                    (PlanSuscripcion.to_dict → dias_prueba), para no
+                                    repetir el número en el frontend. */}
+                                {plan.dias_prueba > 0 && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--success, #4cd964)", background: "rgba(76,217,100,0.14)", borderRadius: 6, padding: "2px 6px" }}>
+                                    {plan.dias_prueba} DÍAS GRATIS
+                                  </span>
+                                )}
                               </div>
                               <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginBottom: 6 }}>
                                 {plan.titulo_comercial || plan.descripcion}
@@ -394,6 +411,11 @@ export default function RegisterGym() {
                               <div style={{ fontSize: 15, fontWeight: 700, color: isSelected ? "var(--accent)" : "var(--text-primary, #fff)" }}>
                                 {plan.precio_mensual_mxn === 0 ? "Gratis" : plan.precio_display}
                               </div>
+                              {plan.dias_prueba > 0 && (
+                                <div style={{ fontSize: 11.5, color: "var(--success, #4cd964)", marginTop: 2 }}>
+                                  Los primeros {plan.dias_prueba} días no se cobran. Sin tarjeta.
+                                </div>
+                              )}
                               {Array.isArray(plan.caracteristicas) && plan.caracteristicas.length > 0 && (
                                 <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 11.5, color: "var(--text-secondary, #ccc)", lineHeight: 1.6 }}>
                                   {plan.caracteristicas.slice(0, 3).map((c, i) => <li key={i}>{c}</li>)}
@@ -460,8 +482,15 @@ export default function RegisterGym() {
                         <input id="adm_pass" type={showPass ? "text" : "password"} placeholder="Mínimo 8 caracteres"
                           value={adminData.password}
                           onChange={(e) => setAdminData({ ...adminData, password: e.target.value })} />
-                        <button type="button" className="password-toggle-btn" onClick={() => setShowPass(!showPass)}>
-                          {showPass ? <FiEye /> : <FiEyeOff />}
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() => setShowPass((v) => !v)}
+                          aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          aria-pressed={showPass}
+                          title={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        >
+                          {showPass ? <FiEyeOff /> : <FiEye />}
                         </button>
                       </div>
 
@@ -495,11 +524,17 @@ export default function RegisterGym() {
                       <button type="button" style={btnBack} onClick={retroceder}>
                         <FiArrowLeft size={14} /> Atrás
                       </button>
-                      <button type="submit" className="login-button" disabled={loading} style={{ flex: 1 }}>
-                        {loading
-                          ? <span style={{ display: "inline-block", width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                          : <>Crear gimnasio <FiArrowRight style={{ marginLeft: 8 }} /></>
-                        }
+                      <button
+                        type="submit"
+                        className="login-button u-btn-carga-host"
+                        disabled={loading}
+                        aria-busy={loading || undefined}
+                        style={{ flex: 1 }}
+                      >
+                        <span className="u-btn-etiqueta" data-cargando={loading}>
+                          Crear gimnasio <FiArrowRight style={{ marginLeft: 8 }} />
+                        </span>
+                        {loading && <span className="u-btn-spinner" />}
                       </button>
                     </div>
                   </motion.form>

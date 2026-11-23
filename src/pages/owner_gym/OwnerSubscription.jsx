@@ -271,6 +271,36 @@ export default function OwnerSubscription() {
         </div>
       )}
 
+      {/* Periodo de prueba: lo que está en juego y cuánto queda, arriba de
+          todo. El propietario no debería enterarse de que se le acabó la
+          prueba porque una pantalla dejó de funcionar. Los días los calcula
+          el servidor (Suscripcion.dias_restantes_prueba): el navegador puede
+          tener mal la fecha, y de ese número depende lo que se le cobra. */}
+      {sub?.en_prueba && (
+        <div style={{ ...S.banner, background: "rgba(76,217,100,.10)", border: "1px solid rgba(76,217,100,.35)", color: "var(--text-primary)" }}>
+          <FiCheckCircle style={{ color: "var(--success, #4cd964)", flexShrink: 0 }} />
+          <span>
+            Estás probando <strong style={{ textTransform: "capitalize" }}>{planActual?.nombre}</strong> gratis.{" "}
+            {sub.dias_restantes_prueba === 0
+              ? <strong>Tu prueba termina hoy.</strong>
+              : <>Te {sub.dias_restantes_prueba === 1 ? "queda" : "quedan"}{" "}
+                 <strong>{sub.dias_restantes_prueba} {sub.dias_restantes_prueba === 1 ? "día" : "días"}</strong>.</>}
+            {" "}Si no contratas, tu gimnasio pasa al plan gratuito: conservas tu información
+            y tus miembros registrados, pero pierdes las funciones de este plan.
+          </span>
+        </div>
+      )}
+
+      {sub?.prueba_vencida && (
+        <div style={{ ...S.banner, ...S.bannerErr }}>
+          <FiAlertCircle style={{ flexShrink: 0 }} />
+          <span>
+            Tu periodo de prueba terminó. Tu gimnasio está en el plan gratuito y tu
+            información sigue completa. Contrata un plan para recuperar las funciones.
+          </span>
+        </div>
+      )}
+
       {/* Tarjeta del plan actual — acento superior para darle jerarquía */}
       <div style={{ ...S.card, borderTop: "3px solid var(--accent)" }}>
         {!sub ? (

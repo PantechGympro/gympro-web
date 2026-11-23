@@ -7,7 +7,7 @@ import {
   FiClock, FiUsers, FiChevronDown, FiChevronUp, FiSave,
   FiAlertCircle, FiX, FiBookOpen, FiList, FiZap,
   FiGrid, FiActivity, FiTrendingDown, FiAward, FiFeather,
-  FiCrosshair, FiSun, FiMoon, FiCoffee, FiShoppingCart, FiCheck,
+  FiCrosshair, FiSun, FiMoon, FiCoffee, FiShoppingCart,
   FiClipboard, FiUser,
 } from "react-icons/fi";
 import { GiMeal } from "react-icons/gi";
@@ -16,7 +16,6 @@ import "../../css/CSSUnificado.css";
 /* ─── helpers ─────────────────────────────────────────────────── */
 const token    = () => localStorage.getItem("token");
 const authHdrs = () => ({ Authorization: `Bearer ${token()}`, "Content-Type": "application/json" });
-const fmt      = (n) => (n > 0 ? `${n}` : "—");
 
 // Busca un alimento por código de barras en Open Food Facts (ver
 // api/app/routes/compartido/nutricion_externa.py). El esquema de "mi dieta"

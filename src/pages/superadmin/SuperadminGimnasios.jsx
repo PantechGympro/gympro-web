@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import Swal from "sweetalert2";
+import { avisos, confirmar } from "../../utils/avisos";
+import Modal from "../../components/ui/Modal";
+import { FilasSkeleton, Linea } from "../../components/ui/Skeleton";
 import { getGimnasios, getGimnasio, toggleGimnasio } from "../../api/superadmin";
 
 const card = (extra = {}) => ({
@@ -28,7 +30,7 @@ const btnStyle = (variant = "primary") => {
     danger:  { background: "rgba(239,68,68,.1)",     color: "var(--danger)" },
     success: { background: "rgba(16,185,129,.1)",    color: "var(--success)" },
   };
-  return { border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s", ...(v[variant] || v.primary) };
+  return { border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s, transform .14s cubic-bezier(0.23, 1, 0.32, 1)", ...(v[variant] || v.primary) };
 };
 
 const PLAN_LABELS = { starter: "Starter", basico: "Básico", pro: "Pro", enterprise: "Enterprise" };
@@ -51,11 +53,14 @@ function GymDetailModal({ gym, onClose }) {
   if (!gym) return null;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 24 }}>
-      <div style={{ ...card(), width: "100%", maxWidth: 680, maxHeight: "85vh", overflowY: "auto", position: "relative" }}>
-        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: "var(--text-secondary)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>✕</button>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>{detail?.nombre ?? gym.nombre}</h2>
-        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20 }}>ID: {gym.id} · {detail?.email ?? gym.email}</p>
+    <Modal
+      abierto
+      onCerrar={onClose}
+      titulo={detail?.nombre ?? gym.nombre}
+      descripcion={`ID: ${gym.id} · ${detail?.email ?? gym.email}`}
+      ancho={680}
+    >
+      <div>
 
         <div className="grid-3col-responsive" style={{ display: "grid", gap: 12, marginBottom: 20 }}>
           {[
@@ -99,7 +104,14 @@ function GymDetailModal({ gym, onClose }) {
           Métricas Operativas
         </h3>
         {loadingM ? (
-          <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Cargando métricas…</p>
+          <div className="grid-4col-responsive" style={{ display: "grid", gap: 10, marginBottom: 16 }} aria-hidden="true">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} style={{ background: "var(--bg-input)", borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                <Linea ancho="58%" alto={9} />
+                <Linea ancho="42%" alto={18} />
+              </div>
+            ))}
+          </div>
         ) : metricas ? (
           <>
             {/* Miembros */}
@@ -200,7 +212,7 @@ function GymDetailModal({ gym, onClose }) {
           </>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -232,29 +244,24 @@ export default function SuperadminGimnasios() {
   useEffect(() => { load(1, filters); }, []);
 
   const handleToggle = async (gym) => {
-    const { isConfirmed } = await Swal.fire({
-      title: `${gym.activo ? "Desactivar" : "Activar"} "${gym.nombre}"`,
-      text: gym.activo
-        ? "Los usuarios de este gimnasio no podrán iniciar sesión."
-        : "El gimnasio recuperará acceso completo.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: gym.activo ? "Desactivar" : "Activar",
-      confirmButtonColor: gym.activo ? "var(--danger)" : "var(--success)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
+    const confirmado = await confirmar({
+      titulo: `${gym.activo ? "Desactivar" : "Activar"} "${gym.nombre}"`,
+      mensaje: gym.activo
+        ? "Nadie de ese gimnasio podrá iniciar sesión: ni el propietario, ni su equipo, ni sus socios. Los datos se conservan."
+        : "El gimnasio y todo su equipo recuperan el acceso completo.",
+      confirmar: gym.activo ? "Desactivar" : "Activar",
+      tono: gym.activo ? "peligro" : "neutro",
     });
-    if (!isConfirmed) return;
+    if (!confirmado) return;
     try {
       await toggleGimnasio(gym.id);
       // Recargar desde el servidor: si el filtro activo/inactivo está aplicado, la fila debe
       // desaparecer de la lista cuando ya no cumple el filtro, y el total del encabezado
       // y la paginación deben reflejar el conteo real tras el cambio.
       load(page, filters);
-      Swal.fire({ icon: "success", title: gym.activo ? "Gimnasio desactivado" : "Gimnasio activado", timer: 1500, showConfirmButton: false, background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.exito(gym.activo ? "Gimnasio desactivado" : "Gimnasio activado");
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error", text: e?.response?.data?.msg || "No se pudo cambiar el estado", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo cambiar el estado", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
@@ -303,7 +310,7 @@ export default function SuperadminGimnasios() {
           <option value="pro">Pro</option>
           <option value="enterprise">Enterprise</option>
         </select>
-        <button style={btnStyle("ghost")} onClick={() => load(1, filters)}>Buscar</button>
+        <button className="u-presion" style={btnStyle("ghost")} onClick={() => load(1, filters)}>Buscar</button>
       </div>
 
       {/* Table */}
@@ -321,11 +328,18 @@ export default function SuperadminGimnasios() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>Cargando…</td></tr>
+              <tr><td colSpan={8} style={{ padding: 12 }}>
+                <FilasSkeleton filas={6} columnas={["24%", "22%", "12%", "12%", "10%"]} />
+              </td></tr>
             ) : gyms.length === 0 ? (
-              <tr><td colSpan={8} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>Sin resultados</td></tr>
+              <tr><td colSpan={8} style={{ padding: 0 }}>
+                <div className="u-vacio" style={{ margin: 12 }}>
+                  <strong>Sin resultados</strong>
+                  Prueba con otro término de búsqueda o quita los filtros.
+                </div>
+              </td></tr>
             ) : gyms.map(gym => (
-              <tr key={gym.id} style={{ borderBottom: "1px solid var(--border, rgba(255,255,255,.04))" }}>
+              <tr key={gym.id} className="u-fila" style={{ borderBottom: "1px solid var(--border, rgba(255,255,255,.04))" }}>
                 <td style={{ padding: "12px 16px" }}>
                   <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{gym.nombre}</span>
                 </td>
@@ -343,7 +357,7 @@ export default function SuperadminGimnasios() {
                 <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{gym.telefono || "—"}</td>
                 <td style={{ padding: "12px 16px" }}>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button style={btnStyle("ghost")} onClick={() => setSelected(gym)}>Ver</button>
+                    <button className="u-presion" style={btnStyle("ghost")} onClick={() => setSelected(gym)}>Ver</button>
                     <button
                       style={btnStyle(gym.activo ? "danger" : "success")}
                       onClick={() => handleToggle(gym)}
@@ -362,11 +376,11 @@ export default function SuperadminGimnasios() {
       {/* Pagination */}
       {pages > 1 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
-          <button style={btnStyle("ghost")} disabled={page === 1} onClick={() => load(page - 1)}>← Anterior</button>
+          <button className="u-presion" style={btnStyle("ghost")} disabled={page === 1} onClick={() => load(page - 1)}>← Anterior</button>
           <span style={{ padding: "7px 14px", fontSize: 13, color: "var(--text-secondary)" }}>
             {page} / {pages}
           </span>
-          <button style={btnStyle("ghost")} disabled={page === pages} onClick={() => load(page + 1)}>Siguiente →</button>
+          <button className="u-presion" style={btnStyle("ghost")} disabled={page === pages} onClick={() => load(page + 1)}>Siguiente →</button>
         </div>
       )}
     </div>

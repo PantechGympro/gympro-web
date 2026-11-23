@@ -29,7 +29,6 @@ const SUCCESS    = COLORES_GRAFICO.real;
 const INFO       = COLORES_GRAFICO.asistencia;
 const DANGER     = COLORES_GRAFICO.baja;
 const WARNING    = COLORES_GRAFICO.pos;
-const PURPLE     = COLORES_GRAFICO.membresias;
 const PALETTE    = SERIES_GRAFICO;
 
 // Cuando el superadmin analiza un gimnasio concreto, guarda su id en

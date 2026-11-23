@@ -258,6 +258,15 @@ const secciones = [
           <li>Tipografías y recursos servidos desde el propio dominio: la plataforma no pide archivos a terceros que pudieran registrar tu dirección IP.</li>
           <li>Respaldos verificados por restauración antes de cualquier migración de datos.</li>
           <li>Límite de intentos de inicio de sesión y revisión de código obligatoria antes de liberar un cambio.</li>
+          <li>
+            Control de altas repetidas <strong>solo en el registro de un gimnasio nuevo</strong>: para evitar que una
+            misma persona abra varias cuentas gratuitas, en esa petición —y únicamente en esa— se calcula en tu
+            navegador un identificador técnico del equipo (idioma, zona horaria, resolución de pantalla y número de
+            núcleos) y se envía convertido en un resumen criptográfico. El servidor nunca recibe esos valores, solo el
+            resumen; no se usan canvas, WebGL ni tipografías instaladas, y <strong>no sirve para seguir tu navegación,
+            perfilarte ni mostrarte publicidad</strong>. Se conserva junto con tu correo y teléfono en forma
+            normalizada —no en claro— y con la dirección IP de la que salió el registro.
+          </li>
         </ul>
         <p style={S.p}>
           Ninguna medida es infalible. Si ocurriera una vulneración que afecte de forma significativa tus datos, el
@@ -397,8 +406,9 @@ const secciones = [
       <>
         <p style={S.p}>
           No se utilizan cookies de rastreo, analítica ni publicidad de terceros, y la plataforma no carga recursos de
-          servidores ajenos: las tipografías se sirven desde el propio dominio. Esto es lo único que se guarda en tu
-          navegador:
+          servidores ajenos: las tipografías se sirven desde el propio dominio. El registro de un gimnasio nuevo
+          calcula un identificador técnico del equipo que no se guarda en tu navegador ni se usa para seguirte
+          (se explica en «Cómo se protegen»). Esto es lo único que se guarda en tu navegador:
         </p>
         <table style={S.tabla}>
           <thead>
