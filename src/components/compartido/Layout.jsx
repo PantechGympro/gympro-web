@@ -1,6 +1,6 @@
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Suspense, useEffect, useState } from "react";
-import { FiLoader, FiCheckCircle, FiAlertCircle, FiX } from "react-icons/fi";
+import { FiLoader, FiCheckCircle, FiAlertCircle, FiX, FiBell } from "react-icons/fi";
 import Sidebar from "./Sidebar";
 import CargandoPagina from "./CargandoPagina";
 import PerfilCompletoBadge from "./PerfilCompletoBadge";
@@ -9,6 +9,7 @@ import {
   useRoutineImportJob, dismissRoutineImportJob, cancelRoutineImportJob,
 } from "../../hooks/useRoutineImportJob";
 import { useToast } from "../../hooks/useToast";
+import { useWebPush } from "../../hooks/useWebPush";
 import { peticion } from "../../api/cliente";
 import { cerrarSesion } from "../../utils/sesion";
 import AvisoPrivacidadGate from "./AvisoPrivacidadGate";
@@ -227,6 +228,20 @@ export default function Layout({ role = "owner_gym" }) {
   // Diálogo de confirmación propio (mismo look que el resto del sistema, ver
   // hooks/useToast.jsx) para el botón "Cancelar", en vez de window.confirm().
   const { confirm: confirmImportCancel, ToastPortal: ImportToastPortal } = useToast();
+
+  // ── Aviso de activación de Web Push (SCRUM-130) ──────────────────────────
+  // Visible para TODOS los roles -- a diferencia de AvisoLimitePlan (solo
+  // owner_gym) o AvisoMembresia (solo miembro), el push por navegador es
+  // util para cualquiera que use la web sin la app movil instalada.
+  const { permiso: pushPermiso, activando: pushActivando, error: pushError, solicitar: solicitarPush } = useWebPush();
+  const [pushBannerOculto, setPushBannerOculto] = useState(
+    () => localStorage.getItem("gympro_push_banner_oculto") === "1"
+  );
+  const ocultarPushBanner = () => {
+    localStorage.setItem("gympro_push_banner_oculto", "1");
+    setPushBannerOculto(true);
+  };
+  const mostrarPushBanner = pushPermiso === "default" && !pushBannerOculto;
 
   const showImportBanner = role === "trainer" && !!routineImportJob && !importBannerHidden;
 
@@ -528,6 +543,41 @@ export default function Layout({ role = "owner_gym" }) {
         >
           {/* Las páginas se cargan bajo demanda (ver App.jsx): mientras llega
               el archivo de la pantalla, la barra lateral se queda en su sitio. */}
+          {mostrarPushBanner && (
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              gap: 12, padding: "10px 20px",
+              background: "rgba(51,119,255,.08)", borderBottom: "1px solid var(--border)",
+              fontSize: 12.5, color: "var(--text-secondary)", flexShrink: 0,
+            }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <FiBell size={14} style={{ color: "var(--accent)" }} />
+                Activa las notificaciones de este navegador para recibir avisos de citas, mensajes y pagos aunque no tengas la pestaña abierta.
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                {pushError && <span style={{ color: "var(--danger)" }}>{pushError}</span>}
+                <button
+                  onClick={solicitarPush}
+                  disabled={pushActivando}
+                  style={{
+                    border: "none", borderRadius: 8, padding: "6px 14px",
+                    background: "var(--accent)", color: "#fff", fontWeight: 600,
+                    fontSize: 12, cursor: pushActivando ? "default" : "pointer",
+                    opacity: pushActivando ? 0.6 : 1,
+                  }}
+                >
+                  {pushActivando ? "Activando..." : "Activar"}
+                </button>
+                <button
+                  onClick={ocultarPushBanner}
+                  aria-label="Cerrar aviso"
+                  style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: 2 }}
+                >
+                  <FiX size={14} />
+                </button>
+              </div>
+            </div>
+          )}
           {role === "owner_gym" && <AvisoLimitePlan onVerPlanes={() => handleNav("ow-subscription")} />}
           {role === "user" && <AvisoMembresia />}
           <Suspense fallback={<CargandoPagina />}>
