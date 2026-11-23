@@ -12,7 +12,7 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { FiX, FiCheck, FiAlertCircle, FiCreditCard, FiRefreshCw, FiDollarSign, FiUser, FiLock, FiCalendar, FiClock } from "react-icons/fi";
+import { FiX, FiCheck, FiAlertCircle, FiDollarSign, FiUser, FiLock, FiCalendar, FiClock } from "react-icons/fi";
 import { registrarVenta, getHorariosGym } from "../../api/owner_gym";
 import useMetodosPago from "../../hooks/useMetodosPago";
 import { pagarYRedirigir } from "../../api/pagosOnline";

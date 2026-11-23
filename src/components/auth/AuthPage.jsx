@@ -172,7 +172,7 @@ export default function AuthPage() {
             <div className="form-group">
               <label htmlFor="email">Correo electrónico</label>
               <div className="input-dark-container">
-                <input id="email" type="email" autoComplete="username" placeholder="ejemplo@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
+                <input id="email" type="email" autoComplete="username" placeholder="ejemplo@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} autoFocus />
               </div>
             </div>
 
@@ -180,8 +180,15 @@ export default function AuthPage() {
               <label htmlFor="password">Contraseña</label>
               <div className="input-dark-container password-input-wrapper">
                 <input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="******" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} />
-                <button type="button" className="password-toggle-btn" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <FiEye /> : <FiEyeOff />}
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-pressed={showPassword}
+                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
                 </button>
               </div>
             </div>
@@ -192,14 +199,30 @@ export default function AuthPage() {
               </Link>
             </div>
 
-            {error && (
-              <div className="error-message">
-                <FiAlertTriangle /> <span>{error}</span>
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {error && (
+                <motion.div
+                  className="error-message"
+                  role="alert"
+                  initial={{ opacity: 0, transform: "translateY(-4px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <FiAlertTriangle aria-hidden="true" /> <span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <motion.button type="submit" className="login-button" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              {loading ? <span className="spinner" /> : "Ingresar al sistema"}
+            <motion.button
+              type="submit"
+              className="login-button u-btn-carga-host"
+              disabled={loading}
+              aria-busy={loading || undefined}
+              whileTap={loading ? undefined : { scale: 0.98 }}
+            >
+              <span className="u-btn-etiqueta" data-cargando={loading}>Ingresar al sistema</span>
+              {loading && <span className="u-btn-spinner" />}
             </motion.button>
 
             {/* Aviso y Términos a la vista antes de entrar: la LFPDPPP pide que el

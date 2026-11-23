@@ -12,7 +12,6 @@ import {
   updateMiembro,
   deleteMiembro,
   reactivateMiembro,
-  BASE_URL,
 } from "../../api/miembros";
 import { useToast } from "../../hooks/useToast";
 import MiembroForm from "../../components/admin/MiembroForm";

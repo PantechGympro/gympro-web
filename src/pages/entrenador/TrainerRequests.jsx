@@ -46,17 +46,6 @@ const fmtTime = (iso) => {
   if (!iso) return "";
   return parseISO(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
 };
-const fmtRelative = (iso) => {
-  if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return "ahora";
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
-};
-
 const ESTADO_META = {
   pendiente: { label: "Pendiente", color: "var(--warning)", bg: "rgba(245,158,11,.12)", icon: <FiClock /> },
   aceptada:  { label: "Aceptada",  color: "var(--success)", bg: "rgba(16,185,129,.12)", icon: <FiCheckCircle /> },

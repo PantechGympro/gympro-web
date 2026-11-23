@@ -5,7 +5,7 @@ import axios from "axios";
 import {
   FiUsers, FiSearch, FiCheckCircle, FiAlertCircle,
   FiXCircle, FiRefreshCw, FiUser, FiPhone, FiMail, FiPlus, FiX,
-  FiEdit2, FiEye, FiSlash, FiRotateCcw, FiTrash2,
+  FiEdit2, FiEye, FiSlash, FiRotateCcw,
 } from "react-icons/fi";
 import {
   createMiembro, updateMiembro, deleteMiembro, reactivateMiembro,

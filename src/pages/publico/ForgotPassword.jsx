@@ -1,5 +1,6 @@
 import { mensajeAmigable } from "../../utils/errores";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { forgotPassword, resetPassword } from "../../api/auth";
 import {
@@ -71,7 +72,9 @@ export default function ForgotPassword() {
   const btn = {
     width: "100%", marginTop: 18, padding: "12px 16px", borderRadius: 10, border: "none",
     background: "var(--accent, #6c63ff)", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer",
+    position: "relative",
   };
+  const ENTRADA = { duration: 0.18, ease: [0.23, 1, 0.32, 1] };
   const label = { fontSize: 13, fontWeight: 600, color: "var(--text-secondary, #94a3b8)" };
 
   return (
@@ -89,16 +92,32 @@ export default function ForgotPassword() {
         </p>
 
         {info && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(34,197,94,0.12)", color: "#22c55e", padding: "10px 12px", borderRadius: 10, fontSize: 13, margin: "10px 0" }}>
-            <FiCheckCircle /> <span>{info}</span>
-          </div>
+          <motion.div
+            role="status"
+            initial={{ opacity: 0, transform: "translateY(-4px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            transition={ENTRADA}
+            style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(34,197,94,0.12)", color: "#22c55e", padding: "10px 12px", borderRadius: 10, fontSize: 13, margin: "10px 0" }}>
+            <FiCheckCircle aria-hidden="true" /> <span>{info}</span>
+          </motion.div>
         )}
         {error && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.12)", color: "#ef4444", padding: "10px 12px", borderRadius: 10, fontSize: 13, margin: "10px 0" }}>
-            <FiAlertTriangle /> <span>{error}</span>
-          </div>
+          <motion.div
+            role="alert"
+            initial={{ opacity: 0, transform: "translateY(-4px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            transition={ENTRADA}
+            style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.12)", color: "#ef4444", padding: "10px 12px", borderRadius: 10, fontSize: 13, margin: "10px 0" }}>
+            <FiAlertTriangle aria-hidden="true" /> <span>{error}</span>
+          </motion.div>
         )}
 
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, transform: "translateX(10px)" }}
+          animate={{ opacity: 1, transform: "translateX(0px)" }}
+          transition={ENTRADA}
+        >
         {step === 1 ? (
           <form onSubmit={enviarCodigo}>
             <label style={label}>Correo electrónico</label>
@@ -107,8 +126,9 @@ export default function ForgotPassword() {
               <input style={inputEl} type="email" placeholder="ejemplo@correo.com" value={email}
                 onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
             </div>
-            <button style={btn} type="submit" disabled={loading}>
-              {loading ? "Enviando…" : "Enviar código"}
+            <button style={btn} type="submit" disabled={loading} aria-busy={loading || undefined}>
+              <span className="u-btn-etiqueta" data-cargando={loading}>Enviar código</span>
+              {loading && <span className="u-btn-spinner" />}
             </button>
           </form>
         ) : (
@@ -125,9 +145,12 @@ export default function ForgotPassword() {
               <FiLock color="var(--text-secondary, #94a3b8)" />
               <input style={inputEl} type={showPass ? "text" : "password"} placeholder="Mínimo 8 caracteres"
                 value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} />
-              <button type="button" onClick={() => setShowPass(!showPass)}
+              <button type="button" onClick={() => setShowPass((v) => !v)}
+                aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={showPass}
+                title={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
                 style={{ background: "none", border: "none", color: "var(--text-secondary, #94a3b8)", cursor: "pointer" }}>
-                {showPass ? <FiEye /> : <FiEyeOff />}
+                {showPass ? <FiEyeOff /> : <FiEye />}
               </button>
             </div>
 
@@ -138,8 +161,9 @@ export default function ForgotPassword() {
                 value={confirm} onChange={(e) => setConfirm(e.target.value)} required disabled={loading} />
             </div>
 
-            <button style={btn} type="submit" disabled={loading}>
-              {loading ? "Guardando…" : "Restablecer contraseña"}
+            <button style={btn} type="submit" disabled={loading} aria-busy={loading || undefined}>
+              <span className="u-btn-etiqueta" data-cargando={loading}>Restablecer contraseña</span>
+              {loading && <span className="u-btn-spinner" />}
             </button>
             <button type="button" onClick={enviarCodigo} disabled={loading}
               style={{ width: "100%", marginTop: 10, background: "none", border: "none", color: "var(--accent, #6c63ff)", fontSize: 13, cursor: "pointer" }}>
@@ -147,6 +171,7 @@ export default function ForgotPassword() {
             </button>
           </form>
         )}
+        </motion.div>
       </div>
     </div>
   );

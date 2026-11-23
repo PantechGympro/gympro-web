@@ -38,15 +38,6 @@ const C = {
 // ── Utilidades ────────────────────────────────────────────────────────────────
 
 /** Lee un File y lo devuelve como data URL base64 (sin resize para máxima compatibilidad) */
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = (e) => resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 const imc = (kg, m) => {
   const k = parseFloat(kg), h = parseFloat(m);
   return k > 0 && h > 0 ? (k / (h * h)).toFixed(1) : "";

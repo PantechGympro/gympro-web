@@ -1,3 +1,4 @@
+import { FilasSkeleton, TarjetasSkeleton } from "../../components/ui/Skeleton";
 import { useState, useEffect } from "react";
 import {
   getAnalyticsPlataforma,
@@ -133,8 +134,12 @@ export default function SuperadminDashboard() {
       </div>
 
       {loading ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-secondary)", fontSize: 15 }}>
-          Cargando métricas de plataforma…
+        /* Esqueleto con la forma de los KPIs y la tabla que vienen: el
+           bloque centrado anterior dejaba 300px vacíos y luego todo
+           aparecía de golpe desplazando la página. */
+        <div aria-busy="true" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <TarjetasSkeleton tarjetas={4} />
+          <FilasSkeleton filas={6} columnas={["30%", "22%", "18%", "14%"]} />
         </div>
       ) : (
         <>

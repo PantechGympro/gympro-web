@@ -1,3 +1,4 @@
+import { FilasSkeleton } from "../../components/ui/Skeleton";
 import { useState, useEffect, useCallback } from "react";
 import { getSuscripciones } from "../../api/superadmin";
 
@@ -29,7 +30,7 @@ const btnStyle = (variant = "primary") => {
     danger:  { background: "rgba(239,68,68,.1)",     color: "var(--danger)" },
     warn:    { background: "rgba(234,179,8,.1)",     color: "var(--warning)" },
   };
-  return { border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s", ...(v[variant] || v.primary) };
+  return { border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s, transform .14s cubic-bezier(0.23, 1, 0.32, 1)", ...(v[variant] || v.primary) };
 };
 
 const ESTADO_BADGE = {
@@ -117,7 +118,7 @@ export default function SuperadminSuscripciones() {
           <option value="">Todos los estados</option>
           {Object.entries(ESTADO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <button style={btnStyle("ghost")} onClick={() => load(1, filter)}>Buscar</button>
+        <button className="u-presion" style={btnStyle("ghost")} onClick={() => load(1, filter)}>Buscar</button>
       </div>
 
       {/* Table */}
@@ -133,18 +134,25 @@ export default function SuperadminSuscripciones() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>Cargando…</td></tr>
+              <tr><td colSpan={5} style={{ padding: 12 }}>
+                <FilasSkeleton filas={6} columnas={["30%", "20%", "16%", "16%"]} />
+              </td></tr>
             ) : subs.length === 0 ? (
-              <tr><td colSpan={5} style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>Sin resultados</td></tr>
+              <tr><td colSpan={5} style={{ padding: 0 }}>
+                <div className="u-vacio" style={{ margin: 12 }}>
+                  <strong>Sin suscripciones que mostrar</strong>
+                  Cuando un gimnasio contrate un plan, su suscripción aparecerá aquí.
+                </div>
+              </td></tr>
             ) : subs.map(sub => (
-              <tr key={sub.id} style={{ borderBottom: "1px solid var(--border, rgba(255,255,255,.04))" }}>
+              <tr key={sub.id} className="u-fila" style={{ borderBottom: "1px solid var(--border, rgba(255,255,255,.04))" }}>
                 <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>{sub.gimnasio}</td>
                 <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{planLabel(sub.plan)}</td>
                 <td style={{ padding: "12px 16px" }}>
                   <span style={badge(ESTADO_BADGE[sub.estado] || "muted")}>{ESTADO_LABELS[sub.estado] || sub.estado}</span>
                 </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{fmtDate(sub.fecha_inicio)}</td>
-                <td style={{ padding: "12px 16px", color: sub.estado === "past_due" || sub.estado === "unpaid" ? "var(--danger)" : "var(--text-secondary)" }}>
+                <td className="u-tabular" style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{fmtDate(sub.fecha_inicio)}</td>
+                <td className="u-tabular" style={{ padding: "12px 16px", color: sub.estado === "past_due" || sub.estado === "unpaid" ? "var(--danger)" : "var(--text-secondary)" }}>
                   {fmtDate(sub.fecha_proximo_cobro)}
                 </td>
               </tr>
@@ -156,9 +164,9 @@ export default function SuperadminSuscripciones() {
 
       {pages > 1 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
-          <button style={btnStyle("ghost")} disabled={page === 1} onClick={() => load(page - 1)}>← Anterior</button>
+          <button className="u-presion" style={btnStyle("ghost")} disabled={page === 1} onClick={() => load(page - 1)}>← Anterior</button>
           <span style={{ padding: "7px 14px", fontSize: 13, color: "var(--text-secondary)" }}>{page} / {pages}</span>
-          <button style={btnStyle("ghost")} disabled={page === pages} onClick={() => load(page + 1)}>Siguiente →</button>
+          <button className="u-presion" style={btnStyle("ghost")} disabled={page === pages} onClick={() => load(page + 1)}>Siguiente →</button>
         </div>
       )}
     </div>
