@@ -9,16 +9,19 @@ import { mensajeAmigable } from "../../utils/errores";
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  FiFileText, FiUser, FiBell, FiPlus, FiTrash2, FiSend,
+  FiFileText, FiUser, FiBell, FiPlus, FiSend,
   FiCheck, FiX, FiClock, FiAlertCircle, FiCheckCircle,
-  FiMessageSquare, FiEdit2, FiZap, FiToggleLeft, FiToggleRight,
+  FiMessageSquare, FiZap, FiToggleLeft, FiToggleRight,
   FiChevronDown, FiChevronUp, FiRefreshCw, FiStar,
   FiChevronLeft, FiChevronRight, FiImage, FiInfo, FiCalendar,
+  FiCreditCard, FiDollarSign,
 } from "react-icons/fi";
 import { GiMuscleUp } from "react-icons/gi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "../../css/CSSUnificado.css";
+import { useWebPush } from "../../hooks/useWebPush";
+import { listarNotificaciones, marcarLeida, marcarTodasLeidas } from "../../api/notificaciones";
 
 /* ── Video helper (same as TrainerRoutines) ─────────────────── */
 const videoCache = new Map();
@@ -1229,344 +1232,175 @@ function ChatView({ trainerId, onBack, trainers }) {
    TAB 3 — ALERTAS DE ENTRENAMIENTO
 ══════════════════════════════════════════════════════════════ */
 function TabAlertas() {
-  const [alertas,   setAlertas]   = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [formOpen,  setFormOpen]  = useState(false);
-  const [editAlerta, setEditAlerta] = useState(null);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [noLeidas,       setNoLeidas]       = useState(0);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState(false);
+  const [marcandoTodas,  setMarcandoTodas]  = useState(false);
 
-  // Form state
-  const [titulo,   setTitulo]   = useState("Entrenamiento");
-  const [hora,     setHora]     = useState("07:00");
-  const [dias,     setDias]     = useState([]);
-  const [tipo,     setTipo]     = useState("rutina");
-  const [saving,   setSaving]   = useState(false);
-  const [err,      setErr]      = useState("");
+  const { soportado: pushSoportado, permiso: pushPermiso, activando: pushActivando,
+          error: pushError, solicitar: activarPush, desactivar: desactivarPush } = useWebPush();
 
   const cargar = useCallback(async () => {
-    setLoading(true);
+    setLoading(true); setError(false);
     try {
-      const d = await API("GET", "/alerts");
-      setAlertas(d.alertas || []);
-    } catch { /* silente */ }
+      const d = await listarNotificaciones();
+      setNotificaciones(d.notificaciones || []);
+      setNoLeidas(d.no_leidas || 0);
+    } catch { setError(true); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // Browser notification permission
-  const [notifPerm, setNotifPerm] = useState(
-    typeof Notification !== "undefined" ? Notification.permission : "denied"
-  );
-  const pedirPermiso = async () => {
-    if (typeof Notification === "undefined") return;
-    const p = await Notification.requestPermission();
-    setNotifPerm(p);
+  const marcarUna = async (n) => {
+    if (n.leida) return;
+    setNotificaciones(prev => prev.map(x => x._id === n._id ? { ...x, leida: true } : x));
+    setNoLeidas(c => Math.max(0, c - 1));
+    try { await marcarLeida(n._id); } catch { /* optimismo de UI ya la marcó */ }
   };
 
-  const abrirForm = (alerta = null) => {
-    if (alerta) {
-      setTitulo(alerta.titulo);
-      setHora(alerta.hora);
-      setDias(alerta.dias || []);
-      setTipo(alerta.tipo || "rutina");
-      setEditAlerta(alerta);
-    } else {
-      setTitulo("Entrenamiento"); setHora("07:00"); setDias([]); setTipo("rutina");
-      setEditAlerta(null);
-    }
-    setErr("");
-    setFormOpen(true);
+  const marcarTodas = async () => {
+    if (!noLeidas) return;
+    setMarcandoTodas(true);
+    setNotificaciones(prev => prev.map(x => ({ ...x, leida: true })));
+    setNoLeidas(0);
+    try { await marcarTodasLeidas(); } catch { /* optimismo de UI ya las marcó */ }
+    finally { setMarcandoTodas(false); }
   };
 
-  const cerrarForm = () => { setFormOpen(false); setEditAlerta(null); setErr(""); };
+  const togglePush = async () => {
+    if (pushPermiso === "granted") await desactivarPush();
+    else await activarPush();
+  };
 
-  const guardar = async () => {
-    if (!dias.length) { setErr("Selecciona al menos un día"); return; }
-    setSaving(true); setErr("");
+  const fmtFechaHora = (iso) => {
+    if (!iso) return "—";
     try {
-      if (editAlerta) {
-        await API("PUT", `/alerts/${editAlerta.id}`, { titulo, hora, dias, tipo, activa: editAlerta.activa });
-      } else {
-        await API("POST", "/alerts", { titulo, hora, dias, tipo });
-      }
-      cerrarForm();
-      cargar();
-    } catch (e) {
-      setErr(mensajeAmigable(e));
-    } finally { setSaving(false); }
+      return new Date(iso).toLocaleString("es-MX", {
+        day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+      });
+    } catch { return iso; }
   };
 
-  const toggleActiva = async (alerta) => {
-    try {
-      await API("PUT", `/alerts/${alerta.id}`, { activa: !alerta.activa });
-      cargar();
-    } catch { /* silente */ }
+  const iconoTipo = (tipo = "") => {
+    if (tipo.startsWith("cita"))      return <FiCalendar size={15} />;
+    if (tipo.includes("membresia"))   return <FiCreditCard size={15} />;
+    if (tipo.includes("pago"))        return <FiDollarSign size={15} />;
+    if (tipo.includes("mensaje"))     return <FiMessageSquare size={15} />;
+    if (tipo.includes("rutina") || tipo.includes("sesion")) return <GiMuscleUp size={15} />;
+    return <FiBell size={15} />;
   };
 
-  const eliminar = async (id) => {
-    if (!window.confirm("¿Eliminar esta alerta?")) return;
-    try {
-      await API("DELETE", `/alerts/${id}`);
-      cargar();
-    } catch { /* silente */ }
-  };
-
-  const toggleDia = (d) => setDias(prev =>
-    prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]
-  );
-
-  // Los recordatorios ahora son automáticos (los genera el backend según tu
-  // rutina). Esta pestaña solo lo explica; ya no se crean alertas a mano.
   return (
-    <div style={{ padding: "20px 24px" }}>
-      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 14, padding: 24, textAlign: "center", maxWidth: 560, margin: "0 auto" }}>
-        <div style={{ width: 56, height: 56, borderRadius: 16, background: "var(--accent-dim, rgba(51,119,255,.12))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-          <FiBell size={26} style={{ color: "var(--accent)" }} />
+    <div style={{ padding: "20px 24px", maxWidth: 680 }}>
+      {/* Estado de las notificaciones push: móvil (Expo, automático si tiene
+          la app instalada) y web (requiere permiso explícito del navegador) */}
+      <div style={{ ...card({ padding: "16px 18px" }), marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>
+          Notificaciones push
         </div>
-        <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px" }}>Recordatorios automáticos</h3>
-        <p style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 auto", maxWidth: 440 }}>
-          Ya no necesitas crear alertas a mano. Cuando sea un día de entrenamiento de tu rutina y aún no lo hayas registrado, te llega una notificación en la campana para que no rompas tu racha.
-        </p>
-        <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--text-secondary)", background: "var(--bg-input)", borderRadius: 10, padding: "10px 14px" }}>
-          <FiCheckCircle size={14} style={{ color: "var(--success)" }} />
-          Se activa con tus rutinas: no requiere configuración.
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <FiCheckCircle size={15} style={{ color: "var(--success)" }} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>App móvil</div>
+              <div style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>Automática si tienes la app de GymPro instalada e iniciaste sesión ahí.</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {pushPermiso === "granted"
+              ? <FiCheckCircle size={15} style={{ color: "var(--success)" }} />
+              : <FiAlertCircle size={15} style={{ color: "var(--warning)" }} />}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Este navegador</div>
+              <div style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
+                {!pushSoportado
+                  ? "Este navegador no soporta notificaciones push."
+                  : pushPermiso === "granted"
+                    ? "Activadas en este navegador."
+                    : pushPermiso === "denied"
+                      ? "Bloqueadas — actívalas desde los ajustes del navegador."
+                      : "Aún no activadas en este navegador."}
+              </div>
+              {pushError && <div style={{ fontSize: 11.5, color: "var(--danger)", marginTop: 2 }}>{pushError}</div>}
+            </div>
+          </div>
+          {pushSoportado && pushPermiso !== "denied" && (
+            <button
+              onClick={togglePush}
+              disabled={pushActivando}
+              style={{ background: "none", border: "none", cursor: pushActivando ? "default" : "pointer", color: pushPermiso === "granted" ? "var(--accent)" : "var(--text-secondary)", padding: 4, flexShrink: 0 }}
+              aria-label={pushPermiso === "granted" ? "Desactivar" : "Activar"}
+            >
+              {pushPermiso === "granted" ? <FiToggleRight size={24} /> : <FiToggleLeft size={24} />}
+            </button>
+          )}
         </div>
       </div>
-    </div>
-  );
 
-  // eslint-disable-next-line no-unreachable
-  return (
-    <div style={{ padding: "20px 24px" }}>
-      {/* Banner de notificaciones */}
-      {notifPerm !== "granted" && (
-        <div style={{
-          padding: "12px 16px", borderRadius: 10, marginBottom: 16,
-          background: "rgba(234,179,8,.07)", border: "1px solid rgba(234,179,8,.25)",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          fontSize: 13, color: "var(--warning)",
-        }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <FiBell size={14} />
-            Activa las notificaciones del navegador para recibir recordatorios
-          </span>
-          <button onClick={pedirPermiso} style={{ ...btn("var(--warning)"), fontSize: 11, padding: "5px 10px" }}>
-            Activar
-          </button>
-        </div>
-      )}
-
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      {/* Historial real de avisos (in-app + lo que ya se mandó por push) */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-          {alertas.length} alerta{alertas.length !== 1 ? "s" : ""} configurada{alertas.length !== 1 ? "s" : ""}
+          {noLeidas > 0 ? `${noLeidas} sin leer` : "Todo leído"}
         </div>
-        <button onClick={() => abrirForm()} style={{ ...btn(), fontSize: 12 }}>
-          <FiPlus size={13} /> Nueva alerta
-        </button>
+        {noLeidas > 0 && (
+          <button onClick={marcarTodas} disabled={marcandoTodas} style={{ ...btn("var(--accent)", true), fontSize: 11.5, padding: "5px 12px" }}>
+            <FiCheck size={12} /> Marcar todo como leído
+          </button>
+        )}
       </div>
 
-      {/* Lista */}
       {loading ? (
         <div className="skeleton" style={{ height: 70, borderRadius: 12 }} />
-      ) : alertas.length === 0 ? (
+      ) : error ? (
+        <div style={{ padding: 32, textAlign: "center", color: "var(--text-secondary)" }}>
+          No se pudo cargar tu historial. <button onClick={cargar} style={{ ...btn(), marginLeft: 8 }}>Reintentar</button>
+        </div>
+      ) : notificaciones.length === 0 ? (
         <div style={{
           textAlign: "center", padding: "48px 0",
           border: "1px dashed var(--border, rgba(255,255,255,.1))", borderRadius: 12,
           color: "var(--text-secondary)",
         }}>
-          <FiBell size={36} style={{ opacity: 0.2, marginBottom: 10 }} />
-          <p style={{ fontSize: 13 }}>Sin alertas configuradas</p>
-          <button onClick={() => abrirForm()} style={{ ...btn(), marginTop: 12, fontSize: 12 }}>
-            <FiPlus size={12} /> Crear primera alerta
-          </button>
+          <FiBell size={32} style={{ opacity: 0.2, marginBottom: 10 }} />
+          <p style={{ fontSize: 13 }}>Todavía no tienes avisos. Aquí aparecerá el historial de tus notificaciones.</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {alertas.map(a => (
-            <div key={a.id} style={{
-              ...card({ padding: "14px 18px" }),
-              opacity: a.activa ? 1 : 0.55,
-              borderLeft: `3px solid ${a.activa ? "var(--accent)" : "rgba(255,255,255,.1)"}`,
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", marginBottom: 4 }}>
-                    {a.titulo}
-                    <span style={{
-                      marginLeft: 8, fontSize: 10, padding: "2px 7px", borderRadius: 99,
-                      background: "var(--accent-dim)", color: "var(--accent-soft)", fontWeight: 600,
-                    }}>
-                      {a.tipo === "sesion_pt" ? "Sesión PT" : "Rutina"}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <FiClock size={11} color="var(--text-secondary)" />
-                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{a.hora}</span>
-                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>·</span>
-                    <div style={{ display: "flex", gap: 3 }}>
-                      {DIAS.map(d => (
-                        <span key={d} style={{
-                          width: 22, height: 22, borderRadius: "50%", display: "flex",
-                          alignItems: "center", justifyContent: "center",
-                          fontSize: 10, fontWeight: 700,
-                          background: a.dias?.includes(d) ? "var(--accent)" : "rgba(255,255,255,.05)",
-                          color: a.dias?.includes(d) ? "#fff" : "var(--text-secondary)",
-                        }}>
-                          {DIAS_LABEL[d]}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+          {notificaciones.map((n) => (
+            <div
+              key={n._id}
+              onClick={() => marcarUna(n)}
+              style={{
+                ...card({ padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12, cursor: n.leida ? "default" : "pointer" }),
+                borderLeft: `3px solid ${n.leida ? "transparent" : "var(--accent)"}`,
+                opacity: n.leida ? 0.72 : 1,
+              }}
+            >
+              <div style={{
+                width: 34, height: 34, borderRadius: 9, background: "var(--bg-input)", flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)",
+              }}>
+                {iconoTipo(n.tipo)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text-primary)" }}>{n.titulo}</span>
+                  {!n.leida && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />}
                 </div>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <button onClick={() => toggleActiva(a)} style={{ background: "none", border: "none", cursor: "pointer", color: a.activa ? "var(--accent)" : "var(--text-secondary)", padding: 4 }}>
-                    {a.activa ? <FiToggleRight size={22} /> : <FiToggleLeft size={22} />}
-                  </button>
-                  <button onClick={() => abrirForm(a)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", padding: 4 }}>
-                    <FiEdit2 size={14} />
-                  </button>
-                  <button onClick={() => eliminar(a.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--danger)", padding: 4 }}>
-                    <FiTrash2 size={14} />
-                  </button>
+                <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>{n.mensaje}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 5 }}>
+                  <FiClock size={10} color="var(--text-secondary)" />
+                  <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{fmtFechaHora(n.creado_en)}</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      {/* Modal de form */}
-      <AnimatePresence>
-        {formOpen && (
-          <>
-            <motion.div
-              onClick={cerrarForm}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(0,0,0,.6)", backdropFilter: "blur(4px)" }}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              style={{
-                position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-                zIndex: 9991, width: "min(420px, 92vw)",
-                background: "var(--bg-card)",
-                border: "1px solid var(--border, rgba(255,255,255,.1))",
-                borderRadius: 14, padding: "22px 24px",
-                boxShadow: "0 24px 60px rgba(0,0,0,.5)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 18 }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
-                  {editAlerta ? "Editar alerta" : "Nueva alerta"}
-                </span>
-                <button onClick={cerrarForm} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>
-                  <FiX size={18} />
-                </button>
-              </div>
-
-              {/* Título */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5 }}>
-                  Nombre
-                </label>
-                <input
-                  value={titulo}
-                  onChange={e => setTitulo(e.target.value)}
-                  style={{
-                    width: "100%", boxSizing: "border-box", padding: "9px 12px", borderRadius: 8,
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text-primary)", fontSize: 13, outline: "none",
-                  }}
-                />
-              </div>
-
-              {/* Hora */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5 }}>
-                  Hora
-                </label>
-                <input
-                  type="time"
-                  value={hora}
-                  onChange={e => setHora(e.target.value)}
-                  style={{
-                    width: "100%", boxSizing: "border-box", padding: "9px 12px", borderRadius: 8,
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text-primary)", fontSize: 13, outline: "none",
-                  }}
-                />
-              </div>
-
-              {/* Días */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
-                  Días
-                </label>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {DIAS.map(d => (
-                    <button
-                      key={d}
-                      onClick={() => toggleDia(d)}
-                      style={{
-                        width: 34, height: 34, borderRadius: "50%", border: "none",
-                        cursor: "pointer", fontSize: 11, fontWeight: 700,
-                        background: dias.includes(d) ? "var(--accent)" : "rgba(255,255,255,.06)",
-                        color: dias.includes(d) ? "#fff" : "var(--text-secondary)",
-                        transition: "all .15s",
-                      }}
-                    >
-                      {DIAS_LABEL[d]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tipo */}
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
-                  Tipo
-                </label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {[{ k: "rutina", l: "Rutina propia" }, { k: "sesion_pt", l: "Sesión PT" }].map(({ k, l }) => (
-                    <button
-                      key={k}
-                      onClick={() => setTipo(k)}
-                      style={{
-                        flex: 1, padding: "7px 0", borderRadius: 8, cursor: "pointer",
-                        border: tipo === k ? "none" : "1px solid var(--border, rgba(255,255,255,.1))",
-                        background: tipo === k ? "var(--accent)" : "transparent",
-                        color: tipo === k ? "#fff" : "var(--text-secondary)",
-                        fontSize: 12, fontWeight: 600,
-                      }}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {err && (
-                <div style={{ padding: "8px 12px", borderRadius: 8, marginBottom: 12, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.3)", color: "var(--danger)", fontSize: 12 }}>
-                  {err}
-                </div>
-              )}
-
-              <button
-                onClick={guardar}
-                disabled={saving}
-                style={{ ...btn(saving ? "#374151" : "var(--accent)"), width: "100%", justifyContent: "center", padding: "11px 0" }}
-              >
-                <FiCheck size={14} /> {saving ? "Guardando..." : editAlerta ? "Actualizar" : "Crear alerta"}
-              </button>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -1604,7 +1438,7 @@ function TabCitas() {
   if (citas.length === 0) return (
     <div style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>
       <FiCalendar size={28} style={{ marginBottom: 10, opacity: .6 }} />
-      <p>No tienes citas agendadas todavía. Recepción te avisará aquí cuando te agenden una.</p>
+      <p>No tienes citas agendadas todavía. Aquí verás las que te agenden recepción o tu entrenador.</p>
     </div>
   );
 
@@ -1671,7 +1505,7 @@ export default function UserTraining() {
               {tab === "rutinas"    && "Tus rutinas propias y las asignadas por tu entrenador"}
               {tab === "entrenador" && "Entrenamiento personal y chat con tu entrenador"}
               {tab === "citas"     && "Citas que recepción agendó para ti"}
-              {tab === "alertas"   && "Recordatorios y alertas de entrenamiento"}
+              {tab === "alertas"   && "Tus notificaciones: citas, mensajes, pagos y recordatorios"}
             </p>
           </div>
         </div>
