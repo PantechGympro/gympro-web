@@ -1,0 +1,307 @@
+/* ============================================================
+   ui.css — Capa de interfaz compartida (paneles internos y auth)
+   ------------------------------------------------------------
+   Prefijo `u-` para no chocar con las clases que ya existen
+   (.superadmin-*, .login-*, .btn-*). Esto NO reemplaza a
+   CSSUnificado.css: se apoya en sus tokens (--accent, --bg-card,
+   --r-md, etc.) y solo agrega las piezas que faltaban y que cada
+   pantalla venía resolviendo por su cuenta.
+
+   Criterio de movimiento (skills `animate`, `review-animations`,
+   `animation-performance`):
+     - Solo `transform` y `opacity`.
+     - Curvas exactas del vocabulario compartido.
+     - Las animaciones de panel administrativo van CORTAS a
+       propósito: quien trabaja aquí ve estas pantallas decenas de
+       veces al día, y a esa frecuencia lo que se agradece es que no
+       estorben. Botones 140ms, filas 140ms, modales 200ms.
+     - Sin `transition: all` en ninguna parte.
+     - Hover siempre detrás de (hover: hover) and (pointer: fine).
+     - `prefers-reduced-motion` conserva el fundido y quita el
+       desplazamiento.
+   ============================================================ */
+
+:root {
+  --u-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --u-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ── Botones ───────────────────────────────────────────────────────────── */
+.u-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 10px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 140ms var(--u-ease-out),
+              background-color 160ms var(--u-ease-out),
+              border-color 160ms var(--u-ease-out),
+              color 160ms var(--u-ease-out),
+              box-shadow 160ms var(--u-ease-out),
+              opacity 160ms var(--u-ease-out);
+}
+/* La respuesta vive en el press y es inmediata: es lo que confirma que
+   la interfaz escuchó, antes de que llegue la respuesta del servidor. */
+.u-btn:active:not(:disabled) { transform: scale(0.97); }
+.u-btn:disabled { opacity: .55; cursor: not-allowed; }
+.u-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.u-btn-primario   { background: var(--accent);   color: var(--text-on-accent); }
+.u-btn-secundario { background: var(--bg-card);  color: var(--text-primary); border-color: var(--border); }
+.u-btn-fantasma   { background: transparent;     color: var(--text-secondary); }
+.u-btn-peligro    { background: var(--danger);   color: #fff; }
+.u-btn-exito      { background: var(--success);  color: #06220f; }
+
+@media (hover: hover) and (pointer: fine) {
+  .u-btn-primario:hover:not(:disabled)   { background: var(--accent-hover); box-shadow: var(--shadow-accent); }
+  .u-btn-secundario:hover:not(:disabled) { border-color: var(--border-hover); }
+  .u-btn-fantasma:hover:not(:disabled)   { color: var(--text-primary); background: var(--bg-hover); }
+  .u-btn-peligro:hover:not(:disabled)    { filter: brightness(1.08); }
+  .u-btn-exito:hover:not(:disabled)      { filter: brightness(1.08); }
+}
+
+.u-btn-sm { font-size: 12.5px; padding: 7px 12px; }
+.u-btn-icono { padding: 8px; width: 34px; height: 34px; }
+
+/* Estado de carga: la etiqueta se queda en el flujo (solo se vuelve
+   invisible) y el spinner se superpone. Así el botón NO cambia de ancho al
+   pasar a "cargando" -- el salto de ancho es la razón por la que un envío
+   se siente roto aunque funcione. */
+.u-btn-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 140ms var(--u-ease-out);
+}
+.u-btn-etiqueta[data-cargando="true"] { opacity: 0; }
+.u-btn-spinner {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: .9;
+  animation: u-giro 700ms linear infinite;
+}
+@keyframes u-giro { to { transform: rotate(360deg); } }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+.u-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(3, 6, 12, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  /* El scrim oscurece para enfocar la tarea; el panel no lleva blur porque
+     apilar dos superficies translúcidas destruye la legibilidad. */
+}
+.u-modal {
+  position: relative;
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.2), 0 18px 48px rgba(0,0,0,.34);
+  /* Un modal no está anclado a ningún disparador: es la excepción a la
+     regla de `transform-origin` en el disparador. */
+  transform-origin: center;
+}
+.u-modal:focus { outline: none; }
+.u-modal-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 0;
+}
+.u-modal-titulo { font-size: 16.5px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: var(--text-primary); }
+.u-modal-desc { font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); margin: 6px 0 0; }
+.u-modal-cuerpo { padding: 16px 20px; }
+.u-modal-pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 20px 20px;
+  flex-wrap: wrap;
+}
+.u-modal-cerrar {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color 160ms var(--u-ease-out),
+              background-color 160ms var(--u-ease-out),
+              transform 140ms var(--u-ease-out);
+}
+.u-modal-cerrar:active { transform: scale(0.92); }
+.u-modal-cerrar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .u-modal-cerrar:hover { color: var(--text-primary); background: var(--bg-hover); }
+}
+
+/* Icono de tono para confirmaciones (peligro / aviso / neutro) */
+.u-modal-icono {
+  flex-shrink: 0;
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 17px;
+}
+.u-modal-icono[data-tono="peligro"] { background: var(--danger-bg);  color: var(--danger); }
+.u-modal-icono[data-tono="aviso"]   { background: var(--warning-bg); color: var(--warning); }
+.u-modal-icono[data-tono="neutro"]  { background: var(--accent-dim); color: var(--accent); }
+
+/* Confirmación escrita para acciones irreversibles */
+.u-confirm-input {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: border-color 160ms var(--u-ease-out), box-shadow 160ms var(--u-ease-out);
+}
+.u-confirm-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* ── Esqueletos de carga ───────────────────────────────────────────────── */
+.u-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-input);
+  border-radius: var(--r-sm);
+}
+/* El brillo viaja con `transform`, no con background-position (que
+   repinta en cada frame). */
+.u-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--bg-hover), transparent);
+  animation: u-brillo 1.4s linear infinite;
+}
+@keyframes u-brillo { to { transform: translateX(100%); } }
+
+.u-skeleton-tabla { display: flex; flex-direction: column; gap: 8px; }
+.u-skeleton-fila {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.u-skeleton-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+.u-skeleton-tarjeta {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Filas y tarjetas de datos ─────────────────────────────────────────── */
+.u-fila {
+  transition: background-color 140ms var(--u-ease-out),
+              border-color 140ms var(--u-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .u-fila:hover { background: var(--bg-hover); }
+}
+
+/* Cifras y métricas: siempre tabulares. Sin esto, los dígitos cambian de
+   ancho al actualizarse y la columna "baila" en cada refresco. */
+.u-cifra,
+.u-tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* ── Entradas de vista: cambio de pestaña / sección / filtro ───────────── */
+.u-vista {
+  opacity: 0;
+  transform: translateY(6px);
+  animation: u-entrada 160ms var(--u-ease-out) forwards;
+}
+@keyframes u-entrada { to { opacity: 1; transform: translateY(0); } }
+
+/* ── Estado vacío ──────────────────────────────────────────────────────── */
+.u-vacio {
+  text-align: center;
+  padding: 34px 22px;
+  border-radius: var(--r-lg);
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.u-vacio strong { display: block; color: var(--text-secondary); margin-bottom: 4px; font-weight: 700; }
+
+/* ── Campos de formulario (auth y paneles) ─────────────────────────────── */
+.u-campo { display: flex; flex-direction: column; gap: 6px; }
+.u-campo-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color 160ms var(--u-ease-out);
+}
+.u-campo:focus-within .u-campo-label { color: var(--accent); }
+.u-campo-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--danger);
+  opacity: 0;
+  transform: translateY(-3px);
+  animation: u-entrada 160ms var(--u-ease-out) forwards;
+}
+
+/* ── Movimiento reducido ───────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .u-btn:active:not(:disabled),
+  .u-modal-cerrar:active { transform: none; }
+  .u-vista,
+  .u-campo-error { animation-duration: 120ms; transform: none; }
+  .u-skeleton::after { animation: none; }
+  .u-btn-spinner { animation-duration: 1.4s; }
+}
+
+/* Permite usar el spinner superpuesto en botones que ya tienen su propia
+   clase heredada (.login-button y los de estilo inline de auth): lo único
+   que necesitan del sistema nuevo es ser contenedor posicionado. */
+.u-btn-carga-host { position: relative; }

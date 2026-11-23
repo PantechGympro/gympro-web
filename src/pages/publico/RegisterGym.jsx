@@ -210,7 +210,10 @@ export default function RegisterGym() {
           {/* Éxito */}
           <AnimatePresence>
             {success && (
-              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
                 style={{ textAlign: "center", padding: "32px 0" }}
               >
                 <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -259,7 +262,10 @@ export default function RegisterGym() {
                             }}
                           >
                             {isSelected && (
-                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                              <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
                                 style={{ position: "absolute", top: 8, right: 8, width: 18, height: 18, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center" }}
                               >
                                 <FiCheck size={10} color="#fff" />
@@ -369,7 +375,10 @@ export default function RegisterGym() {
                               }}
                             >
                               {isSelected && (
-                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
                                   style={{ position: "absolute", top: 10, right: 10, width: 18, height: 18, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 >
                                   <FiCheck size={10} color="#fff" />
@@ -475,8 +484,15 @@ export default function RegisterGym() {
                         <input id="adm_pass" type={showPass ? "text" : "password"} placeholder="Mínimo 8 caracteres"
                           value={adminData.password}
                           onChange={(e) => setAdminData({ ...adminData, password: e.target.value })} />
-                        <button type="button" className="password-toggle-btn" onClick={() => setShowPass(!showPass)}>
-                          {showPass ? <FiEye /> : <FiEyeOff />}
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() => setShowPass((v) => !v)}
+                          aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          aria-pressed={showPass}
+                          title={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        >
+                          {showPass ? <FiEyeOff /> : <FiEye />}
                         </button>
                       </div>
 
@@ -510,11 +526,17 @@ export default function RegisterGym() {
                       <button type="button" style={btnBack} onClick={retroceder}>
                         <FiArrowLeft size={14} /> Atrás
                       </button>
-                      <button type="submit" className="login-button" disabled={loading} style={{ flex: 1 }}>
-                        {loading
-                          ? <span style={{ display: "inline-block", width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                          : <>Crear gimnasio <FiArrowRight style={{ marginLeft: 8 }} /></>
-                        }
+                      <button
+                        type="submit"
+                        className="login-button u-btn-carga-host"
+                        disabled={loading}
+                        aria-busy={loading || undefined}
+                        style={{ flex: 1 }}
+                      >
+                        <span className="u-btn-etiqueta" data-cargando={loading}>
+                          Crear gimnasio <FiArrowRight style={{ marginLeft: 8 }} />
+                        </span>
+                        {loading && <span className="u-btn-spinner" />}
                       </button>
                     </div>
                   </motion.form>
