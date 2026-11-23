@@ -24,6 +24,29 @@
  * estática), las barras/KPIs aparecen ya en su valor final sin animar, y
  * el resto de transiciones con desplazamiento se neutralizan por CSS
  * conservando solo el fundido de opacidad.
+ *
+ * Pasada 2026-11-22 (diagnóstico + rediseño dirigido, skills `break-ui`,
+ * `review-animations`, `taste-skill`, `impeccable`, `emil-design-eng`):
+ * el bug real ("se cierra al mover el cursor") vivía en FuncionesPorRol.jsx,
+ * no aquí (ver el comentario fechado en ese archivo). Esta página en sí ya
+ * seguía gran parte del criterio de diseño aplicado (tokens de easing
+ * únicos, reduced-motion en los 3 frentes, sin gradientes ni texto con
+ * degradado) -- se restylea puntualmente lo que SÍ violaba las reglas de
+ * esas skills, sin tocar lo que ya cumplía:
+ *   - Funcionalidades y Roles dejan de ser "tarjetas con icono encima"
+ *     (grid de tarjetas idénticas con icono/titulo/texto) -- patrón que
+ *     `impeccable` marca como genérico de plantilla sin excepción. Pasan a
+ *     ser filas editoriales (icono pequeño en línea, no "coronando" nada).
+ *   - La insignia "Más elegido" del plan destacado deja de ser una píldora
+ *     flotante (house rule de `taste-skill`: "no pill-badges") y pasa a ser
+ *     texto en mayúsculas junto al nombre del plan + el acento lateral que
+ *     ya existía (antes solo al hover) ahora permanente en ese plan.
+ *   - La barra de navegación deja de usar `backdrop-filter: blur()` al
+ *     hacer scroll (house rule: "no glass/backdrop-blur"); se queda solo
+ *     con la sombra, que ya comunicaba lo mismo.
+ *   - Las secciones alternas (Roles/Planes/Testimonios) dejan de llevar
+ *     borde superior/inferior de 1px (house rule: "no hairline dividers");
+ *     el cambio de fondo ya las separa sin necesidad de una línea.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -87,15 +110,15 @@ const S = {
   previewNote: { fontSize: 11, color: "var(--text-tertiary)", marginTop: 10, textAlign: "center" },
 
   section: { padding: "64px 28px", maxWidth: 1180, margin: "0 auto" },
-  sectionAlt: { padding: "64px 28px", background: "var(--bg-card)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" },
+  sectionAlt: { padding: "64px 28px", background: "var(--bg-card)" },
   sectionTitle: { fontSize: 34, fontWeight: 800, textAlign: "center", letterSpacing: "-0.01em", margin: "0 0 8px" },
   sectionSub: { fontSize: 14.5, color: "var(--text-secondary)", textAlign: "center", margin: "0 auto 40px", maxWidth: 560 },
 
   grid6: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 18 },
 
   planCard: { position: "relative", display: "flex", flexDirection: "column", padding: "24px 22px 22px 25px" },
-  planBadge: { position: "absolute", top: 14, right: 14, background: "var(--accent)", color: "var(--text-on-accent)", fontSize: 10.5, fontWeight: 800, padding: "4px 10px", borderRadius: 999 },
   planNombre: { fontSize: 18, fontWeight: 800, margin: "0 0 4px", textTransform: "capitalize" },
+  planDestacadoLabel: { fontSize: 10.5, fontWeight: 800, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.04em" },
   planTagline: { fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.4, margin: "0 0 18px", minHeight: 34 },
   planPrecioRow: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 18 },
   planPrecioNum: { fontSize: 32 },
@@ -104,15 +127,24 @@ const S = {
   planItem: { display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.4 },
   planCheck: { color: "var(--accent)", flexShrink: 0, marginTop: 2, fontSize: 13 },
   featureCard: { background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, padding: "22px 20px 22px 23px" },
-  featureIcon: { width: 40, height: 40, borderRadius: 6, background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 14 },
-  featureTitulo: { fontSize: 15.5, fontWeight: 700, margin: "0 0 6px" },
-  featureTexto: { fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 },
+  // Funcionalidades: fila editorial (icono pequeño en línea + texto), no
+  // tarjeta con icono "coronando" el título -- ese patrón repetido e
+  // idéntico en cada tarjeta es justo el que `impeccable`/`taste-skill`
+  // marcan como genérico de plantilla.
+  funcList: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", columnGap: 48, rowGap: 30 },
+  funcIconWrap: { flexShrink: 0, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontSize: 18, marginTop: 2 },
+  funcTitulo: { fontSize: 16.5, fontWeight: 700, margin: "0 0 5px" },
+  funcTexto: { fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55, margin: 0, maxWidth: 420 },
 
-  grid5: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 16 },
-  roleCard: { background: "var(--bg-main)", border: "1px solid var(--border)", borderRadius: 8, padding: "20px 18px 20px 21px", textAlign: "center" },
-  roleIcon: { width: 44, height: 44, borderRadius: 999, background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, margin: "0 auto 12px" },
-  roleNombre: { fontSize: 14.5, fontWeight: 700, margin: "0 0 6px" },
-  roleTexto: { fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 },
+  // Roles: lista ordenada (aquí sí hay jerarquía real de alcance), con el
+  // número como cifra tipográfica en vez de insignia circular sobre una
+  // tarjeta -- misma razón que arriba, sin repetir la tarjeta.
+  roleList: { display: "flex", flexDirection: "column" },
+  roleIndice: { fontSize: 28, color: "var(--accent-soft)", lineHeight: 1, width: 40, flexShrink: 0, textAlign: "right" },
+  roleIconWrap: { flexShrink: 0, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)", fontSize: 18, marginTop: 2 },
+  roleCopy: { flex: 1, minWidth: 0 },
+  roleNombre: { fontSize: 16, fontWeight: 700, margin: "0 0 4px" },
+  roleTexto: { fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55, margin: 0, maxWidth: 560 },
 
   marqueeViewport: { overflow: "hidden", margin: "0 -28px" },
   marqueeTrack: { display: "flex", gap: 20, width: "max-content", animation: "gympro-marquee 32s linear infinite" },
@@ -310,12 +342,10 @@ export default function Landing() {
 
         /* ── Barra de navegación: sombra/blur al hacer scroll ────────────── */
         .gympro-nav {
-          transition: box-shadow 250ms var(--gympro-ease-out),
-                      backdrop-filter 250ms var(--gympro-ease-out);
+          transition: box-shadow 250ms var(--gympro-ease-out);
         }
         .gympro-nav.is-scrolled {
           box-shadow: var(--shadow-sm);
-          backdrop-filter: blur(10px) saturate(1.1);
         }
 
         /* ── Secuencia de entrada del hero (el momento protagonista) ─────── */
@@ -367,7 +397,6 @@ export default function Landing() {
         .gympro-reveal.is-visible { opacity: 1; transform: translateY(0); }
 
         .gympro-feature-card,
-        .gympro-role-card,
         .gympro-testi-card {
           opacity: 0;
           transform: translateY(20px);
@@ -377,12 +406,10 @@ export default function Landing() {
                       border-color 220ms var(--gympro-ease-out);
         }
         .gympro-feature-card.is-visible,
-        .gympro-role-card.is-visible,
         .gympro-testi-card.is-visible { opacity: 1; transform: translateY(0); }
 
         @media (hover: hover) and (pointer: fine) {
           .gympro-feature-card.is-visible:hover,
-          .gympro-role-card.is-visible:hover,
           .gympro-testi-card.is-visible:hover {
             transform: translateY(-4px);
             box-shadow: var(--shadow-md);
@@ -403,13 +430,11 @@ export default function Landing() {
         /* ── Acento lateral: una franja de color que entra al hover, en vez
            de un radio/sombra idéntico en todas las tarjetas ──────────────── */
         .gympro-feature-card,
-        .gympro-role-card,
         .gympro-testi-card {
           position: relative;
           overflow: hidden;
         }
         .gympro-feature-card::before,
-        .gympro-role-card::before,
         .gympro-testi-card::before {
           content: "";
           position: absolute;
@@ -422,9 +447,48 @@ export default function Landing() {
         }
         @media (hover: hover) and (pointer: fine) {
           .gympro-feature-card.is-visible:hover::before,
-          .gympro-role-card.is-visible:hover::before,
           .gympro-testi-card.is-visible:hover::before {
             transform: scaleY(1);
+          }
+        }
+        /* El plan recomendado mantiene el acento siempre visible (no solo
+           al hover) -- esa es ahora la señal de "destacado", ya no la
+           insignia en forma de píldora que taste-skill/impeccable
+           marcan como genérica de plantilla. */
+        .gympro-feature-card.gympro-plan-featured::before {
+          transform: scaleY(1);
+        }
+
+        /* ── Funcionalidades: fila editorial, no tarjeta con icono encima ── */
+        .gympro-func-row {
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+          opacity: 0;
+          transform: translateY(16px);
+          transition: opacity 500ms var(--gympro-ease-out),
+                      transform 350ms var(--gympro-ease-out);
+        }
+        .gympro-func-row.is-visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Roles: lista ordenada, sin tarjeta -- el número ya transmite la
+           jerarquía real de alcance, no hace falta repetirla en una caja ── */
+        .gympro-role-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 18px 10px;
+          border-radius: 12px;
+          opacity: 0;
+          transform: translateY(16px);
+          transition: opacity 500ms var(--gympro-ease-out),
+                      transform 350ms var(--gympro-ease-out),
+                      background-color 220ms var(--gympro-ease-out);
+        }
+        .gympro-role-row.is-visible { opacity: 1; transform: translateY(0); }
+        @media (hover: hover) and (pointer: fine) {
+          .gympro-role-row.is-visible:hover {
+            background-color: var(--bg-main);
           }
         }
 
@@ -455,26 +519,6 @@ export default function Landing() {
         }
         @media (max-width: 700px) {
           .gympro-scope-grid { grid-template-columns: repeat(2, 1fr); row-gap: 28px; }
-        }
-
-        /* ── Insignia numerada de los roles: aquí sí hay una jerarquía real
-           de alcance (Propietario ve todo el negocio, Miembro solo lo
-           suyo); en "Funcionalidades" no la hay, por eso esas tarjetas no
-           llevan número ───────────────────────────────────────────────── */
-        .gympro-role-badge {
-          position: absolute;
-          top: 14px;
-          right: 14px;
-          width: 20px;
-          height: 20px;
-          border-radius: 999px;
-          background: var(--accent);
-          color: var(--text-on-accent);
-          font-size: 10.5px;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         /* ── Botones: feedback de press + hover (sin libreria) ──────────── */
@@ -519,22 +563,24 @@ export default function Landing() {
           .gympro-hero-preview,
           .gympro-reveal,
           .gympro-feature-card,
-          .gympro-role-card,
-          .gympro-testi-card {
+          .gympro-testi-card,
+          .gympro-func-row,
+          .gympro-role-row {
             transform: none;
             transition-duration: 250ms;
           }
           .gympro-h1-accent::before { transition: none; }
           .gympro-feature-card::before,
-          .gympro-role-card::before,
           .gympro-testi-card::before {
             transition: none;
           }
           .gympro-feature-card.is-visible:hover,
-          .gympro-role-card.is-visible:hover,
           .gympro-testi-card.is-visible:hover,
           .gympro-gym-card:hover {
             transform: none;
+          }
+          .gympro-role-row.is-visible:hover {
+            background-color: transparent;
           }
         }
       `}</style>
@@ -658,16 +704,18 @@ export default function Landing() {
         >
           Ahorra tiempo, mejora la organización y enfócate en lo más importante: tus socios.
         </p>
-        <div style={S.grid6}>
+        <div style={S.funcList}>
           {FUNCIONALIDADES.map((f, i) => (
             <div
               key={f.titulo}
-              className={`gympro-feature-card${funcionalidadesVisible ? " is-visible" : ""}`}
-              style={{ ...S.featureCard, transitionDelay: `${160 + i * 60}ms` }}
+              className={`gympro-func-row${funcionalidadesVisible ? " is-visible" : ""}`}
+              style={{ transitionDelay: `${120 + i * 70}ms` }}
             >
-              <div style={S.featureIcon}>{f.icon}</div>
-              <h3 style={S.featureTitulo}>{f.titulo}</h3>
-              <p style={S.featureTexto}>{f.texto}</p>
+              <div style={S.funcIconWrap} aria-hidden="true">{f.icon}</div>
+              <div>
+                <h3 style={S.funcTitulo}>{f.titulo}</h3>
+                <p style={S.funcTexto}>{f.texto}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -684,21 +732,24 @@ export default function Landing() {
           >
             GymPro reparte el trabajo en 5 roles, cada uno con justo lo que necesita ver.
           </p>
-          <div style={S.grid5}>
+          <div style={S.roleList}>
             {ROLES.map((r, i) => (
               <div
                 key={r.nombre}
-                className={`gympro-role-card${rolesVisible ? " is-visible" : ""}`}
-                style={{ ...S.roleCard, transitionDelay: `${160 + i * 60}ms` }}
+                className={`gympro-role-row${rolesVisible ? " is-visible" : ""}`}
+                style={{ transitionDelay: `${140 + i * 70}ms` }}
               >
                 {/* Numerado porque sí hay una jerarquía real de alcance
                     (Propietario ve todo, Miembro solo lo suyo) -- no es
                     un adorno, ver AUDIT.md sobre cuándo numerar tiene
-                    sentido. */}
-                <span className="gympro-role-badge">{i + 1}</span>
-                <div style={S.roleIcon}>{r.icon}</div>
-                <h3 style={S.roleNombre}>{r.nombre}</h3>
-                <p style={S.roleTexto}>{r.texto}</p>
+                    sentido. Cifra tipográfica, ya no insignia circular
+                    sobre una tarjeta. */}
+                <span className="gympro-display" style={S.roleIndice}>{i + 1}</span>
+                <div style={S.roleIconWrap} aria-hidden="true">{r.icon}</div>
+                <div style={S.roleCopy}>
+                  <h3 style={S.roleNombre}>{r.nombre}</h3>
+                  <p style={S.roleTexto}>{r.texto}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -737,7 +788,7 @@ export default function Landing() {
                 return (
                   <div
                     key={p.id}
-                    className={`gympro-feature-card${planesVisible ? " is-visible" : ""}`}
+                    className={`gympro-feature-card${p.destacado ? " gympro-plan-featured" : ""}${planesVisible ? " is-visible" : ""}`}
                     style={{
                       ...S.featureCard,
                       ...S.planCard,
@@ -746,8 +797,10 @@ export default function Landing() {
                       transitionDelay: `${160 + i * 60}ms`,
                     }}
                   >
-                    {p.destacado && <span style={S.planBadge}>Más elegido</span>}
-                    <h3 style={S.planNombre}>{p.nombre}</h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                      <h3 style={{ ...S.planNombre, margin: 0 }}>{p.nombre}</h3>
+                      {p.destacado && <span style={S.planDestacadoLabel}>Recomendado</span>}
+                    </div>
                     <p style={S.planTagline}>{p.titulo_comercial || p.descripcion}</p>
                     <div style={S.planPrecioRow}>
                       <span className="gympro-display" style={S.planPrecioNum}>{precio}</span>
