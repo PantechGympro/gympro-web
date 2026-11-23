@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import Swal from "sweetalert2";
+import { avisos, confirmar } from "../../utils/avisos";
+import { FilasSkeleton } from "../../components/ui/Skeleton";
 import { FiRefreshCw, FiLoader, FiX } from "react-icons/fi";
 import {
   getAnalyticsPlataforma,
@@ -37,7 +38,7 @@ const btnStyle = (variant = "primary", extra = {}) => {
     warn:    { background: "rgba(234,179,8,.1)",     color: "var(--warning)" },
     neg:     { background: "rgba(239,68,68,.1)",     color: "var(--danger)" },
   };
-  return { border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s", ...(v[variant] || v.primary), ...extra };
+  return { border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s, transform .14s cubic-bezier(0.23, 1, 0.32, 1)", ...(v[variant] || v.primary), ...extra };
 };
 
 // ── Mini Bar Chart ──────────────────────────────────────────────
@@ -155,18 +156,18 @@ export default function SuperadminAnalytics() {
   }, [plat, gyms]);
 
   const handleRefresh = async () => {
-    const { isConfirmed } = await Swal.fire({
-      title: "¿Forzar recálculo?",
-      text: "Ejecutará Spark sobre todos los datos de la plataforma. Puede tardar varios segundos.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Recalcular",
-      confirmButtonColor: "var(--accent)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
+    const confirmado = await confirmar({
+      titulo: "¿Volver a calcular las métricas?",
+      mensaje:
+        "Se procesan de nuevo todos los datos de la plataforma. Puede tardar varios segundos; " +
+        "mientras tanto puedes seguir usando el panel.",
+      confirmar: "Recalcular",
+      tono: "aviso",
     });
-    if (isConfirmed) loadPlat(true);
+    if (confirmado) {
+      avisos.info("Recalculando métricas", "Te avisamos en cuanto termine.");
+      loadPlat(true);
+    }
   };
 
   const TABS = [
@@ -183,7 +184,7 @@ export default function SuperadminAnalytics() {
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>Analytics de Plataforma</h1>
           <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>Motor Spark — agregación multi-gimnasio</p>
         </div>
-        <button style={btnStyle("warn")} onClick={handleRefresh} disabled={loadingPlat}>
+        <button className="u-presion" style={btnStyle("warn")} onClick={handleRefresh} disabled={loadingPlat}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             {loadingPlat ? <><FiLoader /> Calculando…</> : <><FiRefreshCw /> Recalcular Spark</>}
           </span>
@@ -218,7 +219,9 @@ export default function SuperadminAnalytics() {
         {TABS.map(t => (
           <button
             key={t.id}
-            style={{ border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", background: tab === t.id ? "var(--accent, var(--accent))" : "transparent", color: tab === t.id ? "#fff" : "var(--text-secondary)", transition: "all .15s" }}
+            className="u-presion"
+            aria-pressed={tab === t.id}
+            style={{ border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", background: tab === t.id ? "var(--accent, var(--accent))" : "transparent", color: tab === t.id ? "#fff" : "var(--text-secondary)", transition: "background-color .15s cubic-bezier(0.23, 1, 0.32, 1), color .15s cubic-bezier(0.23, 1, 0.32, 1), transform .14s cubic-bezier(0.23, 1, 0.32, 1)" }}
             onClick={() => setTab(t.id)}
           >
             {t.label}
@@ -245,7 +248,7 @@ export default function SuperadminAnalytics() {
               <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{ingresosFiltered.length} registros</span>
             </div>
             {loadingPlat ? (
-              <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Calculando con Spark…</p>
+              <FilasSkeleton filas={5} columnas={["30%", "24%", "18%", "14%"]} />
             ) : (
               <PlatformTable
                 data={ingresosFiltered}
@@ -265,7 +268,7 @@ export default function SuperadminAnalytics() {
               </h3>
               <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{resumenFiltered.length} gimnasios</span>
             </div>
-            {loadingPlat ? <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Calculando…</p> : (
+            {loadingPlat ? <FilasSkeleton filas={4} columnas={["36%", "24%", "18%"]} /> : (
               <SummaryTable
                 data={resumenFiltered}
                 page={pageResumen}
@@ -287,7 +290,7 @@ export default function SuperadminAnalytics() {
                 <span style={{ color: "var(--text-secondary)" }}>RMSE: <b style={{ color: "var(--accent-soft)" }}>{proyeccion.rmse?.toLocaleString()}</b></span>
               </div>}
             </div>
-            {loadingProy ? <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Calculando regresión lineal…</p>
+            {loadingProy ? <FilasSkeleton filas={4} columnas={["32%", "26%", "20%"]} />
             : proyeccion?.error ? <p style={{ fontSize: 13, color: "var(--danger)" }}>{proyeccion.error}</p>
             : (
               <>
@@ -317,9 +320,9 @@ export default function SuperadminAnalytics() {
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
               Gimnasios en Riesgo de Churn ({churn?.total_riesgo ?? "—"})
             </h3>
-            <button style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadChurn}>↺</button>
+            <button className="u-presion" style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadChurn}>↺</button>
           </div>
-          {loadingChurn ? <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Cargando…</p>
+          {loadingChurn ? <FilasSkeleton filas={5} columnas={["34%", "22%", "18%"]} />
           : !churn?.gimnasios_riesgo?.length ? (
             <p style={{ fontSize: 14, color: "var(--success)", textAlign: "center", padding: "30px 0" }}>✓ Sin gimnasios en riesgo</p>
           ) : (
@@ -356,9 +359,9 @@ export default function SuperadminAnalytics() {
         <div style={card()}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>Nuevos Miembros por Mes / Gimnasio</h3>
-            <button style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadCrec}>↺</button>
+            <button className="u-presion" style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadCrec}>↺</button>
           </div>
-          {loadingCrec ? <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Calculando con Spark…</p>
+          {loadingCrec ? <FilasSkeleton filas={5} columnas={["30%", "24%", "20%"]} />
           : !crec?.crecimiento?.length ? (
             <p style={{ fontSize: 13, color: "var(--text-secondary)", textAlign: "center", padding: "30px 0" }}>Sin datos disponibles</p>
           ) : (

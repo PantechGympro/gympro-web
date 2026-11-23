@@ -1,6 +1,9 @@
 import { mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useRef } from "react";
-import Swal from "sweetalert2";
+import { avisos, confirmar } from "../../utils/avisos";
+import Modal from "../../components/ui/Modal";
+import Boton from "../../components/ui/Boton";
+import { FilasSkeleton } from "../../components/ui/Skeleton";
 import {
   getBackupStatus,
   triggerBackup,
@@ -41,7 +44,7 @@ const btnStyle = (variant = "primary", extra = {}) => {
     success: { background: "rgba(16,185,129,.1)",    color: "var(--success)" },
     warn:    { background: "rgba(234,179,8,.1)",     color: "var(--warning)" },
   };
-  return { border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s", ...(v[variant] || v.primary), ...extra };
+  return { border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "opacity .15s, transform .14s cubic-bezier(0.23, 1, 0.32, 1)", ...(v[variant] || v.primary), ...extra };
 };
 
 const INPUT = {
@@ -135,6 +138,11 @@ export default function SuperadminBackups() {
   const [restoreSel, setRestoreSel] = useState(0);   // índice del backup elegido en el historial
   const [restoring, setRestoring]   = useState(false);
   const [uploadPct, setUploadPct]   = useState(null);
+  // Elección del tipo de respaldo. Antes era un <select> inyectado como
+  // HTML dentro de SweetAlert y leído del DOM con getElementById; ahora es
+  // estado de React como el resto de la pantalla.
+  const [tipoAbierto, setTipoAbierto] = useState(false);
+  const [tipoBackup,  setTipoBackup]  = useState("incremental");
   const fileRef = useRef(null);
   const pollRef = useRef(null);
   const runningRef = useRef(false);   // para detectar la transición "terminó"
@@ -177,39 +185,22 @@ export default function SuperadminBackups() {
       runningRef.current = false;
       const paso = (status?.current_step || "").toLowerCase();
       const errored = paso.startsWith("error");
-      Swal.fire({
-        icon: errored ? "error" : "success",
-        title: errored ? "El backup falló" : "Backup completado",
-        text: errored ? (status?.current_step || "Revisa el historial.") : "El respaldo se generó y ya aparece en el historial.",
-        timer: errored ? undefined : 2600,
-        showConfirmButton: errored,
-        background: "var(--bg-card)",
-        color: "var(--text-primary)",
-      });
+      // El respaldo termina solo, muchas veces con el panel en segundo
+      // plano: un aviso informa sin exigir que alguien cierre un modal.
+      if (errored) {
+        avisos.error("El respaldo falló", status?.current_step || "Revisa el historial para ver en qué paso se detuvo.");
+      } else {
+        avisos.exito("Respaldo completado", "Ya aparece en el historial.");
+      }
       loadAll();   // recarga historial/estado para ver el nuevo backup
     }
   }, [status?.is_running, status?.current_step]);
 
-  const handleTrigger = async () => {
-    const { value: tipo } = await Swal.fire({
-      title: "Iniciar Backup",
-      html: `
-        <select id="swal-tipo" style="width:100%;padding:9px;border-radius:7px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border);font-size:14px">
-          <option value="full">Completo — volcado completo PG + MongoDB</option>
-          <option value="incremental" selected>Incremental — cambios desde último backup</option>
-          <option value="differential">Diferencial — cambios desde último respaldo completo</option>
-        </select>
-      `,
-      showCancelButton: true,
-      confirmButtonText: "Iniciar",
-      confirmButtonColor: "var(--accent)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
-      preConfirm: () => document.getElementById("swal-tipo").value,
-    });
-    if (!tipo) return;
+  const handleTrigger = () => setTipoAbierto(true);
 
+  const iniciarBackup = async () => {
+    const tipo = tipoBackup;
+    setTipoAbierto(false);
     try {
       await triggerBackup(tipo);
       // Optimista: muestra la barra de progreso de inmediato y arranca el polling.
@@ -220,18 +211,9 @@ export default function SuperadminBackups() {
         progress_percentage: 5,
         current_step: "Iniciando respaldo",
       }));
-      Swal.fire({
-        icon: "info",
-        title: `Backup ${tipo} iniciado`,
-        text: "Sigue el progreso en la barra de estado.",
-        timer: 1600,
-        showConfirmButton: false,
-        background: "var(--bg-card)",
-        color: "var(--text-primary)",
-      });
+      avisos.info("Respaldo iniciado", "Puedes seguir el avance en la barra de estado.");
     } catch (e) {
-      const msg = e?.response?.data?.msg || "No se pudo iniciar";
-      Swal.fire({ icon: "error", title: "Error", text: msg, background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo iniciar el respaldo", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
@@ -240,9 +222,9 @@ export default function SuperadminBackups() {
       await updateSchedule(schedForm);
       setSchedule(schedForm);
       setSchedEditing(false);
-      Swal.fire({ icon: "success", title: "Programación guardada", timer: 1500, showConfirmButton: false, background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.exito("Programación guardada");
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error", text: e?.response?.data?.msg || "No se pudo guardar", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo guardar la programación", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
@@ -275,41 +257,37 @@ export default function SuperadminBackups() {
       (h.files.bundle || Object.keys(RESTORE_LABELS).some(k => h.files[k]))
   );
 
-  const confirmarRestore = async (titulo, detalle) => {
-    const { isConfirmed } = await Swal.fire({
-      title: titulo,
-      html: `<p style="font-size:14px;line-height:1.5">${detalle}</p>
-             <p style="font-size:12px;color:var(--warning);margin-top:10px">Esta acción modifica la base de datos activa. Asegúrate de tener un backup reciente antes de continuar.</p>`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, restaurar",
-      confirmButtonColor: "var(--warning)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
+  /**
+   * Restaurar sobrescribe la base de datos activa de TODA la plataforma:
+   * es la acción más destructiva del panel. Por eso es la única que exige
+   * escribir una palabra para habilitar el botón -- pedirlo en todo
+   * entrenaría a teclearla sin leer, y aquí es justo donde hay que leer.
+   */
+  const confirmarRestore = (titulo, detalle) =>
+    confirmar({
+      titulo,
+      mensaje:
+        `${detalle} Se sobrescriben los datos actuales de todos los gimnasios y no hay vuelta atrás ` +
+        "desde aquí: asegúrate de tener un respaldo reciente antes de continuar.",
+      confirmar: "Restaurar ahora",
+      tono: "peligro",
+      escribirParaConfirmar: "RESTAURAR",
     });
-    return isConfirmed;
-  };
 
   const handleRestoreHistory = async (filename, engineLabel) => {
     if (!filename) return;
     const ok = await confirmarRestore(
       `Restaurar ${engineLabel}`,
-      `Se restaurará <b>${engineLabel}</b> desde el archivo <code>${filename}</code>.`
+      `Se restaurará ${engineLabel} desde el archivo ${filename}.`
     );
     if (!ok) return;
     setRestoring(true);
     try {
       const { data } = await restoreBackup(filename);
-      Swal.fire({
-        icon: "success",
-        title: "Restauración completada",
-        text: resumenRestore(data?.resultado, "La base de datos se restauró correctamente."),
-        background: "var(--bg-card)", color: "var(--text-primary)",
-      });
+      avisos.exito("Restauración completada", resumenRestore(data?.resultado, "La base de datos se restauró correctamente."));
       loadAll();
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error al restaurar", text: e?.response?.data?.detalle || e?.response?.data?.msg || "Fallo en la restauración", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("Falló la restauración", e?.response?.data?.detalle || e?.response?.data?.msg || "Revisa el historial y el estado del servidor.");
     } finally {
       setRestoring(false);
     }
@@ -319,27 +297,22 @@ export default function SuperadminBackups() {
     if (!file) return;
     const okExt = /\.(archive|json|dump|tgz|tar\.gz)$/i.test(file.name);
     if (!okExt) {
-      Swal.fire({ icon: "error", title: "Formato inválido", text: "Solo se permiten archivos .archive, .json, .dump o .tar.gz", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("Ese archivo no sirve para restaurar", "Solo se aceptan archivos .archive, .json, .dump o .tar.gz");
       return;
     }
     const ok = await confirmarRestore(
-      "Restaurar desde archivo externo",
-      `Se subirá y restaurará <code>${file.name}</code> (${(file.size / 1024 / 1024).toFixed(2)} MB).`
+      "Restaurar desde un archivo externo",
+      `Se subirá y restaurará ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB).`
     );
     if (!ok) { if (fileRef.current) fileRef.current.value = ""; return; }
     setRestoring(true);
     setUploadPct(0);
     try {
       const { data } = await restoreUpload(file, setUploadPct);
-      Swal.fire({
-        icon: "success",
-        title: "Restauración completada",
-        text: resumenRestore(data?.resultado, `Restaurado desde ${file.name}.`),
-        background: "var(--bg-card)", color: "var(--text-primary)",
-      });
+      avisos.exito("Restauración completada", resumenRestore(data?.resultado, `Restaurado desde ${file.name}.`));
       loadAll();
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error al restaurar", text: e?.response?.data?.detalle || e?.response?.data?.msg || "Fallo en la restauración", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("Falló la restauración", e?.response?.data?.detalle || e?.response?.data?.msg || "Revisa el historial y el estado del servidor.");
     } finally {
       setRestoring(false);
       setUploadPct(null);
@@ -348,34 +321,60 @@ export default function SuperadminBackups() {
   };
 
   const handleDelete = async (job_id, label) => {
-    const { isConfirmed } = await Swal.fire({
-      title: `Eliminar ${label}`,
-      text: "Se borrará la entrada del historial y sus archivos en disco.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Eliminar",
-      confirmButtonColor: "var(--danger)",
-      cancelButtonText: "Cancelar",
-      background: "var(--bg-card)",
-      color: "var(--text-primary)",
+    const confirmado = await confirmar({
+      titulo: `Eliminar ${label}`,
+      mensaje: "Se borra la entrada del historial y también sus archivos en disco. Si era tu respaldo más reciente, te quedas sin él.",
+      confirmar: "Eliminar",
+      tono: "peligro",
     });
-    if (!isConfirmed) return;
+    if (!confirmado) return;
     try {
       await deleteBackupEntry(job_id);
+      avisos.exito("Entrada eliminada");
       loadAll();
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error", text: e?.response?.data?.msg || "No se pudo eliminar", background: "var(--bg-card)", color: "var(--text-primary)" });
+      avisos.error("No se pudo eliminar", e?.response?.data?.msg || "Inténtalo de nuevo en un momento.");
     }
   };
 
   return (
     <div className="superadmin-page" style={{ minHeight: "100vh", background: "var(--bg-input)", fontFamily: "inherit" }}>
+      {/* Elegir tipo de respaldo */}
+      <Modal
+        abierto={tipoAbierto}
+        onCerrar={() => setTipoAbierto(false)}
+        titulo="Nuevo respaldo"
+        descripcion="Elige qué tanto quieres respaldar. Si no estás seguro, el incremental es el de uso diario."
+        ancho={480}
+        pie={
+          <>
+            <Boton variante="secundario" onClick={() => setTipoAbierto(false)}>Cancelar</Boton>
+            <Boton variante="primario" onClick={iniciarBackup}>Iniciar respaldo</Boton>
+          </>
+        }
+      >
+        <label className="u-campo">
+          <span className="u-campo-label">Tipo de respaldo</span>
+          <select
+            data-foco-inicial
+            value={tipoBackup}
+            onChange={(e) => setTipoBackup(e.target.value)}
+            style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "var(--bg-input)", color: "var(--text-primary)", border: "1px solid var(--border)", fontSize: 14, font: "inherit" }}
+          >
+            <option value="full">Completo — todo Postgres y MongoDB</option>
+            <option value="incremental">Incremental — solo lo que cambió desde el último respaldo</option>
+            <option value="differential">Diferencial — lo que cambió desde el último respaldo completo</option>
+          </select>
+        </label>
+      </Modal>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>Backups</h1>
           <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>Respaldos centralizados de la plataforma</p>
         </div>
         <button
+          className="u-presion"
           style={btnStyle("primary", { opacity: status?.is_running ? .5 : 1 })}
           onClick={handleTrigger}
           disabled={status?.is_running}
@@ -387,7 +386,9 @@ export default function SuperadminBackups() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 60, color: "var(--text-secondary)" }}>Cargando…</div>
+        <div aria-busy="true">
+          <FilasSkeleton filas={7} columnas={["26%", "20%", "16%", "12%"]} />
+        </div>
       ) : (
         <>
           {/* Estado actual */}
@@ -433,7 +434,7 @@ export default function SuperadminBackups() {
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><FiTrash2 /> Limpiar errores</span>
                     </button>
                   )}
-                  <button style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadAll}>
+                  <button className="u-presion" style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadAll}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><FiRefreshCw /> Actualizar</span>
                   </button>
                 </div>
@@ -567,7 +568,7 @@ export default function SuperadminBackups() {
                     <p style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 5 }}>Retener (días)</p>
                     <input style={{ ...INPUT, width: "100%", boxSizing: "border-box" }} type="number" min={1} value={schedForm.retener_dias || 30} onChange={e => setSchedForm(f => ({ ...f, retener_dias: parseInt(e.target.value) || 30 }))} />
                   </div>
-                  <button style={btnStyle("primary", { marginTop: 4 })} onClick={handleSaveSchedule}>Guardar</button>
+                  <button className="u-presion" style={btnStyle("primary", { marginTop: 4 })} onClick={handleSaveSchedule}>Guardar</button>
                 </div>
               )}
             </div>

@@ -305,3 +305,13 @@
    clase heredada (.login-button y los de estilo inline de auth): lo único
    que necesitan del sistema nuevo es ser contenedor posicionado. */
 .u-btn-carga-host { position: relative; }
+
+/* Retroalimentación de press para botones que ya traen su propio estilo
+   (inline o heredado): agrega SOLO la transición y el hundido, sin tocar
+   color, tamaño ni layout. Es lo que permite dar micro-interacción táctil
+   a las pantallas existentes sin reescribir sus estilos. */
+.u-presion { transition: transform 140ms var(--u-ease-out); }
+.u-presion:active:not(:disabled) { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .u-presion:active:not(:disabled) { transform: none; }
+}
