@@ -222,9 +222,17 @@ export default function Landing() {
           >
             {theme === "dark" ? <FiSun /> : <FiMoon />}
           </button>
-          <Link to="/login" className="l-btn l-btn-fantasma">Iniciar sesión</Link>
+          {/* Dos rótulos por acción: en pantallas angostas el texto largo
+              parte en dos líneas y la barra crece de 64 a 96 px. El corto se
+              intercambia por CSS, sin duplicar el control ni su destino. */}
+          <Link to="/login" className="l-btn l-btn-fantasma">
+            <span className="l-rotulo-largo">Iniciar sesión</span>
+            <span className="l-rotulo-corto">Entrar</span>
+          </Link>
           <button type="button" className="l-btn l-btn-primario" onClick={() => navigate("/register-gym")}>
-            Registra tu gimnasio <FiArrowRight aria-hidden="true" />
+            <span className="l-rotulo-largo">Registra tu gimnasio</span>
+            <span className="l-rotulo-corto">Registrarme</span>
+            <FiArrowRight aria-hidden="true" className="l-rotulo-flecha" />
           </button>
         </div>
       </nav>

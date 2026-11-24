@@ -211,9 +211,14 @@ const S = {
   },
   stepTitle: { margin: "0 0 8px", fontSize: 17, fontWeight: 700, color: "var(--text-primary, #fff)" },
   stepBody: { margin: "0 auto", maxWidth: 420, fontSize: 13.5, lineHeight: 1.65, color: "var(--text-secondary, #94a3b8)" },
-  dots: { display: "flex", justifyContent: "center", gap: 6, padding: "14px 0 4px", flexWrap: "wrap" },
+  dots: { display: "flex", justifyContent: "center", gap: 0, padding: "5px 0 0", flexWrap: "wrap" },
+  // El punto se ve de 7 px pero el botón mide 25: `content-box` + `padding`
+  // agrandan el área tocable sin agrandar el punto, y `background-clip` evita
+  // que el relleno se pinte. Un objetivo de 7 px es imposible de atinar en
+  // una pantalla táctil.
   dot: {
-    width: 7, height: 7, borderRadius: 99, border: "none", padding: 0, cursor: "pointer",
+    width: 7, height: 7, borderRadius: 99, border: "none", cursor: "pointer",
+    boxSizing: "content-box", padding: 9, backgroundClip: "content-box",
     background: "var(--border, #2d3748)", transition: "all .2s",
   },
   dotActive: { width: 20, background: "var(--accent, #6c63ff)" },
@@ -222,9 +227,12 @@ const S = {
     padding: "14px 18px", borderTop: "1px solid var(--border, #2d3748)", gap: 10,
   },
   footerRight: { display: "flex", alignItems: "center", gap: 8 },
+  // El padding crece el área tocable a ~36 px de alto; el margen negativo lo
+  // devuelve a su sitio para no mover el pie de la guía.
   skipBtn: {
     background: "transparent", border: "none", color: "var(--text-secondary, #94a3b8)",
     fontSize: 12.5, cursor: "pointer", fontWeight: 500,
+    padding: "10px 12px", margin: "-10px -12px",
   },
   navBtn: {
     display: "inline-flex", alignItems: "center", gap: 5,

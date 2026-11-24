@@ -1167,6 +1167,20 @@ ul, ol { list-style: none; }
   }
 }
 
+/* El botón de menú de Sidebar.jsx es `position: fixed` en 14,14 con 42x42, así
+   que ocupa hasta y=56 por encima del contenido. Sin reservarle espacio, el
+   título de CADA página del panel le queda debajo y se lee cortado
+   ("stión de Miembros" en lugar de "Gestión de Miembros").
+   El corte es 768px porque ese es el valor que usa useIsMobile(768) en
+   Sidebar.jsx para mostrar ese botón: con 900px la franja entre 769 y 900
+   reservaría espacio sin que haya botón. */
+@media (max-width: 768px) {
+  .dashboard-content,
+  .page-container {
+    padding-top: 68px;
+  }
+}
+
 @media (max-width: 600px) {
   .main-wrapper {
     margin-left: 0;
