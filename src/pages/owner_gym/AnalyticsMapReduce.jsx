@@ -9,6 +9,7 @@ import InfoGrafico, {
   COLORES_GRAFICO, SERIES_GRAFICO, COLOR_REJILLA, COLOR_ATENUADO,
   ejeX, ejeY, rangoPeriodo, describirTendencia, ImporteExtremos,
 } from "../../components/compartido/InfoGrafico";
+import useIsMobile from "../../hooks/useIsMobile";
 
 const API_BASE = "";
 const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -31,6 +32,10 @@ const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }) => 
 };
 
 export default function AnalyticsMapReduce() {
+  // 900px: por debajo de ese ancho las rejillas de dos y tres columnas
+  // recortan su contenido contra el borde. Es un estilo inline, asi que
+  // ningun media query lo alcanza: la decision tiene que ser en JS.
+  const esAngosto = useIsMobile(900);
   const [data, setData]             = useState(null);
   const [loading, setLoading]       = useState(true);
   const [trainLoading, setTrainLoading] = useState(false);
@@ -395,7 +400,7 @@ export default function AnalyticsMapReduce() {
       </div>
 
       {/* Asistencia por día y por mes */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: esAngosto ? "1fr" : "1fr 1fr", gap: 20 }}>
         <div className="chart-card">
           <InfoGrafico
             titulo="Afluencia promedio por día de la semana"
