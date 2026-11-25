@@ -6,9 +6,21 @@ import Layout from "./components/compartido/Layout";
 import CargandoPagina from "./components/compartido/CargandoPagina";
 import BannerCookies from "./components/compartido/BannerCookies";
 import AvisosHost from "./components/ui/AvisosHost";
+// ── Orden de las hojas de estilo ───────────────────────────────────────────
+// Las paginas se cargan con lazy(), asi que sus hojas llegan en chunks que el
+// navegador inyecta DESPUES del bundle principal. Si CSSUnificado.css solo se
+// importara desde las paginas (como estaba), terminaria pisando a ui.css y a
+// panel.css pese a ser la capa base. Importandolo aqui queda en el bundle
+// principal y webpack deduplica el modulo: las paginas lo siguen importando y
+// no se inyecta dos veces.
+//
+// El orden es deliberado:  base -> componentes -> panel.
+import "./css/CSSUnificado.css";
 // Capa de interfaz compartida (botones, modales, esqueletos, campos).
-// Va aqui, una sola vez, para que este disponible en todas las rutas.
 import "./css/ui.css";
+// Capa de los paneles de Propietario y Administrador: eleva las clases que las
+// dos hojas anteriores ya definen (.kpi-grid, .stat-card, .admin-table...).
+import "./css/panel.css";
 
 // --- PÁGINAS PÚBLICAS ---
 import Landing     from "./pages/publico/Landing";
@@ -16,6 +28,7 @@ import AuthPage    from "./components/auth/AuthPage";
 import RedirigirSiHaySesion from "./components/auth/RedirigirSiHaySesion";
 import RegisterGym from "./pages/publico/RegisterGym";
 import { MembresiaGate } from "./components/miembro/MembresiaGate";
+
 
 // ── Carga diferida de páginas (auditoría nov/2026, rendimiento) ─────────────
 // Antes las 69 pantallas de TODOS los roles se importaban aquí arriba: quien

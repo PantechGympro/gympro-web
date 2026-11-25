@@ -1,0 +1,285 @@
+/* =============================================================================
+   panel.css — Capa compartida de los paneles de Propietario y Administrador.
+
+   Por qué existe
+   --------------
+   Las 26 vistas del panel comparten un puñado de clases (.kpi-grid, .stat-card,
+   .admin-table, .section-header…) pero cada página resolvía su propio layout
+   con estilos inline, que ningún media query puede alcanzar. En vez de reescribir
+   las 16 mil líneas de las páginas, este archivo eleva las clases que YA usan:
+   una sola corrección aquí mejora las 26 vistas a la vez.
+
+   Se carga DESPUÉS de CSSUnificado.css, así que gana por orden de cascada sin
+   necesidad de !important.
+
+   Criterios aplicados
+   -------------------
+   - `impeccable`: este es un panel de trabajo (modo Operate). La ambición se
+     expresa como precisión y contención, no como espectáculo: nada de adornos
+     que estorben a quien cobra una membresía treinta veces al día.
+   - `apple-design`: jerarquía por peso+tamaño+interlineado como conjunto;
+     tracking negativo al crecer la tipografía; cifras tabulares; respuesta en
+     el pointer-down, no en el click; áreas táctiles cómodas.
+   - `animation-performance`: solo se animan `transform` y `opacity`. Duraciones
+     cortas (140 ms) en lo que se toca muchas veces al día; nada de `all`.
+   ========================================================================== */
+
+:root {
+  /* Curvas y duraciones. Viven aquí y no en landing.css porque aquel archivo
+     solo lo importa la página pública: el panel se quedaba sin tokens. */
+  --gympro-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --gympro-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Escala de duración por frecuencia de uso: entre más veces al día se toca
+     algo, más corta debe ser su animación. Una fila de tabla se toca cientos
+     de veces; un modal, unas pocas. */
+  --p-rapido: 140ms;   /* botones, filas, chips, tabs */
+  --p-medio:  200ms;   /* modales, paneles, drawer */
+
+  /* Un solo canalón para todo el panel, que crece con el viewport. */
+  --p-gutter: clamp(14px, 3.2vw, 28px);
+}
+
+/* ── Encabezado de página ──────────────────────────────────────────────────
+   El título escala con el viewport y aprieta el tracking al crecer: a 26px un
+   letter-spacing de 0 se lee suelto. */
+.page-title {
+  font-size: clamp(19px, 1.1rem + 0.7vw, 26px);
+  line-height: 1.15;
+  letter-spacing: -0.021em;
+  text-wrap: balance;
+}
+
+.section-header {
+  gap: 12px 16px;
+  margin-bottom: clamp(14px, 2.4vw, 20px);
+}
+
+/* ── Rejilla de métricas ───────────────────────────────────────────────────
+   `auto-fit` + `minmax` resuelve 1 / 2 / 3-4 columnas sin un solo media query:
+   el número de columnas lo decide el ancho disponible, no un punto de corte
+   adivinado. `min(…, 100%)` evita que en un teléfono muy angosto una sola
+   columna provoque desborde horizontal. */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: clamp(10px, 1.8vw, 16px);
+  align-items: stretch;
+}
+
+/* Tope de 4 columnas. `auto-fit` por si solo sigue agregando columnas mientras
+   quepan: en un monitor de 1920 px daria seis tarjetas en fila, tan angostas
+   que la cifra deja de leerse como titular y la fila se convierte en una
+   tira. Cuatro es el maximo en el que una metrica sigue teniendo presencia. */
+@media (min-width: 1400px) {
+  .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ── Tarjeta de métrica ────────────────────────────────────────────────────
+   El padding se reduce en pantallas chicas: 24px fijos desperdician un tercio
+   del ancho de un teléfono. */
+.stat-card {
+  padding: clamp(16px, 2.6vw, 24px);
+  gap: clamp(10px, 1.4vw, 14px);
+  /* El borde se aclara al pasar el cursor; el transform da el relieve. Ambas
+     son propiedades compuestas, así que no disparan layout. */
+  transition: transform var(--p-rapido) var(--gympro-ease-out),
+              border-color var(--p-rapido) var(--gympro-ease-out),
+              box-shadow   var(--p-rapido) var(--gympro-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover, rgba(255, 255, 255, 0.18));
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* Cifras: tabulares siempre. Sin esto, una columna de montos "baila" al
+   actualizarse porque el 1 es más angosto que el 8. */
+.stat-value,
+.stat-detail,
+.total-count,
+.page-info {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+.stat-value {
+  font-size: clamp(24px, 1.3rem + 1vw, 30px);
+  letter-spacing: -0.024em;
+}
+
+.chart-card { padding: clamp(16px, 2.6vw, 24px); }
+
+/* ── Tablas ────────────────────────────────────────────────────────────────
+   El contenedor ya tenía overflow-x: auto, pero sin señal de que hay más
+   contenido a la derecha: el usuario no sabe que puede desplazar. El degradado
+   del borde derecho lo anuncia, y desaparece al llegar al final porque está
+   pintado sobre el fondo del propio contenedor desplazable. */
+.custom-table-container {
+  position: relative;
+  /* Desplazamiento suave y con inercia en táctil. */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.custom-table-container::-webkit-scrollbar { height: 8px; }
+.custom-table-container::-webkit-scrollbar-thumb {
+  background: var(--border); border-radius: 99px;
+}
+.custom-table-container::-webkit-scrollbar-track { background: transparent; }
+
+/* Filas con altura cómoda para el dedo: 13px de padding daban ~40px de alto,
+   por debajo del mínimo razonable en táctil. */
+.admin-table td { padding: 14px 16px; }
+.admin-table th {
+  padding: 12px 16px;
+  /* El encabezado se queda fijo al desplazar verticalmente una tabla larga. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Las celdas numéricas se alinean a la derecha y en cifras tabulares, que es
+   como se leen las columnas de dinero. Se marca con data-num en el <td>. */
+.admin-table td[data-num],
+.admin-table th[data-num] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .admin-table tbody tr {
+    transition: background-color var(--p-rapido) var(--gympro-ease-out);
+  }
+}
+
+/* ── Tabla en modo tarjeta (opt-in) ────────────────────────────────────────
+   En un teléfono, una tabla de siete columnas obliga a desplazar a ciegas. Con
+   `.tabla-adaptable` cada fila se convierte en una tarjeta y cada celda muestra
+   su encabezado, tomado del atributo data-label del propio <td>.
+
+   Es opt-in a propósito: aplicarlo a toda tabla rompería las que son
+   genuinamente matriciales (reportes comparativos), donde la cuadrícula ES la
+   información y conviene más el desplazamiento horizontal. */
+@media (max-width: 720px) {
+  .tabla-adaptable,
+  .tabla-adaptable thead,
+  .tabla-adaptable tbody,
+  .tabla-adaptable tr,
+  .tabla-adaptable td { display: block; width: 100%; }
+
+  /* El encabezado se oculta sin salir del árbol de accesibilidad: cada celda
+     ya lleva su propia etiqueta visible. */
+  .tabla-adaptable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  .tabla-adaptable tr {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 4px 2px;
+    margin-bottom: 10px;
+  }
+
+  .tabla-adaptable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 14px;
+    border-bottom: none;
+    white-space: normal;      /* el nowrap de escritorio aquí corta nombres */
+    text-align: right;
+  }
+  .tabla-adaptable td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+  /* Una celda sin etiqueta (la de acciones) ocupa el ancho completo y sus
+     botones quedan enteros, no recortados contra el borde. */
+  .tabla-adaptable td:not([data-label]) { justify-content: flex-end; flex-wrap: wrap; }
+  .tabla-adaptable td[data-num] { text-align: right; }
+
+  /* El contenedor deja de desplazarse: ya no hay nada que desplazar. */
+  .tabla-adaptable-host {
+    overflow: visible;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+/* ── Barra de filtros ──────────────────────────────────────────────────────
+   Envuelve en vez de desbordar, y cada control conserva un ancho mínimo
+   usable en lugar de encogerse hasta ser inservible. */
+.p-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: clamp(12px, 2vw, 18px);
+}
+.p-filtros > * { flex: 1 1 180px; min-width: 0; }
+.p-filtros > .p-filtro-auto { flex: 0 0 auto; }
+
+/* ── Áreas táctiles ────────────────────────────────────────────────────────
+   En pantallas táctiles todo control interactivo del panel llega a 44px de
+   alto. Se aplica solo cuando el puntero es grueso: en escritorio con ratón
+   agrandar los botones solo gastaría espacio. */
+@media (pointer: coarse) {
+  .admin-table td button,
+  .admin-table td a,
+  .pagination-controls button,
+  .btn-outline-small,
+  .btn-compact-primary {
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+}
+
+/* ── Entrada escalonada ────────────────────────────────────────────────────
+   Las tarjetas de métrica entran una tras otra con 40 ms de diferencia. El
+   retardo sale de --i, que pone la página en el style inline de cada tarjeta.
+   Es CSS puro: no hay JS midiendo nada ni observadores por tarjeta.
+
+   El tope de 8 evita que en una rejilla larga la última tarjeta aparezca medio
+   segundo después, que es cuando el escalonamiento deja de leerse como
+   intención y empieza a leerse como lentitud. */
+.p-entra {
+  animation: p-entrada 320ms var(--gympro-ease-out) backwards;
+  animation-delay: calc(min(var(--i, 0), 8) * 40ms);
+}
+@keyframes p-entrada {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Retroalimentación al presionar ────────────────────────────────────────
+   En el pointer-down, no al soltar: esperar al click se siente muerto. */
+.stat-card[role="button"]:active,
+.p-presion:active { transform: scale(0.985); }
+
+/* ── Estado vacío ──────────────────────────────────────────────────────────*/
+.empty-state { padding: clamp(32px, 7vw, 56px) clamp(18px, 4vw, 24px); }
+
+/* ── Movimiento reducido ───────────────────────────────────────────────────
+   No se apaga la retroalimentación: se cambia por su equivalente sin
+   desplazamiento. La opacidad se conserva porque comunica estado. */
+@media (prefers-reduced-motion: reduce) {
+  .p-entra {
+    animation: p-aparece 160ms ease-out backwards;
+    animation-delay: 0ms;
+  }
+  @keyframes p-aparece { from { opacity: 0; } to { opacity: 1; } }
+
+  .stat-card:hover,
+  .stat-card[role="button"]:active,
+  .p-presion:active { transform: none; }
+}
