@@ -1015,24 +1015,24 @@ function TabHeatmap() {
         {pico && <> Tu momento más concurrido es el <strong style={{ color: "var(--text-primary)" }}>{pico.dia}</strong> en la franja <strong style={{ color: "var(--text-primary)" }}>{pico.franja}</strong>.</>}
       </div>
 
-      <div style={{ overflowX: "auto" }}>
+      <div className="p-heatmap-scroll">
         <table style={{ borderCollapse: "separate", borderSpacing: 4, width: "100%" }}>
           <thead>
             <tr>
-              <th style={{ width: 110 }} />
-              {dias.map(d => <th key={d} style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600, padding: "4px 2px" }}>{d.slice(0, 3)}</th>)}
+              <th className="p-heatmap-hora" />
+              {dias.map(d => <th key={d} className="p-heatmap-dia" style={{ color: "var(--text-secondary)", fontWeight: 600, padding: "4px 2px" }}>{d.slice(0, 3)}</th>)}
             </tr>
           </thead>
           <tbody>
             {franjas.map((f, fi) => (
               <tr key={f}>
-                <td style={{ fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap", paddingRight: 8, textAlign: "right" }}>{f}</td>
+                <td className="p-heatmap-rotulo" style={{ color: "var(--text-secondary)", whiteSpace: "nowrap", paddingRight: 8, textAlign: "right" }}>{f}</td>
                 {dias.map((d, di) => {
                   const v = cellMap[`${fi}-${di}`] || 0;
                   return (
-                    <td key={di} title={`${d} ${f}: ${v} visitas`}
-                      style={{ background: bg(v), borderRadius: 6, textAlign: "center", padding: "12px 0",
-                        fontSize: 12, fontWeight: 700, color: v > max * 0.5 ? "#06283d" : "var(--text-secondary)", minWidth: 40 }}>
+                    <td key={di} title={`${d} ${f}: ${v} visitas`} className="p-heatmap-celda"
+                      style={{ background: bg(v), borderRadius: 6, textAlign: "center",
+                        fontWeight: 700, color: v > max * 0.5 ? "#06283d" : "var(--text-secondary)" }}>
                       {v || ""}
                     </td>
                   );
@@ -1503,7 +1503,7 @@ export default function AdminAnalytics() {
   const ActiveComp = TABS.find(t => t.id === activeTab)?.Component;
 
   return (
-    <div className="analytics-page" style={{ maxWidth: 1100, margin: "0 auto" }}>
+    <div className="analytics-page">
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ color: "var(--text-primary)", fontSize: 24, fontWeight: 700, margin: 0 }}>
           Inteligencia de tu Gimnasio

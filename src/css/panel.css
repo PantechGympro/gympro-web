@@ -337,3 +337,34 @@
   .p-girando { animation: none; }
   .p-barra-analisis-punto { animation: p-latido 2s steps(2, end) infinite; }
 }
+
+/* ---------------------------------------------------------------------------
+   Mapa de calor de asistencia (AdminAnalytics -> "Horarios Concurridos")
+
+   Las medidas viven aqui y no en el JSX porque una consulta de medios no
+   puede alcanzar un estilo en linea. Con los 110px de la columna de horas
+   y los 40px por casilla el ancho minimo de la tabla es ~418px: mas que
+   cualquier telefono, lo que obligaba a la pagina entera a crecer. Al
+   reducirlos por punto de corte la semana completa cabe en pantalla, y el
+   contenedor conserva su scroll horizontal como red de seguridad para
+   anchos todavia menores o tipografias aumentadas.
+   --------------------------------------------------------------------------- */
+.p-heatmap-scroll { overflow-x: auto; }
+
+.p-heatmap-hora   { width: 110px; }
+.p-heatmap-rotulo { font-size: 11px; }
+.p-heatmap-dia    { font-size: 11px; }
+.p-heatmap-celda  { min-width: 40px; padding: 12px 0; font-size: 12px; }
+
+@media (max-width: 768px) {
+  .p-heatmap-hora   { width: 76px; }
+  .p-heatmap-rotulo { font-size: 10px; }
+  .p-heatmap-dia    { font-size: 10px; }
+  .p-heatmap-celda  { min-width: 32px; padding: 10px 0; font-size: 11px; }
+}
+
+@media (max-width: 420px) {
+  .p-heatmap-hora   { width: 62px; }
+  .p-heatmap-rotulo { font-size: 9px; }
+  .p-heatmap-celda  { min-width: 26px; padding: 9px 0; font-size: 10px; }
+}
