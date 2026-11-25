@@ -19,6 +19,8 @@ import {
 import { useFuncionesPlan } from "../../hooks/useFuncionesPlan";
 import BloqueoFuncionPlan from "../../components/compartido/BloqueoFuncionPlan";
 import "../../css/CSSUnificado.css";
+import useAnalisisActualizable from "../../hooks/useAnalisisActualizable";
+import BarraAnalisis from "../../components/compartido/BarraAnalisis";
 
 const API_BASE   = "";
 // Tonos tomados de la paleta compartida. Los anteriores eran pasteles claros
@@ -153,6 +155,9 @@ function TabMapReduce() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
+
   // Preparar datos: agrupar ingresos por periodo sumando todos los metodos
   const ingresosAgrupados = data
     ? Object.values(
@@ -198,6 +203,12 @@ function TabMapReduce() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
         <StatCard label="Ingresos totales (12 meses)" value={`$${totalIngresos.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`} />
         <StatCard label="Pagos procesados" value={totalPagos} color={SUCCESS} />
@@ -300,10 +311,13 @@ export function TabKMeans() {
 
   useEffect(() => { fetchData(kValue); }, [kValue, fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
+
   const resumen = data?.resumen_clusters || [];
 
   const clusterBarData = resumen.map(c => ({
-    name:    c.etiqueta || `Cluster ${c.cluster_id}`,
+    name:    c.etiqueta || `Grupo ${c.cluster_id}`,
     Miembros: c.num_miembros,
     IMC:     parseFloat((c.imc_promedio || 0).toFixed(1)),
     Peso:    parseFloat((c.peso_promedio || 0).toFixed(1)),
@@ -331,6 +345,12 @@ export function TabKMeans() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       {/* Explicación para el dueño */}
       <div style={{ background: "rgba(251,227,121,.07)", border: "1px solid rgba(251,227,121,.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
         <strong style={{ color: "var(--text-primary)" }}>¿Qué hace este análisis?</strong>{" "}
@@ -461,6 +481,9 @@ export function TabRegresion() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
+
   const metricas = data?.metricas || {};
 
   // coeficientes llega del backend como dict {dias: 0.003, cintura: 0.12, ...}
@@ -486,6 +509,12 @@ export function TabRegresion() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 20 }}>
         <StatCard label="Precisión del modelo"  value={`${((metricas.r2 || 0) * 100).toFixed(1)}%`} color={metricas.r2 > 0.7 ? SUCCESS : WARNING} />
         <StatCard label="Margen de error prom." value={(metricas.rmse || 0).toFixed(1)} color={INFO} suffix=" kg" />
@@ -593,6 +622,9 @@ function TabCancelaciones() {
     } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
+
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
 
   // ── Exportar reporte PDF via ventana de impresión ─────────────────────────
   const exportPDF = () => {
@@ -770,6 +802,12 @@ function TabCancelaciones() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       {/* KPIs + acciones */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Atención urgente"   value={data.resumen?.riesgo_alto  || 0} color={DANGER}  />
@@ -946,6 +984,9 @@ function TabHeatmap() {
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiClock />} title="Todavía no hay visitas para mostrar"
@@ -964,6 +1005,12 @@ function TabHeatmap() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Visitas analizadas" value={total_visitas}        color={INFO}    />
         <StatCard label="Día más concurrido" value={dia_mas_concurrido}    color={SUCCESS} />
@@ -1029,6 +1076,9 @@ function TabRFM() {
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiUsers />} title="Todavía no hay datos para mostrar"
@@ -1042,6 +1092,12 @@ function TabRFM() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Miembros analizados"     value={total}                    color={INFO}    />
         <StatCard label="Visitas promedio"        value={promedios.visitas}        color={SUCCESS} />
@@ -1125,6 +1181,9 @@ function TabFuerza() {
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiActivity />} title="Todavía no hay entrenamientos para mostrar"
@@ -1137,6 +1196,12 @@ function TabFuerza() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Ejercicios registrados" value={ejercicios_distintos} color={INFO}    />
         <StatCard label="Series analizadas"       value={total_series}         color={SUCCESS} />
@@ -1245,6 +1310,9 @@ export function TabModelos() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: retrain, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiActivity />} title="Todavía no hay datos para los modelos"
@@ -1269,6 +1337,12 @@ export function TabModelos() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
         <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 760 }}>
           <strong style={{ color: "var(--text-primary)" }}>Laboratorio de Modelos.</strong>{" "}

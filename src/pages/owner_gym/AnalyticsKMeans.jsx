@@ -225,12 +225,12 @@ export default function AnalyticsKMeans() {
     const rec = recomendaciones.find(
       (r) => r.cluster === c.cluster || r.cluster === i
     ) || recomendaciones[i] || {};
-    return { ...c, perfil: rec.perfil || `Cluster ${i + 1}`, accion: rec.accion_sugerida || "" };
+    return { ...c, perfil: rec.perfil || `Grupo ${i + 1}`, accion: rec.accion_sugerida || "" };
   });
 
   const getClusterPill = (clusterRef) => {
     const idx    = typeof clusterRef === "number" ? clusterRef : clusters.findIndex((c) => c.cluster === clusterRef);
-    const perfil = clustersEnriquecidos[idx]?.perfil || `Cluster ${idx + 1}`;
+    const perfil = clustersEnriquecidos[idx]?.perfil || `Grupo ${idx + 1}`;
     const cfg    = getRiskConfig(perfil);
     return (
       <span style={{

@@ -283,3 +283,57 @@
   .stat-card[role="button"]:active,
   .p-presion:active { transform: none; }
 }
+
+/* ── Barra de analisis ─────────────────────────────────────────────────────
+   Encabezado de toda pantalla con metricas calculadas (BarraAnalisis.jsx):
+   cuando se calculo, a la izquierda, y la accion de recalcular a la derecha.
+   En movil se apila y el boton ocupa el ancho completo, que es donde el dedo
+   lo encuentra sin apuntar. */
+.p-barra-analisis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-bottom: clamp(14px, 2.2vw, 20px);
+}
+.p-barra-analisis-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.p-barra-analisis-nota { color: var(--text-tertiary); font-size: 12.5px; }
+
+/* El punto no es decorativo: distingue de un vistazo un calculo en curso
+   (ambar, latiendo) de uno ya asentado (verde, quieto). */
+.p-barra-analisis-punto {
+  width: 7px; height: 7px; border-radius: 99px;
+  background: #f59e0b;
+  animation: p-latido 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.p-barra-analisis-punto[data-fresco="true"] {
+  background: #22c55e;
+  animation: none;
+}
+@keyframes p-latido {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .35; }
+}
+
+.p-girando { animation: p-giro 900ms linear infinite; }
+@keyframes p-giro { to { transform: rotate(360deg); } }
+
+@media (max-width: 560px) {
+  .p-barra-analisis > .u-btn { width: 100%; justify-content: center; }
+}
+
+/* El giro y el latido comunican "esto sigue trabajando": se conservan como
+   cambio de opacidad, que no desplaza nada, en vez de apagarse del todo. */
+@media (prefers-reduced-motion: reduce) {
+  .p-girando { animation: none; }
+  .p-barra-analisis-punto { animation: p-latido 2s steps(2, end) infinite; }
+}

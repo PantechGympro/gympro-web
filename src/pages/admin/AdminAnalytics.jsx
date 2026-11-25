@@ -260,7 +260,7 @@ function TabKMeans() {
   const resumen = data?.resumen_clusters || [];
 
   const clusterBarData = resumen.map(c => ({
-    name:    c.etiqueta || `Cluster ${c.cluster_id}`,
+    name:    c.etiqueta || `Grupo ${c.cluster_id}`,
     Miembros: c.num_miembros,
     IMC:     parseFloat((c.imc_promedio || 0).toFixed(1)),
     Peso:    parseFloat((c.peso_promedio || 0).toFixed(1)),
@@ -281,7 +281,7 @@ function TabKMeans() {
     <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 20 }}>
         <StatCard label="Silhouette Score" value={data.silhouette?.toFixed(3)} color={silConfig.color} suffix={` (${silConfig.label})`} />
-        <StatCard label="Clusters" value={kValue} color={INFO} />
+        <StatCard label="Grupos" value={kValue} color={INFO} />
         <StatCard label="Miembros analizados" value={(data.asignaciones || []).length} />
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <label style={{ color: "var(--text-secondary)", fontSize: 13 }}>K =</label>
@@ -329,7 +329,7 @@ function TabKMeans() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: "var(--bg-input)" }}>
-              {["Cluster","Etiqueta","Miembros","IMC Prom.","Peso Prom.","Grasa Prom.","Músculo Prom."].map(h => (
+              {["Grupo","Etiqueta","Miembros","IMC Prom.","Peso Prom.","Grasa Prom.","Músculo Prom."].map(h => (
                 <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 500 }}>{h}</th>
               ))}
             </tr>
