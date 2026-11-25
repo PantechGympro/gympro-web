@@ -15,7 +15,6 @@ import { FiRefreshCw } from "react-icons/fi";
 
 /** "hace un momento" / "hace 5 min" / "hace 2 h" — en lenguaje de todos los dias. */
 function haceCuanto(fecha) {
-  if (!fecha) return "sin calcular";
   const seg = Math.max(0, Math.floor((Date.now() - fecha.getTime()) / 1000));
   if (seg < 60)    return "hace un momento";
   const min = Math.floor(seg / 60);
@@ -48,7 +47,9 @@ export default function BarraAnalisis({
         <span>
           {actualizando
             ? "Actualizando…"
-            : `Actualizado ${haceCuanto(ultimaActualizacion)}`}
+            : ultimaActualizacion
+              ? `Actualizado ${haceCuanto(ultimaActualizacion)}`
+              : "Sin calcular todavía"}
         </span>
         {sinPermisoRecalcular && (
           <span className="p-barra-analisis-nota">

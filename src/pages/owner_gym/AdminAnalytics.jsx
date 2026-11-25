@@ -102,20 +102,6 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const TrainBtn = ({ loading, onClick, label = "Reentrenar modelo" }) => (
-  <button
-    onClick={onClick}
-    disabled={loading}
-    style={{
-      background: loading ? "var(--bg-input)" : ACCENT,
-      color: loading ? "var(--text-secondary)" : "#000",
-      border: "none", borderRadius: 8, padding: "8px 20px",
-      fontSize: 13, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
-    }}
-  >
-    {loading ? "Procesando…" : label}
-  </button>
-);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB: MapReduce
@@ -123,7 +109,8 @@ const TrainBtn = ({ loading, onClick, label = "Reentrenar modelo" }) => (
 function TabMapReduce() {
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [trainLoading, setTL]     = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]     = useState(false);
   const [error, setError]         = useState(null);
   const [trainMsg, setTrainMsg]   = useState(null);
 
@@ -208,13 +195,13 @@ function TabMapReduce() {
         actualizando={analisis.actualizando}
         sinPermisoRecalcular={analisis.sinPermisoRecalcular}
         onActualizar={analisis.actualizar}
+        etiqueta="Actualizar datos"
       />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
         <StatCard label="Ingresos totales (12 meses)" value={`$${totalIngresos.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`} />
         <StatCard label="Pagos procesados" value={totalPagos} color={SUCCESS} />
         <StatCard label="Métodos de pago" value={resumenMetodos.length} color={INFO} />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar datos" />
           {trainMsg && <span style={{ color: SUCCESS, fontSize: 13 }}>{trainMsg}</span>}
         </div>
       </div>
@@ -277,7 +264,8 @@ export function TabKMeans() {
   const [kValue, setKValue]       = useState(3);
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [trainLoading, setTL]     = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]     = useState(false);
   const [error, setError]         = useState(null);
   const [trainMsg, setTrainMsg]   = useState(null);
 
@@ -350,6 +338,7 @@ export function TabKMeans() {
         actualizando={analisis.actualizando}
         sinPermisoRecalcular={analisis.sinPermisoRecalcular}
         onActualizar={analisis.actualizar}
+        etiqueta="Actualizar grupos"
       />
       {/* Explicación para el dueño */}
       <div style={{ background: "rgba(251,227,121,.07)", border: "1px solid rgba(251,227,121,.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
@@ -371,7 +360,6 @@ export function TabKMeans() {
               fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}>{k}</button>
           ))}
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar grupos" />
           {trainMsg && <span style={{ color: SUCCESS, fontSize: 13 }}>{trainMsg}</span>}
         </div>
       </div>
@@ -449,7 +437,8 @@ const COEF_LABELS = {
 export function TabRegresion() {
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [trainLoading, setTL]     = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]     = useState(false);
   const [error, setError]         = useState(null);
   const [trainMsg, setTrainMsg]   = useState(null);
 
@@ -514,13 +503,13 @@ export function TabRegresion() {
         actualizando={analisis.actualizando}
         sinPermisoRecalcular={analisis.sinPermisoRecalcular}
         onActualizar={analisis.actualizar}
+        etiqueta="Actualizar tendencias"
       />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 20 }}>
         <StatCard label="Precisión del modelo"  value={`${((metricas.r2 || 0) * 100).toFixed(1)}%`} color={metricas.r2 > 0.7 ? SUCCESS : WARNING} />
         <StatCard label="Margen de error prom." value={(metricas.rmse || 0).toFixed(1)} color={INFO} suffix=" kg" />
         <StatCard label="Registros analizados"  value={metricas.num_muestras || "—"} />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar tendencias" />
           {trainMsg && <span style={{ color: SUCCESS, fontSize: 13 }}>{trainMsg}</span>}
         </div>
       </div>
@@ -590,7 +579,8 @@ function TabCancelaciones() {
   const analiticasIaPermitido = funcionesPlan.analiticas_ia !== false;
   const [data, setData]         = useState(null);
   const [loading, setLoading]   = useState(true);
-  const [trainLoading, setTL]   = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]   = useState(false);
   const [error, setError]       = useState(null);
   const [trainMsg, setTrainMsg] = useState(null);
   const [page, setPage]         = useState(1);
@@ -807,6 +797,7 @@ function TabCancelaciones() {
         actualizando={analisis.actualizando}
         sinPermisoRecalcular={analisis.sinPermisoRecalcular}
         onActualizar={analisis.actualizar}
+        etiqueta="Actualizar análisis"
       />
       {/* KPIs + acciones */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
@@ -815,7 +806,6 @@ function TabCancelaciones() {
         <StatCard label="Activos y estables" value={data.resumen?.activos      || 0} color={SUCCESS} />
         <StatCard label="Total analizados"   value={totalAnalizado}                  color={INFO}    />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar análisis" />
           <button onClick={exportPDF}
             style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 8,
               background: "rgba(99,102,241,.15)", border: "1px solid rgba(99,102,241,.4)",
@@ -1283,7 +1273,8 @@ export function TabModelos() {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
-  const [tl, setTL]           = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]             = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null);
@@ -1342,6 +1333,7 @@ export function TabModelos() {
         actualizando={analisis.actualizando}
         sinPermisoRecalcular={analisis.sinPermisoRecalcular}
         onActualizar={analisis.actualizar}
+        etiqueta="Actualizar modelos"
       />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
         <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 760 }}>
@@ -1349,7 +1341,6 @@ export function TabModelos() {
           Entrenamos varios algoritmos sobre los mismos datos de tu gimnasio y comparamos qué tan bien predice cada uno.
           Muestra distintas técnicas de inteligencia artificial y cómo se evalúan.
         </div>
-        <TrainBtn loading={tl} onClick={retrain} label="Actualizar modelos" />
       </div>
 
       {/* Regresión */}

@@ -114,7 +114,15 @@ export default function useAnalisisActualizable({
     };
   }, [activo, intervaloMs, actualizar, ultimaActualizacion]);
 
-  /** Marca la hora sin disparar nada: para la carga inicial de la pantalla. */
+  /**
+   * La hora del primer calculo. Cada pantalla trae su propio useEffect que
+   * pide los datos al montarse, asi que ese momento ES el primer calculo: sin
+   * esto la barra se queda en "sin calcular" hasta que alguien aprieta el
+   * boton, que es justo lo contrario de lo que se quiere comunicar.
+   */
+  useEffect(() => { setUltima(new Date()); }, []);
+
+  /** Permite re-sellar la hora a mano si la pantalla recarga por su cuenta. */
   const marcarCargaInicial = useCallback(() => setUltima(new Date()), []);
 
   return {
