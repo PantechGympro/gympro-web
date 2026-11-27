@@ -11,6 +11,7 @@ import { registrarPago } from "../../api/pagos";
 import { useToast } from "../../hooks/useToast";
 import useMetodosPago from "../../hooks/useMetodosPago";
 import "../../css/CSSUnificado.css";
+import useIsMobile from "../../hooks/useIsMobile";
 
 /* ── Iconos ── */
 const UserIcon    = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>);
@@ -66,6 +67,10 @@ function MemberCard({ miembro, onClear }) {
 
 /* ── Componente principal ── */
 export default function CobrarMembresia() {
+  // 900px: por debajo de ese ancho las rejillas de dos y tres columnas
+  // recortan su contenido contra el borde. Es un estilo inline, asi que
+  // ningun media query lo alcanza: la decision tiene que ser en JS.
+  const esAngosto = useIsMobile(900);
   const { toast, ToastPortal } = useToast();
 
   const [miembros,    setMiembros]    = useState([]);
@@ -188,7 +193,7 @@ export default function CobrarMembresia() {
         <div style={{ textAlign: "center", padding: 60, color: "var(--text-secondary)" }}>Cargando…</div>
       ) : (
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 24, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: esAngosto ? "1fr" : "1fr 380px", gap: 24, alignItems: "start" }}>
 
           {/* ── Columna izquierda: formulario ── */}
           <form onSubmit={handleSubmit} data-guide="ow-cobrar-form" style={{ display: "flex", flexDirection: "column", gap: 20 }}>

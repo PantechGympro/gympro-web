@@ -1,6 +1,7 @@
 import { mensajeAmigable, mensajePorEstado } from "../../utils/errores";
 import { useState, useEffect, useCallback } from "react";
 import "../../css/CSSUnificado.css";
+import useIsMobile from "../../hooks/useIsMobile";
 
 const API_BASE = "";
 
@@ -53,6 +54,10 @@ function getSilhouetteConfig(score) {
 const ITEMS_PER_PAGE = 10;
 
 export default function AnalyticsKMeans() {
+  // 900px: por debajo de ese ancho las rejillas de dos y tres columnas
+  // recortan su contenido contra el borde. Es un estilo inline, asi que
+  // ningun media query lo alcanza: la decision tiene que ser en JS.
+  const esAngosto = useIsMobile(900);
   const [kValue, setKValue]           = useState(3);
   const [data, setData]               = useState(null);
   const [loading, setLoading]         = useState(true);
@@ -225,12 +230,12 @@ export default function AnalyticsKMeans() {
     const rec = recomendaciones.find(
       (r) => r.cluster === c.cluster || r.cluster === i
     ) || recomendaciones[i] || {};
-    return { ...c, perfil: rec.perfil || `Cluster ${i + 1}`, accion: rec.accion_sugerida || "" };
+    return { ...c, perfil: rec.perfil || `Grupo ${i + 1}`, accion: rec.accion_sugerida || "" };
   });
 
   const getClusterPill = (clusterRef) => {
     const idx    = typeof clusterRef === "number" ? clusterRef : clusters.findIndex((c) => c.cluster === clusterRef);
-    const perfil = clustersEnriquecidos[idx]?.perfil || `Cluster ${idx + 1}`;
+    const perfil = clustersEnriquecidos[idx]?.perfil || `Grupo ${idx + 1}`;
     const cfg    = getRiskConfig(perfil);
     return (
       <span style={{
@@ -376,7 +381,11 @@ export default function AnalyticsKMeans() {
       {/* Cluster Cards */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${Math.min(clustersEnriquecidos.length, 3)}, 1fr)`,
+        // Columnas fijas solo cuando hay ancho: en un telefono tres tarjetas
+        // lado a lado recortan las cifras contra el borde.
+        gridTemplateColumns: esAngosto
+          ? "1fr"
+          : `repeat(${Math.min(clustersEnriquecidos.length, 3)}, 1fr)`,
         gap: 16, marginBottom: 24,
       }}>
         {clustersEnriquecidos.map((c, i) => {

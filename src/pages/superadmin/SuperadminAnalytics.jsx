@@ -169,12 +169,16 @@ export default function SuperadminAnalytics() {
       </div>
 
       {/* Selector de gimnasio */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, padding: "12px 16px", background: "var(--bg-card)", borderRadius: 12, border: "1px solid var(--border)", width: "fit-content" }}>
+      {/* `width: fit-content` + un select de 220px rigidos desbordaban el
+          contenedor en pantallas angostas: la fila medía mas que el viewport y
+          el boton de limpiar quedaba fuera, inalcanzable. Ahora la fila envuelve
+          y el select cede ancho hasta un minimo usable. */}
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 20, padding: "12px 16px", background: "var(--bg-card)", borderRadius: 12, border: "1px solid var(--border)", maxWidth: "100%" }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Filtrar por gimnasio</span>
         <select
           value={selGym}
           onChange={e => setSelGym(e.target.value)}
-          style={{ minWidth: 220 }}
+          style={{ flex: "1 1 180px", minWidth: 0, maxWidth: 320 }}
         >
           <option value="all">Todos los gimnasios</option>
           {gyms.map(g => (
@@ -297,7 +301,8 @@ export default function SuperadminAnalytics() {
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
               Gimnasios en Riesgo de Churn ({churn?.total_riesgo ?? "—"})
             </h3>
-            <button className="u-presion" style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadChurn}>↺</button>
+            <button className="u-presion" style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadChurn}
+              aria-label="Actualizar churn" title="Actualizar churn">↺</button>
           </div>
           {loadingChurn ? <FilasSkeleton filas={5} columnas={["34%", "22%", "18%"]} />
           : !churn?.gimnasios_riesgo?.length ? (
@@ -336,7 +341,8 @@ export default function SuperadminAnalytics() {
         <div style={card()}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>Nuevos Miembros por Mes / Gimnasio</h3>
-            <button className="u-presion" style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadCrec}>↺</button>
+            <button className="u-presion" style={btnStyle("ghost", { padding: "5px 10px", fontSize: 12 })} onClick={loadCrec}
+              aria-label="Actualizar crecimiento" title="Actualizar crecimiento">↺</button>
           </div>
           {loadingCrec ? <FilasSkeleton filas={5} columnas={["30%", "24%", "20%"]} />
           : !crec?.crecimiento?.length ? (
@@ -461,6 +467,12 @@ function SummaryTable({ data, page, setPage }) {
 }
 
 function CrecimientoTable({ data }) {
+  // Antes se cortaba en `data.slice(0, 80)`: ochenta filas de corrido, sin
+  // decir que habia mas ni como llegar a ellas. Con el mismo paginador que ya
+  // usan las otras dos tablas de esta pantalla, la tabla cabe de un vistazo y
+  // el total queda a la vista.
+  const [page, setPage] = useState(1);
+  const slice = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -472,7 +484,7 @@ function CrecimientoTable({ data }) {
           </tr>
         </thead>
         <tbody>
-          {data.slice(0, 80).map((r, i) => (
+          {slice.map((r, i) => (
             <tr key={i} style={{ borderBottom: "1px solid var(--border, rgba(255,255,255,.04))" }}>
               <td style={{ padding: "8px 12px", color: "var(--text-primary)", fontWeight: 500 }}>{r.gimnasio || `Gym ${r.gym_id}`}</td>
               <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{r.periodo}</td>
@@ -488,6 +500,7 @@ function CrecimientoTable({ data }) {
           ))}
         </tbody>
       </table>
+      <Pagination total={data.length} page={page} setPage={setPage} />
     </div>
   );
 }

@@ -410,6 +410,23 @@
   .l-nav-links { display: none; }
 }
 
+/* En la barra superior el texto NUNCA parte: si lo hace, la barra pasa de 64 a
+   96 px de alto y empuja el hero. Por debajo de 560 px se cambia al rótulo
+   corto y se recorta el padding para que las dos acciones quepan en 375 px. */
+.l-rotulo-corto { display: none; }
+@media (max-width: 560px) {
+  .l-nav-actions { gap: 6px; }
+  .l-nav-actions .l-btn {
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+  .l-nav-actions .l-btn-fantasma { padding: 10px 8px; }
+  .l-nav-actions .l-rotulo-largo  { display: none; }
+  .l-nav-actions .l-rotulo-corto  { display: inline; }
+  .l-nav-actions .l-rotulo-flecha { display: none; }
+}
+
 /* ── Revelado al hacer scroll: un solo sistema, mismas curvas en toda la
    página. Nunca una curva distinta por sección. ───────────────────────── */
 .l-reveal {

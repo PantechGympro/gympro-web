@@ -151,7 +151,7 @@ function ConfirmDialog({ open, title, message, onConfirm, onCancel, danger }) {
 // identidad entre renders, igual que Avatar y PhotoUploader.
 function Field({ label, required, children }) {
   return (
-    <div style={{ flex: "1 1 calc(50% - 6px)", minWidth: 0 }}>
+    <div style={{ flex: "1 1 calc(50% - 6px)", minWidth: 180 }}>
       <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.t2, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>
         {label}{required && <span style={{ color: C.accent, marginLeft: 2 }}>*</span>}
       </label>

@@ -1167,6 +1167,20 @@ ul, ol { list-style: none; }
   }
 }
 
+/* El botón de menú de Sidebar.jsx es `position: fixed` en 14,14 con 42x42, así
+   que ocupa hasta y=56 por encima del contenido. Sin reservarle espacio, el
+   título de CADA página del panel le queda debajo y se lee cortado
+   ("stión de Miembros" en lugar de "Gestión de Miembros").
+   El corte es 768px porque ese es el valor que usa useIsMobile(768) en
+   Sidebar.jsx para mostrar ese botón: con 900px la franja entre 769 y 900
+   reservaría espacio sin que haya botón. */
+@media (max-width: 768px) {
+  .dashboard-content,
+  .page-container {
+    padding-top: 68px;
+  }
+}
+
 @media (max-width: 600px) {
   .main-wrapper {
     margin-left: 0;
@@ -2319,7 +2333,7 @@ button.swal2-confirm { background-color: var(--accent) !important; }
 .superadmin-page { padding: 28px 32px; }
 
 @media (max-width: 768px) {
-  .superadmin-page { padding: 20px 16px 20px 64px; }
+  .superadmin-page { padding: 68px 16px 20px; }
 }
 
 /* -- Superadmin: tablas anchas (6-7 columnas) que de otro modo se
@@ -2339,16 +2353,32 @@ button.swal2-confirm { background-color: var(--accent) !important; }
    Gimnasio"): construye su propio contenedor de pagina (no usa
    .top-header), asi que necesita su propio padding-left para el boton
    hamburguesa. */
-.analytics-page { padding: 24px 28px; }
+/* -- Los tres contenedores de pagina (.analytics-page, .reportes-page y
+   .superadmin-page) son hijos flex de una columna, asi que su ancho se
+   estira al de la columna PERO nunca baja de su ancho minimo de
+   contenido. Si algo adentro no encoge -- el mapa de calor mide 418px en
+   su ancho minimo -- la caja crece mas que la pantalla y, como <body>
+   usa overflow-x: clip, el excedente se recorta sin posibilidad de
+   desplazarse: queda inalcanzable. El tope al 100% los obliga a respetar
+   el ancho de la columna y deja que cada contenedor con scroll propio
+   (.p-heatmap-scroll, .superadmin-table-scroll) haga su trabajo. */
+.analytics-page,
+.reportes-page,
+.superadmin-page { max-width: 100%; }
+
+.analytics-page { padding: 24px 28px; max-width: min(1100px, 100%); margin: 0 auto; }
 
 /* -- Reportes (OwnerReportes.jsx): el contenedor de pagina tambien
    construye su propio padding (no usa .top-header). */
 .reportes-page { padding: 28px 32px; }
 
 @media (max-width: 768px) {
-  .reportes-page { padding: 20px 16px 20px 64px; }
+  /* El relleno superior (y no uno lateral de 64px) libera el boton
+     hamburguesa sin regalarle 64px de ancho a una pantalla de 360-440px;
+     es el mismo criterio que .dashboard-content y .page-container. */
+  .reportes-page { padding: 68px 16px 20px; }
   .reportes-grid { grid-template-columns: 1fr; }
-  .analytics-page { padding: 20px 16px 20px 64px; }
+  .analytics-page { padding: 68px 16px 20px; }
 }
 
 /* ============================================================
