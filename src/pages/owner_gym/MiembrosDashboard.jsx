@@ -191,7 +191,7 @@ const inputSt = {
 
 function Field({ label, required, children, half }) {
   return (
-    <div style={{ flex: half ? "1 1 calc(50% - 6px)" : "1 1 100%", minWidth: 0 }}>
+    <div style={{ flex: half ? "1 1 calc(50% - 6px)" : "1 1 100%", minWidth: half ? 180 : 0 }}>
       <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.t2, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>
         {label}{required && <span style={{ color: C.accent, marginLeft: 2 }}>*</span>}
       </label>

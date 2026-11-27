@@ -19,6 +19,8 @@ import {
 import { useFuncionesPlan } from "../../hooks/useFuncionesPlan";
 import BloqueoFuncionPlan from "../../components/compartido/BloqueoFuncionPlan";
 import "../../css/CSSUnificado.css";
+import useAnalisisActualizable from "../../hooks/useAnalisisActualizable";
+import BarraAnalisis from "../../components/compartido/BarraAnalisis";
 
 const API_BASE   = "";
 // Tonos tomados de la paleta compartida. Los anteriores eran pasteles claros
@@ -100,20 +102,6 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const TrainBtn = ({ loading, onClick, label = "Reentrenar modelo" }) => (
-  <button
-    onClick={onClick}
-    disabled={loading}
-    style={{
-      background: loading ? "var(--bg-input)" : ACCENT,
-      color: loading ? "var(--text-secondary)" : "#000",
-      border: "none", borderRadius: 8, padding: "8px 20px",
-      fontSize: 13, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
-    }}
-  >
-    {loading ? "Procesando…" : label}
-  </button>
-);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB: MapReduce
@@ -121,7 +109,8 @@ const TrainBtn = ({ loading, onClick, label = "Reentrenar modelo" }) => (
 function TabMapReduce() {
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [trainLoading, setTL]     = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]     = useState(false);
   const [error, setError]         = useState(null);
   const [trainMsg, setTrainMsg]   = useState(null);
 
@@ -152,6 +141,9 @@ function TabMapReduce() {
   };
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
 
   // Preparar datos: agrupar ingresos por periodo sumando todos los metodos
   const ingresosAgrupados = data
@@ -198,12 +190,18 @@ function TabMapReduce() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+        etiqueta="Actualizar datos"
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
         <StatCard label="Ingresos totales (12 meses)" value={`$${totalIngresos.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`} />
         <StatCard label="Pagos procesados" value={totalPagos} color={SUCCESS} />
         <StatCard label="Métodos de pago" value={resumenMetodos.length} color={INFO} />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar datos" />
           {trainMsg && <span style={{ color: SUCCESS, fontSize: 13 }}>{trainMsg}</span>}
         </div>
       </div>
@@ -266,7 +264,8 @@ export function TabKMeans() {
   const [kValue, setKValue]       = useState(3);
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [trainLoading, setTL]     = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]     = useState(false);
   const [error, setError]         = useState(null);
   const [trainMsg, setTrainMsg]   = useState(null);
 
@@ -300,10 +299,13 @@ export function TabKMeans() {
 
   useEffect(() => { fetchData(kValue); }, [kValue, fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
+
   const resumen = data?.resumen_clusters || [];
 
   const clusterBarData = resumen.map(c => ({
-    name:    c.etiqueta || `Cluster ${c.cluster_id}`,
+    name:    c.etiqueta || `Grupo ${c.cluster_id}`,
     Miembros: c.num_miembros,
     IMC:     parseFloat((c.imc_promedio || 0).toFixed(1)),
     Peso:    parseFloat((c.peso_promedio || 0).toFixed(1)),
@@ -331,6 +333,13 @@ export function TabKMeans() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+        etiqueta="Actualizar grupos"
+      />
       {/* Explicación para el dueño */}
       <div style={{ background: "rgba(251,227,121,.07)", border: "1px solid rgba(251,227,121,.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
         <strong style={{ color: "var(--text-primary)" }}>¿Qué hace este análisis?</strong>{" "}
@@ -351,7 +360,6 @@ export function TabKMeans() {
               fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}>{k}</button>
           ))}
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar grupos" />
           {trainMsg && <span style={{ color: SUCCESS, fontSize: 13 }}>{trainMsg}</span>}
         </div>
       </div>
@@ -429,7 +437,8 @@ const COEF_LABELS = {
 export function TabRegresion() {
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [trainLoading, setTL]     = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]     = useState(false);
   const [error, setError]         = useState(null);
   const [trainMsg, setTrainMsg]   = useState(null);
 
@@ -461,6 +470,9 @@ export function TabRegresion() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
+
   const metricas = data?.metricas || {};
 
   // coeficientes llega del backend como dict {dias: 0.003, cintura: 0.12, ...}
@@ -486,12 +498,18 @@ export function TabRegresion() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+        etiqueta="Actualizar tendencias"
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 20 }}>
         <StatCard label="Precisión del modelo"  value={`${((metricas.r2 || 0) * 100).toFixed(1)}%`} color={metricas.r2 > 0.7 ? SUCCESS : WARNING} />
         <StatCard label="Margen de error prom." value={(metricas.rmse || 0).toFixed(1)} color={INFO} suffix=" kg" />
         <StatCard label="Registros analizados"  value={metricas.num_muestras || "—"} />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar tendencias" />
           {trainMsg && <span style={{ color: SUCCESS, fontSize: 13 }}>{trainMsg}</span>}
         </div>
       </div>
@@ -561,7 +579,8 @@ function TabCancelaciones() {
   const analiticasIaPermitido = funcionesPlan.analiticas_ia !== false;
   const [data, setData]         = useState(null);
   const [loading, setLoading]   = useState(true);
-  const [trainLoading, setTL]   = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]   = useState(false);
   const [error, setError]       = useState(null);
   const [trainMsg, setTrainMsg] = useState(null);
   const [page, setPage]         = useState(1);
@@ -593,6 +612,9 @@ function TabCancelaciones() {
     } catch (e) { setError(mensajeAmigable(e)); }
     finally { setTL(false); }
   };
+
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: handleTrain, });
 
   // ── Exportar reporte PDF via ventana de impresión ─────────────────────────
   const exportPDF = () => {
@@ -770,6 +792,13 @@ function TabCancelaciones() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+        etiqueta="Actualizar análisis"
+      />
       {/* KPIs + acciones */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Atención urgente"   value={data.resumen?.riesgo_alto  || 0} color={DANGER}  />
@@ -777,7 +806,6 @@ function TabCancelaciones() {
         <StatCard label="Activos y estables" value={data.resumen?.activos      || 0} color={SUCCESS} />
         <StatCard label="Total analizados"   value={totalAnalizado}                  color={INFO}    />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <TrainBtn loading={trainLoading} onClick={handleTrain} label="Actualizar análisis" />
           <button onClick={exportPDF}
             style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 8,
               background: "rgba(99,102,241,.15)", border: "1px solid rgba(99,102,241,.4)",
@@ -946,6 +974,9 @@ function TabHeatmap() {
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiClock />} title="Todavía no hay visitas para mostrar"
@@ -964,6 +995,12 @@ function TabHeatmap() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Visitas analizadas" value={total_visitas}        color={INFO}    />
         <StatCard label="Día más concurrido" value={dia_mas_concurrido}    color={SUCCESS} />
@@ -978,24 +1015,24 @@ function TabHeatmap() {
         {pico && <> Tu momento más concurrido es el <strong style={{ color: "var(--text-primary)" }}>{pico.dia}</strong> en la franja <strong style={{ color: "var(--text-primary)" }}>{pico.franja}</strong>.</>}
       </div>
 
-      <div style={{ overflowX: "auto" }}>
+      <div className="p-heatmap-scroll">
         <table style={{ borderCollapse: "separate", borderSpacing: 4, width: "100%" }}>
           <thead>
             <tr>
-              <th style={{ width: 110 }} />
-              {dias.map(d => <th key={d} style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600, padding: "4px 2px" }}>{d.slice(0, 3)}</th>)}
+              <th className="p-heatmap-hora" />
+              {dias.map(d => <th key={d} className="p-heatmap-dia" style={{ color: "var(--text-secondary)", fontWeight: 600, padding: "4px 2px" }}>{d.slice(0, 3)}</th>)}
             </tr>
           </thead>
           <tbody>
             {franjas.map((f, fi) => (
               <tr key={f}>
-                <td style={{ fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap", paddingRight: 8, textAlign: "right" }}>{f}</td>
+                <td className="p-heatmap-rotulo" style={{ color: "var(--text-secondary)", whiteSpace: "nowrap", paddingRight: 8, textAlign: "right" }}>{f}</td>
                 {dias.map((d, di) => {
                   const v = cellMap[`${fi}-${di}`] || 0;
                   return (
-                    <td key={di} title={`${d} ${f}: ${v} visitas`}
-                      style={{ background: bg(v), borderRadius: 6, textAlign: "center", padding: "12px 0",
-                        fontSize: 12, fontWeight: 700, color: v > max * 0.5 ? "#06283d" : "var(--text-secondary)", minWidth: 40 }}>
+                    <td key={di} title={`${d} ${f}: ${v} visitas`} className="p-heatmap-celda"
+                      style={{ background: bg(v), borderRadius: 6, textAlign: "center",
+                        fontWeight: 700, color: v > max * 0.5 ? "#06283d" : "var(--text-secondary)" }}>
                       {v || ""}
                     </td>
                   );
@@ -1029,6 +1066,9 @@ function TabRFM() {
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiUsers />} title="Todavía no hay datos para mostrar"
@@ -1042,6 +1082,12 @@ function TabRFM() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Miembros analizados"     value={total}                    color={INFO}    />
         <StatCard label="Visitas promedio"        value={promedios.visitas}        color={SUCCESS} />
@@ -1125,6 +1171,9 @@ function TabFuerza() {
   }, []);
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiActivity />} title="Todavía no hay entrenamientos para mostrar"
@@ -1137,6 +1186,12 @@ function TabFuerza() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+      />
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <StatCard label="Ejercicios registrados" value={ejercicios_distintos} color={INFO}    />
         <StatCard label="Series analizadas"       value={total_series}         color={SUCCESS} />
@@ -1218,7 +1273,8 @@ export function TabModelos() {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
-  const [tl, setTL]           = useState(false);
+  // El indicador de carga lo muestra BarraAnalisis (analisis.actualizando).
+  const [, setTL]             = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null);
@@ -1245,6 +1301,9 @@ export function TabModelos() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Refresco manual y automatico cada hora (useAnalisisActualizable).
+  const analisis = useAnalisisActualizable({ cargar: fetchData, recalcular: retrain, });
+
   if (loading) return <LoadingSpinner />;
   if (error || !data || data.error) return (
     <NoDataBox icon={<FiActivity />} title="Todavía no hay datos para los modelos"
@@ -1269,13 +1328,19 @@ export function TabModelos() {
 
   return (
     <div>
+      <BarraAnalisis
+        ultimaActualizacion={analisis.ultimaActualizacion}
+        actualizando={analisis.actualizando}
+        sinPermisoRecalcular={analisis.sinPermisoRecalcular}
+        onActualizar={analisis.actualizar}
+        etiqueta="Actualizar modelos"
+      />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
         <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 760 }}>
           <strong style={{ color: "var(--text-primary)" }}>Laboratorio de Modelos.</strong>{" "}
           Entrenamos varios algoritmos sobre los mismos datos de tu gimnasio y comparamos qué tan bien predice cada uno.
           Muestra distintas técnicas de inteligencia artificial y cómo se evalúan.
         </div>
-        <TrainBtn loading={tl} onClick={retrain} label="Actualizar modelos" />
       </div>
 
       {/* Regresión */}
@@ -1438,7 +1503,7 @@ export default function AdminAnalytics() {
   const ActiveComp = TABS.find(t => t.id === activeTab)?.Component;
 
   return (
-    <div className="analytics-page" style={{ maxWidth: 1100, margin: "0 auto" }}>
+    <div className="analytics-page">
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ color: "var(--text-primary)", fontSize: 24, fontWeight: 700, margin: 0 }}>
           Inteligencia de tu Gimnasio

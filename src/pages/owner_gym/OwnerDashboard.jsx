@@ -41,17 +41,18 @@ const S = {
     borderRadius: 8, color: "var(--text-secondary,var(--text-secondary))", cursor: "pointer",
     fontSize: 13, transition: "all .2s",
   },
-  grid4: {
-    display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
-    gap: 16, marginBottom: 28,
-  },
+  // La rejilla en si vive en .kpi-grid (panel.css): como clase SI la alcanzan
+  // los media queries, y ahi se resuelve 1 / 2 / 3-4 columnas con tope en
+  // pantallas anchas. Aqui solo queda la separacion con lo que sigue.
+  grid4: { marginBottom: 28 },
   card: {
     background: "var(--bg-card)",
     border: "1px solid var(--border)",
     borderRadius: 12, padding: "20px 22px",
   },
   cardLabel: { fontSize: 12, color: "var(--text-secondary,var(--text-secondary))", textTransform: "uppercase", letterSpacing: ".06em" },
-  cardValue: { fontSize: 28, fontWeight: 700, margin: "8px 0 4px", color: "var(--text-primary,var(--text-primary))" },
+  cardValue: {
+    fontVariantNumeric: "tabular-nums", fontSize: 28, fontWeight: 700, margin: "8px 0 4px", color: "var(--text-primary,var(--text-primary))" },
   cardSub:   { fontSize: 12, color: "var(--text-tertiary,var(--text-tertiary))" },
   grid2: {
     display: "grid", gap: 20, marginBottom: 24,
@@ -81,9 +82,13 @@ const S = {
 };
 
 // ─── Tarjeta KPI ───────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, icon, accent = "var(--accent)", loading }) {
+function KpiCard({ label, value, sub, icon, accent = "var(--accent)", loading, i = 0 }) {
   return (
-    <div style={{ ...S.card, borderTop: `3px solid ${accent}` }}>
+    // `stat-card` y `p-entra` vienen de panel.css: superficie compartida y
+    // entrada escalonada. El indice viaja como variable CSS --i, que es de
+    // donde sale el retardo de cada tarjeta; asi el escalonamiento es CSS puro
+    // y no cuesta un temporizador por tarjeta.
+    <div className="stat-card p-entra" style={{ ...S.card, borderTop: `3px solid ${accent}`, "--i": i }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <span style={S.cardLabel}>{label}</span>
         <span style={{ color: accent, fontSize: 20 }}>{icon}</span>
@@ -187,8 +192,9 @@ export default function OwnerDashboard() {
       </div>
 
       {/* KPIs principales */}
-      <div style={S.grid4} data-guide="ow-kpis">
+      <div className="kpi-grid" style={S.grid4} data-guide="ow-kpis">
         <KpiCard
+          i={0}
           label="Miembros Activos"
           value={kpis?.miembros?.activos ?? "—"}
           sub={`${kpis?.miembros?.nuevos_mes ?? 0} nuevos este mes`}
@@ -197,6 +203,7 @@ export default function OwnerDashboard() {
           loading={loading}
         />
         <KpiCard
+          i={1}
           label="Ingresos del Mes"
           value={fmt(kpis?.ingresos?.mes_actual)}
           sub={
@@ -214,6 +221,7 @@ export default function OwnerDashboard() {
         />
         {/* El POS ya va sumado dentro de "Ingresos del Mes"; aquí se desglosa. */}
         <KpiCard
+          i={2}
           label="Ventas POS (Mes)"
           value={fmt(kpis?.ventas_pos?.total_mes)}
           sub={`${kpis?.ventas_pos?.transacciones ?? 0} transacciones · incluidas arriba`}
@@ -222,6 +230,7 @@ export default function OwnerDashboard() {
           loading={loading}
         />
         <KpiCard
+          i={3}
           label="Membresías por Vencer"
           value={kpis?.miembros?.por_vencer ?? "—"}
           sub="Próximos 7 días"
@@ -230,6 +239,7 @@ export default function OwnerDashboard() {
           loading={loading}
         />
         <KpiCard
+          i={4}
           label="Total Miembros"
           value={kpis?.miembros?.total ?? "—"}
           sub={`${kpis?.miembros?.inactivos ?? 0} inactivos`}
@@ -238,6 +248,7 @@ export default function OwnerDashboard() {
           loading={loading}
         />
         <KpiCard
+          i={5}
           label="Entrenadores"
           value={kpis?.staff?.entrenadores ?? "—"}
           sub={`${kpis?.staff?.recepcionistas ?? 0} recepcionistas`}
@@ -246,6 +257,7 @@ export default function OwnerDashboard() {
           loading={loading}
         />
         <KpiCard
+          i={6}
           label="Tipos de Membresía"
           value={kpis?.tipos_membresia ?? "—"}
           sub="Planes activos"
@@ -254,6 +266,7 @@ export default function OwnerDashboard() {
           loading={loading}
         />
         <KpiCard
+          i={7}
           label="Ingresos Mes Anterior"
           value={fmt(kpis?.ingresos?.mes_anterior)}
           sub="Para comparación"
