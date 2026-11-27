@@ -438,7 +438,17 @@ export default function Sidebar({
       // (right: -14) y con "hidden" quedaba recortado, asi que no se veia.
       // El recorte que si hace falta esta en la lista de navegacion.
       overflow: "visible",
-      transition: "width .3s cubic-bezier(.4,0,.2,1), min-width .3s cubic-bezier(.4,0,.2,1), transform .3s cubic-bezier(.4,0,.2,1)",
+      // En movil solo se anima `transform`: animar `width` obliga al navegador
+      // a recalcular el layout en CADA cuadro del deslizamiento, que es de
+      // donde venian los tirones al abrir el drawer. En escritorio el colapso
+      // SI cambia el ancho real de la columna (el contenido se reacomoda), asi
+      // que ahi `width` tiene que animarse; es una accion esporadica y se nota
+      // mucho menos. La sombra entra en la lista para que no aparezca de golpe.
+      transition: isMobile
+        ? "transform .28s var(--gympro-ease-out, cubic-bezier(.23,1,.32,1)), box-shadow .28s var(--gympro-ease-out, cubic-bezier(.23,1,.32,1))"
+        : "width .3s var(--gympro-ease-out, cubic-bezier(.23,1,.32,1)), min-width .3s var(--gympro-ease-out, cubic-bezier(.23,1,.32,1))",
+      // Avisa al compositor antes del deslizamiento, solo mientras es drawer.
+      willChange: isMobile ? "transform" : "auto",
       // En movil el sidebar sale del flujo normal (fixed) y vive oculto
       // fuera de pantalla hasta que se abre, en vez de compartir el ancho
       // con el contenido -- esto es lo que corrige que todo se viera
@@ -663,11 +673,25 @@ export default function Sidebar({
       )}
 
       {/* Fondo semitransparente detras del drawer abierto: tocarlo lo
-          cierra, patron estandar de menu off-canvas. */}
-      {isMobile && mobileOpen && (
+          cierra, patron estandar de menu off-canvas.
+
+          Se mantiene MONTADO mientras el viewport sea movil y solo cambia su
+          opacidad. Si se desmontara al cerrar (como estaba), no habria nada que
+          animar en la salida y el fondo desapareceria de un cuadro al otro,
+          mientras el drawer todavia se esta deslizando. `visibility` se retrasa
+          hasta el final de la transicion para que no intercepte toques cuando
+          ya es invisible. */}
+      {isMobile && (
         <div
           onClick={() => setMobileOpen(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 999 }}
+          aria-hidden={!mobileOpen}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 999,
+            opacity: mobileOpen ? 1 : 0,
+            visibility: mobileOpen ? "visible" : "hidden",
+            pointerEvents: mobileOpen ? "auto" : "none",
+            transition: "opacity .28s var(--gympro-ease-out, cubic-bezier(.23,1,.32,1)), visibility 0s linear " + (mobileOpen ? "0s" : ".28s"),
+          }}
         />
       )}
 
